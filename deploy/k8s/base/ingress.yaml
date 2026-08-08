@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: coldturkey
+  namespace: coldturkey
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
+    # Recovery data must not leak through a referrer, and nothing here should
+    # ever be framed by another site.
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Referrer-Policy: no-referrer";
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.coldturkey.example
+        - api.coldturkey.example
+      secretName: coldturkey-tls
+  rules:
+    - host: api.coldturkey.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: coldturkey-api
+                port:
+                  number: 80
+    # Organisation tenants are addressed by subdomain (clinic.coldturkey.example)
+    # and resolved server-side. Note that after login the tenant always comes
+    # from the signed token, so the hostname cannot be used to reach another
+    # organisation's data.
+    - host: app.coldturkey.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: coldturkey-web
+                port:
+                  number: 80

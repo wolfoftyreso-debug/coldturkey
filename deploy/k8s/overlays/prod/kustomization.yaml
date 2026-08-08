@@ -1,0 +1,59 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: coldturkey
+
+resources:
+  - ../../base
+
+replicas:
+  - name: coldturkey-api
+    count: 3
+  - name: coldturkey-web
+    count: 2
+
+# Production uses a managed database with backups and point-in-time recovery.
+# The in-cluster Postgres is for evaluation only, so it is removed here and
+# DATABASE_URL points elsewhere.
+patches:
+  - patch: |
+      $patch: delete
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: coldturkey-postgres
+        namespace: coldturkey
+  - patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: coldturkey-postgres
+        namespace: coldturkey
+  - patch: |
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: postgres
+        namespace: coldturkey
+  - target:
+      kind: NetworkPolicy
+      name: api
+    patch: |
+      - op: remove
+        path: /spec/egress/0
+  - target:
+      kind: ConfigMap
+      name: coldturkey-config
+    patch: |
+      - op: replace
+        path: /data/LOG_LEVEL
+        value: info
+      - op: replace
+        path: /data/DATABASE_POOL_MAX
+        value: "20"
+
+# Secrets are never committed. Point this at an external secret store — the
+# placeholder Secret in base/config.yaml exists only so `kustomize build`
+# produces a complete manifest.

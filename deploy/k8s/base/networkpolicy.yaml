@@ -1,0 +1,110 @@
+# Default deny, then open only what the system actually needs.
+#
+# The threat this addresses is lateral movement: a compromise elsewhere in the
+# cluster should not be able to reach a database full of relapse histories just
+# because it shares a network.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: coldturkey
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api
+  namespace: coldturkey
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: coldturkey-api
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: coldturkey-web
+      ports:
+        - port: 8080
+    # Prometheus scrapes /metrics; those counters carry no personal data.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: coldturkey-postgres
+      ports:
+        - port: 5432
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Outbound HTTPS for the Anthropic API. Nothing else leaves this pod.
+    - ports:
+        - port: 443
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web
+  namespace: coldturkey
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: coldturkey-web
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: coldturkey-api
+      ports:
+        - port: 8080
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# The database accepts connections from the API and the migration job, and from
+# nothing else in the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres
+  namespace: coldturkey
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: coldturkey-postgres
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: coldturkey-api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: coldturkey-migrate
+      ports:
+        - port: 5432

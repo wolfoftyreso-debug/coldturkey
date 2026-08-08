@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Cold Turkey",
+    "slug": "coldturkey",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "coldturkey",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b0d0f",
+    "splash": {
+      "backgroundColor": "#0b0d0f",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.coldturkey.client",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "app.coldturkey.client",
+      "adaptiveIcon": {
+        "backgroundColor": "#0b0d0f"
+      }
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "apiUrl": "http://localhost:8080",
+      "tenant": "public"
+    }
+  }
+}

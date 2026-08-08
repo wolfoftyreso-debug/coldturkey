@@ -1,0 +1,88 @@
+# A single-replica Postgres for evaluation and small self-hosted deployments.
+#
+# For anything carrying real patient data, delete this file and point
+# DATABASE_URL at a managed database with backups, point-in-time recovery and
+# encryption at rest. The row-level security policies in the schema work
+# identically either way — they are enforced by Postgres, not by the operator.
+apiVersion: v1
+kind: Service
+metadata:
+  name: coldturkey-postgres
+  namespace: coldturkey
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: coldturkey-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coldturkey-postgres
+  namespace: coldturkey
+spec:
+  serviceName: coldturkey-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: coldturkey-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: coldturkey-postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: coldturkey
+            - name: POSTGRES_DB
+              value: coldturkey
+            - name: POSTGRES_PASSWORD
+              value: coldturkey
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ['pg_isready', '-U', 'coldturkey']
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ['pg_isready', '-U', 'coldturkey']
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 10Gi

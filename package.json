@@ -1,0 +1,78 @@
+{
+  "name": "coldturkey",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cold Turkey — secular recovery and addiction support coach. Multi-tenant platform with web and mobile clients.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/** build && pnpm --filter @coldturkey/api build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "dev:api": "pnpm --filter @coldturkey/api dev",
+    "dev:web": "pnpm --filter @coldturkey/web dev",
+    "dev:mobile": "pnpm --filter @coldturkey/mobile start",
+    "db:migrate": "pnpm --filter @coldturkey/api migrate",
+    "db:seed": "pnpm --filter @coldturkey/api seed",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml,yml}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"],
+    "_comment": [
+      "The workspace legitimately runs two React majors: Next 15 on React 19, and",
+      "Expo SDK 52 / React Native 0.76 on React 18. Neither framework's",
+      "dependencies declare which @types/react they want, so pnpm's hoisted",
+      "fallback decides — and whichever version wins, the other app's typecheck",
+      "breaks with two incompatible React namespaces in one program.",
+      "Declaring @types/react as an optional peer makes pnpm resolve it from the",
+      "importing app instead, so web gets 19 and mobile gets 18. This affects",
+      "type resolution only; no runtime behaviour changes."
+    ],
+    "packageExtensions": {
+      "next": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "expo-router": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "@react-navigation/core": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "@react-navigation/native": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "@react-navigation/native-stack": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "@react-navigation/bottom-tabs": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "@react-navigation/elements": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "@react-navigation/routers": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      },
+      "react-native": {
+        "peerDependencies": { "@types/react": "*" },
+        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+      }
+    }
+  }
+}

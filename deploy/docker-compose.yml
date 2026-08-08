@@ -1,0 +1,54 @@
+# Local stack: Postgres, the API and the web client.
+#
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# The API migrates on boot, so the first start also creates the schema.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: coldturkey
+      POSTGRES_PASSWORD: coldturkey
+      POSTGRES_DB: coldturkey
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U coldturkey']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://coldturkey:coldturkey@postgres:5432/coldturkey
+      JWT_SECRET: local-development-secret-change-me-please-32
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: info
+      # Leave unset to run the deterministic local coach — the app is fully
+      # usable without an API key.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+        NEXT_PUBLIC_DEFAULT_TENANT: public
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

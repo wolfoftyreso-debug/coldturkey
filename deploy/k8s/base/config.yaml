@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coldturkey-config
+  namespace: coldturkey
+data:
+  NODE_ENV: 'production'
+  PORT: '8080'
+  LOG_LEVEL: 'info'
+  DATABASE_POOL_MAX: '10'
+  ACCESS_TOKEN_TTL: '15m'
+  REFRESH_TOKEN_TTL_DAYS: '30'
+  DEFAULT_TENANT_SLUG: 'public'
+  ALLOW_PUBLIC_SIGNUP: 'true'
+  COACH_MODEL: 'claude-opus-5'
+  CORS_ORIGINS: 'https://app.coldturkey.example'
+---
+# Template only — never commit real values.
+#
+#   kubectl -n coldturkey create secret generic coldturkey-secrets \
+#     --from-literal=DATABASE_URL='postgres://user:pass@host:5432/coldturkey' \
+#     --from-literal=JWT_SECRET="$(openssl rand -base64 48)" \
+#     --from-literal=ANTHROPIC_API_KEY='sk-ant-...'
+#
+# ANTHROPIC_API_KEY may be omitted entirely: without it the API serves the
+# deterministic local coach, so the ten-minute protocol, the craving plan and
+# the negotiation counters all keep working.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: coldturkey-secrets
+  namespace: coldturkey
+  annotations:
+    coldturkey.app/note: 'Placeholder. Replace with a real secret or an external secret store.'
+type: Opaque
+stringData:
+  DATABASE_URL: 'postgres://coldturkey:coldturkey@coldturkey-postgres:5432/coldturkey'
+  JWT_SECRET: 'replace-me-with-at-least-32-random-characters'
+  ANTHROPIC_API_KEY: ''

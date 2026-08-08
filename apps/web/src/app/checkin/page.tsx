@@ -1,0 +1,165 @@
+'use client';
+
+import { useState } from 'react';
+import { Loading, Shell } from '../../components/Shell';
+import { api } from '../../lib/api';
+import { useRequireAuth } from '../../lib/session';
+
+function Scale({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="slider-row">
+        <input
+          type="range"
+          min={0}
+          max={10}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+        <span className="slider-value">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckInPage() {
+  const { user, loading, t } = useRequireAuth();
+  const hour = new Date().getHours();
+  const [kind, setKind] = useState<'morning' | 'evening'>(hour < 15 ? 'morning' : 'evening');
+
+  const [mood, setMood] = useState(5);
+  const [sleepQuality, setSleepQuality] = useState(5);
+  const [stress, setStress] = useState(5);
+  const [cravingIntensity, setCravingIntensity] = useState(3);
+  const [biggestRisk, setBiggestRisk] = useState('');
+  const [keyDecision, setKeyDecision] = useState('');
+  const [wentWell, setWentWell] = useState('');
+  const [wasHard, setWasHard] = useState('');
+  const [learned, setLearned] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (loading || !user) return <Loading />;
+
+  async function save() {
+    setBusy(true);
+    try {
+      // The client sends its own local day: the server's UTC "today" would push
+      // an evening check-in into tomorrow for anyone east of Greenwich.
+      const now = new Date();
+      const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+        now.getDate(),
+      ).padStart(2, '0')}`;
+
+      await api.post('/v1/checkins', {
+        kind,
+        day,
+        mood,
+        sleepQuality,
+        stress,
+        cravingIntensity,
+        biggestRisk: kind === 'morning' ? biggestRisk : null,
+        keyDecision: kind === 'morning' ? keyDecision : null,
+        wentWell: kind === 'evening' ? wentWell : null,
+        wasHard: kind === 'evening' ? wasHard : null,
+        learned: kind === 'evening' ? learned : null,
+      });
+      setSaved(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Shell title={t(kind === 'morning' ? 'checkin.morning.title' : 'checkin.evening.title')}>
+      <div className="chips" style={{ marginBottom: 20 }}>
+        <button
+          className="chip"
+          data-selected={kind === 'morning'}
+          onClick={() => setKind('morning')}
+        >
+          {t('checkin.morning.title')}
+        </button>
+        <button
+          className="chip"
+          data-selected={kind === 'evening'}
+          onClick={() => setKind('evening')}
+        >
+          {t('checkin.evening.title')}
+        </button>
+      </div>
+
+      <div className="card">
+        <Scale label={t('checkin.mood')} value={mood} onChange={setMood} />
+        <Scale label={t('checkin.sleep')} value={sleepQuality} onChange={setSleepQuality} />
+        <Scale label={t('checkin.stress')} value={stress} onChange={setStress} />
+        <Scale
+          label={t('checkin.craving')}
+          value={cravingIntensity}
+          onChange={setCravingIntensity}
+        />
+      </div>
+
+      {kind === 'morning' ? (
+        <div className="card">
+          <div className="field">
+            <label htmlFor="risk">{t('checkin.biggestRisk')}</label>
+            <input
+              id="risk"
+              value={biggestRisk}
+              onChange={(event) => setBiggestRisk(event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="decision">{t('checkin.keyDecision')}</label>
+            <input
+              id="decision"
+              value={keyDecision}
+              onChange={(event) => setKeyDecision(event.target.value)}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="card">
+          <div className="field">
+            <label htmlFor="wentWell">{t('checkin.wentWell')}</label>
+            <input
+              id="wentWell"
+              value={wentWell}
+              onChange={(event) => setWentWell(event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="wasHard">{t('checkin.wasHard')}</label>
+            <input
+              id="wasHard"
+              value={wasHard}
+              onChange={(event) => setWasHard(event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="learned">{t('checkin.learned')}</label>
+            <input
+              id="learned"
+              value={learned}
+              onChange={(event) => setLearned(event.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      <button className="btn primary wide" onClick={save} disabled={busy}>
+        {saved ? t('checkin.saved') : t('action.save')}
+      </button>
+    </Shell>
+  );
+}

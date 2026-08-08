@@ -1,0 +1,29 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Every dotenv variant is ignored except the committed template. Broad on
+# purpose: a stray .env.test with a real DATABASE_URL is exactly the kind of
+# thing that gets committed once and lives in the history forever.
+.env
+.env*
+!.env.example
+
+.DS_Store
+Thumbs.db
+
+.expo/
+.expo-shared/
+web-build/
+
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+.pnpm-store/
+.turbo/
+.vercel/
