@@ -73,6 +73,13 @@ jobs:
       - name: Build web
         run: pnpm --filter @cleat/web build
 
+      # Bundle the mobile app rather than only typechecking it. Metro resolves a
+      # different module graph than tsc does — a missing runtime dependency is
+      # invisible to the typechecker and fatal to the bundler — and a phone
+      # client that cannot bundle is a client that cannot ship.
+      - name: Bundle mobile
+        run: pnpm --filter @cleat/mobile exec expo export --platform android --output-dir /tmp/expo-bundle
+
   images:
     name: Build container images
     runs-on: ubuntu-latest

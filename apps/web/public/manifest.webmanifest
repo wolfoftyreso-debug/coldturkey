@@ -1,0 +1,27 @@
+{
+  "name": "Cleat",
+  "short_name": "Cleat",
+  "description": "Rebuild your life.",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#0a0b0d",
+  "theme_color": "#0a0b0d",
+  "orientation": "portrait",
+  "categories": ["health", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "I'm craving",
+      "short_name": "Craving",
+      "url": "/craving",
+      "description": "Acute help, one tap from the home screen"
+    }
+  ]
+}

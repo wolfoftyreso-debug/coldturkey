@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type Dashboard } from '../../lib/api';
+import { saveOfflineKit, takeQueuedCravings } from '../../lib/offline';
 import { formatHours, formatMoney, useRequireAuth } from '../../lib/session';
 
 export default function HomePage() {
@@ -13,7 +14,29 @@ export default function HomePage() {
 
   const load = useCallback(async () => {
     try {
-      setData(await api.get<Dashboard>('/v1/dashboard'));
+      const dashboard = await api.get<Dashboard>('/v1/dashboard');
+      setData(dashboard);
+
+      // Refresh the on-device survival kit on every successful load, so the
+      // craving flow always has the person's own why and their phone numbers
+      // even when the network is gone.
+      saveOfflineKit({
+        whyStatement: dashboard.profile.whyStatement,
+        supportContacts: dashboard.supportContacts.map((c) => ({
+          id: c.id,
+          name: c.name,
+          phone: c.phone,
+          isPrimary: c.isPrimary,
+        })),
+        resources: [],
+        locale: dashboard.user.locale,
+      });
+
+      // Replay anything logged while offline.
+      const queued = takeQueuedCravings();
+      for (const entry of queued) {
+        await api.post('/v1/cravings', entry).catch(() => undefined);
+      }
     } catch {
       setError(true);
     }
@@ -75,7 +98,7 @@ export default function HomePage() {
           {t('mode.reset')}
           <em>{t('mode.reset.sub')}</em>
         </Link>
-        <Link className="action span" href="/coach?mode=struggling">
+        <Link className="action span" href="/struggling">
           {t('mode.now')}
           <em>{t('mode.now.sub')}</em>
         </Link>

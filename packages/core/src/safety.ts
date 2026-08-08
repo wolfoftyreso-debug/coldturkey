@@ -244,6 +244,27 @@ const RULES: Rule[] = [
       'cold sweats',
       'racing heart',
       'tremors',
+      // First-person, plain-language forms. Someone actually in withdrawal
+      // writes "jag skakar", not the clinical noun "skakningar" — an earlier
+      // version of this list only held the nouns and rated a textbook alcohol
+      // withdrawal presentation as no risk at all. These will occasionally fire
+      // on someone shaking with anger, which costs a handoff sentence they did
+      // not need; missing the other case costs considerably more.
+      'skakar',
+      'jag skakar',
+      'skakig',
+      'skakiga hander',
+      'darrar',
+      'darrig',
+      'huttrar',
+      'im shaking',
+      'i am shaking',
+      'shaking',
+      'shaky',
+      'shaky hands',
+      'trembling',
+      'sweating buckets',
+      'heart is racing',
     ]),
   },
 ];
@@ -322,6 +343,15 @@ export function triage(input: TriageInput): TriageResult {
     const inAcuteWindow = hours != null && hours >= 0 && hours <= 96;
     if (profile.medicalDetoxAdvised && inAcuteWindow) {
       categories.add('withdrawal_medical');
+      level = maxLevel(level, 'urgent');
+    }
+
+    // Symptoms outrank the timeline. Someone quitting alcohol who says they are
+    // shaking needs a doctor whether or not the recorded plan puts them inside
+    // the acute window — that record is self-reported and is wrong precisely
+    // when it matters most, because an unlogged relapse resets a clock nobody
+    // told us about. Reported symptoms escalate on their own.
+    if (profile.medicalDetoxAdvised && categories.has('withdrawal_medical')) {
       level = maxLevel(level, 'urgent');
     }
   }

@@ -606,6 +606,68 @@ export async function appendCoachMessage(
   );
 }
 
+// ---------------------------------------------------------- trigger map ---
+
+/**
+ * The chain the spec asks for: trigger → thought → feeling → impulse → action →
+ * consequence. Stored as one JSON object per named trigger, because the value is
+ * in seeing the whole chain at once, not in querying the links separately.
+ */
+export interface TriggerChain {
+  thought?: string;
+  feeling?: string;
+  impulse?: string;
+  action?: string;
+  consequence?: string;
+}
+
+export interface TriggerRow {
+  id: string;
+  label: string;
+  category: string;
+  chain: TriggerChain;
+  created_at: Date;
+}
+
+export async function listTriggers(client: Client, userId: string): Promise<TriggerRow[]> {
+  const { rows } = await client.query<TriggerRow>(
+    'SELECT id, label, category, chain, created_at FROM triggers WHERE user_id = $1 ORDER BY created_at ASC',
+    [userId],
+  );
+  return rows;
+}
+
+export async function createTrigger(
+  client: Client,
+  input: {
+    tenantId: string;
+    userId: string;
+    label: string;
+    category: string;
+    chain: TriggerChain;
+  },
+): Promise<TriggerRow> {
+  const { rows } = await client.query<TriggerRow>(
+    `INSERT INTO triggers (tenant_id, user_id, label, category, chain)
+     VALUES ($1, $2, $3, $4, $5::jsonb)
+     RETURNING id, label, category, chain, created_at`,
+    [input.tenantId, input.userId, input.label, input.category, JSON.stringify(input.chain)],
+  );
+  return rows[0]!;
+}
+
+export async function deleteTrigger(
+  client: Client,
+  userId: string,
+  id: string,
+): Promise<boolean> {
+  const result = await client.query('DELETE FROM triggers WHERE user_id = $1 AND id = $2', [
+    userId,
+    id,
+  ]);
+  return (result.rowCount ?? 0) > 0;
+}
+
 // ------------------------------------------------------ rebuild my life ---
 
 export interface LifeDomainRow {

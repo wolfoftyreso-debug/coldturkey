@@ -649,3 +649,18 @@ input[type='range'] {
     grid-template-columns: 104px 1fr 40px;
   }
 }
+
+/* The offline banner. Deliberately calm rather than alarming: being offline is
+   not an error in this product, it is a supported state. */
+.offline-banner {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 30;
+  padding: 9px 16px calc(9px + env(safe-area-inset-top));
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 13px;
+  text-align: center;
+  letter-spacing: 0.01em;
+}

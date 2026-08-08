@@ -139,3 +139,51 @@ describe('detoxWarning', () => {
     expect(detoxWarning('gambling').required).toBe(false);
   });
 });
+
+describe('withdrawal reported in plain language', () => {
+  // Regression: the withdrawal vocabulary once held only clinical nouns
+  // ("skakningar", "tremors"), so the sentence a person in alcohol withdrawal
+  // actually types was triaged as no risk whatsoever.
+  const plainLanguage = [
+    'jag skakar och har inte druckit på två dagar',
+    'jag är så skakig imorse',
+    'händerna darrar',
+    "i'm shaking and I haven't had a drink since Tuesday",
+    'my hands are trembling',
+  ];
+
+  for (const text of plainLanguage) {
+    it(`flags "${text.slice(0, 32)}…"`, () => {
+      const result = triage({ text });
+      expect(result.categories).toContain('withdrawal_medical');
+      expect(result.level).not.toBe('none');
+    });
+  }
+
+  it('escalates to urgent when the substance needs a medical detox', () => {
+    const result = triage({ text: 'jag skakar', substance: 'alcohol' });
+    expect(result.level).toBe('urgent');
+    expect(result.resources.length).toBeGreaterThan(0);
+  });
+
+  it('escalates on symptoms even long outside the acute window', () => {
+    // The recorded timeline says three weeks sober. The person says they are
+    // shaking. An unlogged relapse is the likeliest explanation, and the symptom
+    // is the signal that has to win.
+    const result = triage({
+      text: 'jag skakar',
+      substance: 'alcohol',
+      hoursSinceLastUse: 24 * 21,
+    });
+    expect(result.level).toBe('urgent');
+  });
+
+  it('stays elevated when the substance carries no detox danger', () => {
+    const result = triage({ text: 'jag skakar', substance: 'nicotine' });
+    expect(result.level).toBe('elevated');
+  });
+
+  it('still never bypasses the coach below an emergency', () => {
+    expect(triage({ text: 'jag skakar', substance: 'alcohol' }).bypassCoach).toBe(false);
+  });
+});

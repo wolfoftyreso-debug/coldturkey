@@ -25,6 +25,8 @@ export default function RootLayout() {
           <Stack.Screen name="coach" options={{ title: 'Coach' }} />
           <Stack.Screen name="checkin" options={{ title: 'Cleat' }} />
           <Stack.Screen name="rebuild" options={{ title: 'Cleat' }} />
+          <Stack.Screen name="patterns" options={{ title: 'Cleat' }} />
+          <Stack.Screen name="plan" options={{ title: 'Cleat' }} />
         </Stack>
       </SessionProvider>
     </SafeAreaProvider>

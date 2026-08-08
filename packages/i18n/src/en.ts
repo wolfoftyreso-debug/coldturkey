@@ -505,6 +505,43 @@ export const en: Catalog = {
   'tool.repair_a_relationship': 'Repair a relationship',
   'tool.do_something_you_like': 'Do something you actually like',
 
+  // ---- Trigger map ----
+  'trigger.title': 'My trigger map',
+  'trigger.intro':
+    "A craving feels like one event. It isn't — it's a chain. Once you can see the links written down it stops feeling inevitable.",
+  'trigger.step.trigger': 'Trigger',
+  'trigger.step.thought': 'Thought',
+  'trigger.step.feeling': 'Feeling',
+  'trigger.step.impulse': 'Impulse',
+  'trigger.step.action': 'Action',
+  'trigger.step.consequence': 'Consequence',
+  'trigger.add': 'Add a trigger',
+  'trigger.label': "What's the trigger?",
+  'trigger.empty': "You haven't mapped any triggers yet.",
+  'trigger.whereToBreak': 'Where can you break the chain?',
+
+  // ---- Cleat Now: I'm struggling ----
+  'now.intro':
+    "This isn't acute yet. It's the hour before — the one that actually decides. We change something cheap now instead of something expensive later.",
+  'now.whatIsHappening': "What's going on?",
+  'now.iAm': 'I feel',
+  'now.cheapest': 'The cheapest things that tend to work',
+  'now.ifItGetsWorse': 'If it grows into a real craving:',
+
+  // ---- Toolbox filters ----
+  'toolbox.all': 'Everything',
+  'toolbox.quickOnly': 'Quick ones',
+
+  // ---- Offline ----
+  'offline.banner': "No connection — but what you need is here anyway.",
+  'offline.planSource': 'This plan came from your phone, not the server.',
+  'offline.queued': "Logged on your device. It'll sync when you're back online.",
+  'offline.noKit':
+    "We haven't saved your details for offline use yet. The protocol below still works.",
+  'offline.title': "You're offline",
+  'offline.body':
+    'The ten-minute protocol, the tools and your why all work without a connection. Open "I\'m craving" as normal.',
+
   // ---- Rebuild my life ----
   'rebuild.title': 'Rebuild my life',
   'rebuild.intro':

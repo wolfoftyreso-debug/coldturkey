@@ -100,7 +100,7 @@ export default function HomeScreen() {
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <TouchableOpacity
           style={[styles.action, { flex: 1 }]}
-          onPress={() => router.push('/checkin')}
+          onPress={() => router.push('/plan')}
         >
           <Text style={styles.actionText}>{t('mode.path')}</Text>
           <Text style={styles.actionSub}>{t('mode.path.sub')}</Text>
@@ -111,6 +111,20 @@ export default function HomeScreen() {
         >
           <Text style={styles.actionText}>{t('mode.rebuild')}</Text>
           <Text style={styles.actionSub}>{t('mode.rebuild.sub')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.action} onPress={() => router.push('/patterns')}>
+        <Text style={styles.actionText}>{t('mode.patterns')}</Text>
+        <Text style={styles.actionSub}>{t('mode.patterns.sub')}</Text>
+      </TouchableOpacity>
+
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <TouchableOpacity
+          style={[styles.button, { flex: 1 }]}
+          onPress={() => router.push('/checkin')}
+        >
+          <Text style={styles.buttonText}>{t('quick.checkIn')}</Text>
         </TouchableOpacity>
       </View>
 

@@ -1,8 +1,8 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 const TENANT = process.env.NEXT_PUBLIC_DEFAULT_TENANT ?? 'public';
 
-const ACCESS_KEY = 'ct.access';
-const REFRESH_KEY = 'ct.refresh';
+const ACCESS_KEY = 'cleat.access';
+const REFRESH_KEY = 'cleat.refresh';
 
 export interface ApiErrorShape {
   code: string;

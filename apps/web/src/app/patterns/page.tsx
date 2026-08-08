@@ -50,6 +50,15 @@ export default function PatternsPage() {
         <p className="muted">{t('common.notEnoughData')}</p>
       ) : null}
 
+      <div className="btn-row" style={{ marginTop: 16 }}>
+        <a className="btn" href="/triggers">
+          {t('trigger.title')}
+        </a>
+        <a className="btn" href="/toolbox">
+          {t('toolbox.title')}
+        </a>
+      </div>
+
       <h2>{t('insight.title')}</h2>
       <p>{t('insight.subtitle')}</p>
       {data?.insights.length ? (

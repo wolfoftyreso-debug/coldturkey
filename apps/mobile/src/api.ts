@@ -5,8 +5,8 @@ const extra = (Constants.expoConfig?.extra ?? {}) as { apiUrl?: string; tenant?:
 const BASE = extra.apiUrl ?? 'http://localhost:8080';
 const TENANT = extra.tenant ?? 'public';
 
-const ACCESS_KEY = 'ct_access';
-const REFRESH_KEY = 'ct_refresh';
+const ACCESS_KEY = 'cleat_access';
+const REFRESH_KEY = 'cleat_refresh';
 
 /**
  * Tokens live in the platform keystore, not in AsyncStorage.

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type CoachResponse, type CravingPlan } from '../../lib/api';
+import { loadOfflineKit, offlineCravingPlan, queueCraving } from '../../lib/offline';
 import { useRequireAuth } from '../../lib/session';
 
 const FEELINGS = [
@@ -39,12 +40,12 @@ type Step = 'safety' | 'feeling' | 'location' | 'intensity' | 'plan' | 'emergenc
  * nothing further down this page is appropriate for someone in danger.
  */
 export default function CravingPage() {
-  const { user, loading, t } = useRequireAuth();
+  const { user, loading, t, locale } = useRequireAuth();
   const [step, setStep] = useState<Step>('safety');
   const [feeling, setFeeling] = useState<string>('craving');
   const [location, setLocation] = useState<string>('home');
   const [intensity, setIntensity] = useState(7);
-  const [plan, setPlan] = useState<CravingPlan | null>(null);
+  const [plan, setPlan] = useState<(CravingPlan & { offline?: boolean }) | null>(null);
   const [emergency, setEmergency] = useState<CoachResponse | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -68,17 +69,32 @@ export default function CravingPage() {
   async function buildPlan() {
     setBusy(true);
     try {
-      setPlan(
-        await api.post<CravingPlan>('/v1/craving/plan', { feeling, location, intensity }),
-      );
-      setStep('plan');
+      setPlan(await api.post<CravingPlan>('/v1/craving/plan', { feeling, location, intensity }));
+    } catch {
+      // No network. This is the case the whole offline kit exists for: the
+      // protocol, the tools and the person's own why are on the device, so the
+      // screen still does its job instead of apologising.
+      setPlan(offlineCravingPlan(locale, intensity, loadOfflineKit()) as never);
     } finally {
+      setStep('plan');
       setBusy(false);
     }
   }
 
   async function logOutcome(outcome: 'resisted' | 'used') {
-    await api.post('/v1/cravings', { intensity, feeling, location, outcome });
+    try {
+      await api.post('/v1/cravings', { intensity, feeling, location, outcome });
+    } catch {
+      // Queue it rather than lose it. The pattern engine is only as good as the
+      // logs, and the hardest cravings are exactly the ones logged offline.
+      queueCraving({
+        intensity,
+        feeling,
+        location,
+        outcome,
+        occurredAt: new Date().toISOString(),
+      });
+    }
   }
 
   if (step === 'emergency') {
@@ -195,6 +211,8 @@ export default function CravingPage() {
           <div className="card accent">
             <p className="lede">{t('craving.delay', { minutes: plan.delayMinutes })}</p>
           </div>
+
+          {plan.offline ? <p className="muted">{t('offline.planSource')}</p> : null}
 
           {plan.callFirst ? (
             <div className="card">

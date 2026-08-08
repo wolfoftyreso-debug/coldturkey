@@ -510,6 +510,45 @@ export const sv = {
   'tool.repair_a_relationship': 'Reparera en relation',
   'tool.do_something_you_like': 'Gör något du faktiskt gillar',
 
+  // ---- Trigger map ----
+  'trigger.title': 'Min triggerkarta',
+  'trigger.intro':
+    'Ett sug känns som en enda händelse. Det är det inte — det är en kedja. När du ser leden skrivna slutar den kännas oundviklig.',
+  'trigger.step.trigger': 'Trigger',
+  'trigger.step.thought': 'Tanke',
+  'trigger.step.feeling': 'Känsla',
+  'trigger.step.impulse': 'Impuls',
+  'trigger.step.action': 'Handling',
+  'trigger.step.consequence': 'Konsekvens',
+  'trigger.add': 'Lägg till en trigger',
+  'trigger.label': 'Vad är triggern?',
+  'trigger.empty': 'Du har inte kartlagt någon trigger ännu.',
+  'trigger.whereToBreak': 'Var kan du bryta kedjan?',
+
+  // ---- Cleat Now: I'm struggling ----
+  'now.intro':
+    'Det här är inte akut ännu. Det är timmen innan — den som faktiskt avgör. Vi ändrar något billigt nu istället för något dyrt sen.',
+  'now.whatIsHappening': 'Vad är det som händer?',
+  'now.iAm': 'Jag känner',
+  'now.cheapest': 'Det billigaste som brukar funka',
+  'now.ifItGetsWorse': 'Om det växer till ett riktigt sug:',
+
+  // ---- Toolbox filters ----
+  'toolbox.all': 'Allt',
+  'toolbox.quickOnly': 'Går snabbt',
+
+  // ---- Offline ----
+  // The craving flow must open with no network. These strings are what the
+  // person sees when it does.
+  'offline.banner': 'Ingen uppkoppling — men det du behöver finns här ändå.',
+  'offline.planSource': 'Planen kommer från din telefon, inte från servern.',
+  'offline.queued': 'Loggat lokalt. Skickas när du är online igen.',
+  'offline.noKit':
+    'Vi har inte hunnit spara dina uppgifter offline än. Protokollet nedan fungerar ändå.',
+  'offline.title': 'Du är offline',
+  'offline.body':
+    'Tiominutersprotokollet, verktygen och ditt varför fungerar utan uppkoppling. Öppna "Jag har sug" så vanligt.',
+
   // ---- Rebuild my life ----
   // SAMHSA describes recovery through health, home, purpose and community. These
   // domains follow that structure with entirely secular language.

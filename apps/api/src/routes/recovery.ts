@@ -37,8 +37,11 @@ import {
   createSupportContact,
   deleteSupportContact,
   getActiveQuit,
+  createTrigger,
+  deleteTrigger,
   listCoachMessages,
   listLifeDomains,
+  listTriggers,
   loadSnapshot,
   recordRelapse,
   updateCravingOutcome,
@@ -522,6 +525,68 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
       deleteSupportContact(client, user.id, id),
     );
     if (!removed) throw notFound('Contact');
+    return reply.code(204).send();
+  });
+
+  // ----------------------------------------------------------- trigger map ---
+
+  /**
+   * Phase 2 of the recovery model. The point is not to collect triggers but to
+   * make the chain visible: by the time someone can see thought → feeling →
+   * impulse written down, the impulse has stopped feeling like a single
+   * inevitable event.
+   */
+  app.get('/v1/triggers', async (request) => {
+    const user = currentUser(request);
+    const locale = user.locale as Locale;
+    return withTenant(user.tenant_id, async (client) => {
+      const rows = await listTriggers(client, user.id);
+      return {
+        intro: translate(locale, 'trigger.intro'),
+        steps: ['trigger', 'thought', 'feeling', 'impulse', 'action', 'consequence'].map(
+          (key) => ({ key, label: translate(locale, `trigger.step.${key}`) }),
+        ),
+        triggers: rows.map((row) => ({
+          id: row.id,
+          label: row.label,
+          category: row.category,
+          chain: row.chain ?? {},
+        })),
+      };
+    });
+  });
+
+  app.post('/v1/triggers', async (request, reply) => {
+    const user = currentUser(request);
+    const body = z
+      .object({
+        label: z.string().min(1).max(200),
+        category: z.string().max(60).default('other'),
+        chain: z
+          .object({
+            thought: z.string().max(1000).optional(),
+            feeling: z.string().max(1000).optional(),
+            impulse: z.string().max(1000).optional(),
+            action: z.string().max(1000).optional(),
+            consequence: z.string().max(1000).optional(),
+          })
+          .default({}),
+      })
+      .parse(request.body);
+
+    const trigger = await withTenant(user.tenant_id, async (client) =>
+      createTrigger(client, { tenantId: user.tenant_id, userId: user.id, ...body }),
+    );
+    return reply.code(201).send({ trigger });
+  });
+
+  app.delete('/v1/triggers/:id', async (request, reply) => {
+    const user = currentUser(request);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    const removed = await withTenant(user.tenant_id, async (client) =>
+      deleteTrigger(client, user.id, id),
+    );
+    if (!removed) throw notFound('Trigger');
     return reply.code(204).send();
   });
 

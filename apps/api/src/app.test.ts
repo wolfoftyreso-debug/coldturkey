@@ -383,6 +383,23 @@ suite('Cleat API', () => {
       expect(body.reply.length).toBeGreaterThan(0);
     });
 
+    it('speaks Swedish all the way through, including interpolated enums', async () => {
+      // Regression: the local coach interpolated an insight's raw parameters, so
+      // a Swedish reply read "dina sug kommer oftast afternoon" — an English
+      // enum surfacing in the one sentence that claims to know the person's own
+      // pattern. The dashboard route localised these; this path did not.
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/coach/message',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { message: 'hur går det för mig egentligen' },
+      });
+      const { reply } = (await json(response)) as never as { reply: string };
+      for (const leaked of ['afternoon', 'evening', 'morning', 'undefined']) {
+        expect(reply.toLowerCase()).not.toContain(leaked);
+      }
+    });
+
     it('keeps a transcript', async () => {
       const response = await app.inject({
         method: 'GET',

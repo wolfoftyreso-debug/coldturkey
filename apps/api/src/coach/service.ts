@@ -15,7 +15,7 @@ import {
   type RecoverySnapshot,
   type SafetyResource,
 } from '@cleat/core';
-import { translate, type Locale } from '@cleat/i18n';
+import { localizeInsightParams, translate, type Locale } from '@cleat/i18n';
 import { askCoach, coachEnabled, type CoachTurn } from './claude.js';
 import { buildContextBlock, type CoachMode } from './prompt.js';
 
@@ -217,7 +217,11 @@ export function localCoach(
   const insights = findInsights(snapshot, { now, limit: 1 });
   const insight = insights[0];
   if (insight) {
-    parts.push(t(insight.message.key, insight.message.params));
+    // Insight params carry raw enum values ("afternoon", a weekday number) that
+    // need their own key namespace. Without this the local coach says "dina sug
+    // kommer oftast afternoon" — an English word in a Swedish sentence, in the
+    // one place the product is claiming to know something about the person.
+    parts.push(t(insight.message.key, localizeInsightParams(locale, insight.message.params)));
   }
 
   parts.push(t('coach.offline'));
