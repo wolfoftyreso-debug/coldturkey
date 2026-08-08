@@ -24,10 +24,45 @@ export function normalizeForMatching(text: string): string {
   return ` ${folded} `;
 }
 
+/** How many words a single `~` is allowed to span. */
+const GAP_WORDS = 3;
+
 /**
  * Build a space-delimited alternation matcher from ASCII patterns.
  * Intended to be used against the output of `normalizeForMatching`.
+ *
+ * A `~` token stands for up to three intervening words, so a rule can be
+ * written the way meaning is actually carried — "orkar inte ~ leva" — instead
+ * of enumerating every sentence somebody might build around it. Requiring
+ * contiguous phrases is what made an earlier version of the safety rules miss
+ * nine out of ten real messages: people write "jag orkar inte riktigt leva
+ * längre", not the dictionary form.
+ *
+ * The gap is bounded on purpose. An unbounded gap would match two words at
+ * opposite ends of a paragraph and turn every rule into a false alarm.
  */
 export function phraseMatcher(alternatives: string[]): RegExp {
-  return new RegExp(`(?<=\\s)(?:${alternatives.join('|')})(?=\\s)`, 'u');
+  const compiled = alternatives.map(compileAlternative);
+  return new RegExp(`(?<=\\s)(?:${compiled.join('|')})(?=\\s)`, 'u');
+}
+
+function compileAlternative(alternative: string): string {
+  const tokens = alternative.trim().split(/\s+/).filter(Boolean);
+  // A gap at either end would anchor against the padding space rather than a
+  // word, so trim them: "~ langre" means the same as "langre".
+  while (tokens[0] === '~') tokens.shift();
+  while (tokens[tokens.length - 1] === '~') tokens.pop();
+  let out = '';
+  for (const token of tokens) {
+    if (token === '~') {
+      out += `(?:\\s[\\p{L}\\p{N}]+){0,${GAP_WORDS}}`;
+    } else {
+      out += `${out ? '\\s' : ''}${escapeForRegExp(token)}`;
+    }
+  }
+  return out;
+}
+
+function escapeForRegExp(token: string): string {
+  return token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

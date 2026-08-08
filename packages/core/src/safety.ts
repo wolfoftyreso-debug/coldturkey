@@ -17,6 +17,14 @@ export type SafetyLevel = 'none' | 'elevated' | 'urgent' | 'emergency';
 
 export type SafetyCategory =
   | 'suicide'
+  /**
+   * Passive ideation — wanting to be gone, to stop existing, to not wake up —
+   * as distinct from a stated intent to act. It is a real signal and it is
+   * never ignored, but answering it with "stop, call the emergency number" is
+   * both wrong and counterproductive: it does not fit what the person said, and
+   * being alarmed at teaches them not to say the next true thing.
+   */
+  | 'suicidal_ideation'
   | 'self_harm'
   | 'overdose'
   | 'unresponsive_person'
@@ -70,27 +78,85 @@ interface Rule {
 const RULES: Rule[] = [
   // ---- Immediate danger to life ----
   {
+    // Stated intent. Unambiguous, and the one case where the app stops being a
+    // coach and says: call the emergency number, now.
     category: 'suicide',
     level: 'emergency',
     matcher: phraseMatcher([
-      'ta mitt liv',
-      'ta sitt liv',
+      'ta ~ mitt liv',
+      'ta ~ sitt liv',
       'ta livet av mig',
-      'vill inte leva',
+      'ta livet av sig',
+      'tar livet av mig',
+      'avsluta ~ allt',
+      'avsluta ~ alltihop',
+      'avsluta ~ mitt liv',
+      'ta mitt eget liv',
       'vill do',
-      'orkar inte leva',
-      'orkar inte mer',
+      'vill inte leva',
       'sjalvmord',
-      'sluta finnas',
-      'inte vakna igen',
+      'sjalvmordstankar',
+      'ta doden pa mig',
       'kill myself',
+      'killing myself',
       'end my life',
       'end it all',
+      'ending it all',
+      'take my own life',
       'want to die',
+      'wanna die',
       'dont want to live',
       'do not want to live',
       'suicidal',
       'suicide',
+      'kms',
+    ]),
+  },
+  {
+    // Passive ideation. Handled, never dismissed — but with the crisis line and
+    // a continuing conversation rather than an ambulance. An earlier version
+    // rated every one of these as no risk at all, which is the worse error in
+    // both directions: it neither helped nor stayed out of the way.
+    category: 'suicidal_ideation',
+    level: 'urgent',
+    matcher: phraseMatcher([
+      'orkar inte ~ langre',
+      'orkar inte ~ mer',
+      'orkar inte ~ leva',
+      'palla inte ~ langre',
+      'pallar inte ~ langre',
+      'klarar inte ~ langre',
+      'vill ~ forsvinna',
+      'vill ~ bort harifran',
+      'vill ~ slippa finnas',
+      'sluta finnas',
+      'inte finnas ~ langre',
+      'inte finnas till',
+      'om jag inte fanns',
+      'om jag forsvann',
+      'battre ~ utan mig',
+      'somna ~ inte vakna',
+      'inte vakna igen',
+      'inte vakna imorgon',
+      'inget kvar att leva for',
+      'ingen mening ~ leva',
+      'ingen mening med ~ allt',
+      'meningslost ~ allt',
+      'want to disappear',
+      'want to vanish',
+      'want it to stop forever',
+      'wish i ~ gone',
+      'wish i was not here',
+      'wish i wasnt here',
+      'better off without me',
+      'nothing left to live for',
+      'no reason to ~ on',
+      'cant go on',
+      'cannot go on',
+      'cant do this ~ longer',
+      'cannot do this ~ longer',
+      'not wake up',
+      'never wake up',
     ]),
   },
   {
@@ -98,12 +164,31 @@ const RULES: Rule[] = [
     level: 'emergency',
     matcher: phraseMatcher([
       'skada mig sjalv',
+      'skada mig',
+      'gora illa mig',
+      'gora mig illa',
       'sjalvskada',
+      'sjalvskadar',
       'skara mig',
+      'skar mig',
+      'skurit mig',
+      'ristat ~ armen',
+      'branner mig sjalv',
       'hurt myself',
       'harm myself',
+      'harming myself',
       'self harm',
+      'selfharm',
       'cutting myself',
+      'cut myself',
+      // Deliberately not a bare "i cut": "i cut down to five a day" is somebody
+      // reporting progress, and answering that with the emergency script is the
+      // exact opposite of what the moment needs. The phrasings below carry the
+      // meaning without swallowing the success story.
+      'i cut last night',
+      'i cut again',
+      'i cut this morning',
+      'burning myself',
     ]),
   },
   {
@@ -121,10 +206,34 @@ const RULES: Rule[] = [
       'tog for manga',
       'hela kartan',
       'hela burken',
+      'hela forpackningen',
+      'hela flaskan',
+      'hela brickan',
+      'svalt ~ tabletter',
+      'svalde ~ tabletter',
+      'atit ~ tabletter',
+      'kakade ~ tabletter',
+      'kakat ~ tabletter',
+      'tagit ~ tabletter',
+      'tog ~ tabletter',
+      'kakade ~ stycken',
+      'blandat ~ tabletter',
+      'blandat sprit ~ tabletter',
+      'blandade ~ tabletter',
+      'blandat ~ benzo',
       'took too much',
       'took too many',
       'whole bottle',
       'whole pack',
+      'whole packet',
+      'whole box',
+      'swallowed ~ pills',
+      'swallowed ~ tablets',
+      'took ~ pills',
+      'mixed ~ pills',
+      'mixed ~ benzos',
+      'mixed booze ~ benzos',
+      'handful of pills',
     ]),
   },
   {
@@ -132,16 +241,28 @@ const RULES: Rule[] = [
     level: 'emergency',
     matcher: phraseMatcher([
       'andas inte',
+      'andas ~ konstigt',
+      'andas ~ knappt',
       'vaknar inte',
+      'gar inte att vacka',
       'medvetslos',
       'far inte kontakt',
       'bla om lapparna',
       'kan inte vacka',
+      'svarar inte',
+      'reagerar inte',
+      'helt borta',
       'not breathing',
+      'breathing weird',
+      'breathing funny',
       'wont wake up',
       'will not wake up',
+      'cant wake ~ up',
+      'cannot wake ~ up',
+      'out cold',
       'unconscious',
       'unresponsive',
+      'not responding',
       'turning blue',
       'blue lips',
     ]),
@@ -151,16 +272,36 @@ const RULES: Rule[] = [
     level: 'emergency',
     matcher: phraseMatcher([
       'far inte luft',
+      'far inte ~ luft',
       'kan inte andas',
+      'svart att andas',
       'brostsmarta',
+      'ont i brostet',
+      'ont ~ brostkorgen',
+      'trycker over brostet',
       'kraftig blodning',
+      'blodningen ~ inte',
+      'bloder ~ slutar inte',
+      'bloder ~ inte slutar',
+      'blodet slutar inte',
       'kraks blod',
+      'krakts blod',
+      'kraktes blod',
+      'kaffesump',
       'cant breathe',
       'can not breathe',
+      'cannot breathe',
+      'cant catch my breath',
+      'cannot catch my breath',
+      'struggling to breathe',
       'chest pain',
+      'pain in my chest',
       'heavy bleeding',
+      'bleeding ~ wont stop',
+      'wont stop bleeding',
       'vomiting blood',
       'coughing blood',
+      'coffee grounds',
     ]),
   },
   {
@@ -169,13 +310,19 @@ const RULES: Rule[] = [
     matcher: phraseMatcher([
       'kramper',
       'krampanfall',
+      'krampade',
+      'krampat',
+      'fick ett anfall',
       'epileptiskt anfall',
       'delirium',
       'delirium tremens',
       'skakar okontrollerat',
       'seizure',
       'seizures',
+      'seizing',
+      'had a fit',
       'convulsions',
+      'convulsing',
       'the dts',
       'shaking uncontrollably',
     ]),
@@ -188,12 +335,24 @@ const RULES: Rule[] = [
     matcher: phraseMatcher([
       'hallucinerar',
       'ser saker som inte finns',
+      'ser saker ~ inte finns',
       'hor roster',
+      'hor ~ roster',
+      'hor nagon ~ inte ar dar',
+      'hor nagon prata ~ inte ar dar',
       'roster i huvudet',
       'paranoid',
       'kanner mig forfoljd',
+      'nagon forfoljer mig',
+      'nagon ~ forfoljer mig',
+      'blir forfoljd',
+      'de overvakar mig',
       'hallucinating',
       'hearing voices',
+      'hearing someone ~ not there',
+      'seeing things ~ not there',
+      'being followed',
+      'they are watching me',
       'psychosis',
       'psychotic',
     ]),
@@ -203,10 +362,25 @@ const RULES: Rule[] = [
     level: 'urgent',
     matcher: phraseMatcher([
       'skada nagon annan',
+      'skada nagon',
       'gora nagon illa',
+      'gor nagot dumt mot',
+      'gora nagot dumt mot',
       'sla ihjal',
+      'sla sonder honom',
+      'sla sonder henne',
+      'sla ner honom',
+      'sla ner henne',
+      'ge mig pa honom',
+      'ge mig pa henne',
       'hurt someone',
       'hurt somebody',
+      'hurt him',
+      'hurt her',
+      'hurt them',
+      'i will hurt',
+      'beat him up',
+      'beat her up',
       'kill him',
       'kill her',
       'kill them',
@@ -219,11 +393,20 @@ const RULES: Rule[] = [
     matcher: phraseMatcher([
       'kan inte halla mig saker',
       'klarar inte att vara ensam',
+      'vagar inte vara ensam',
+      'vill inte vara ensam ikvall',
+      'ska inte vara ensam',
       'inte trygg med mig sjalv',
       'litar inte pa mig sjalv',
+      'litar inte riktigt pa mig sjalv',
       'cant keep myself safe',
       'can not keep myself safe',
+      'cannot keep myself safe',
       'not safe alone',
+      'cant be ~ my own',
+      'cannot be ~ my own',
+      'shouldnt be alone',
+      'should not be alone',
       'dont trust myself',
       'do not trust myself',
     ]),
@@ -253,7 +436,12 @@ const RULES: Rule[] = [
       'skakar',
       'jag skakar',
       'skakig',
+      'jatteskakig',
       'skakiga hander',
+      'handerna skakar',
+      'hander ~ skakar',
+      'svettas ~ mar illa',
+      'kallsvettig',
       'darrar',
       'darrig',
       'huttrar',
@@ -262,6 +450,8 @@ const RULES: Rule[] = [
       'shaking',
       'shaky',
       'shaky hands',
+      'hands ~ shaking',
+      'hands wont stop shaking',
       'trembling',
       'sweating buckets',
       'heart is racing',
@@ -294,9 +484,20 @@ const GENERIC_RESOURCES: SafetyResource[] = [
   { key: 'resource.generic.local', contact: '', kind: 'crisis' },
 ];
 
-export function emergencyResources(country?: string): SafetyResource[] {
-  if (!country) return GENERIC_RESOURCES;
-  return EMERGENCY_RESOURCES[country.toUpperCase()] ?? GENERIC_RESOURCES;
+export function emergencyResources(country?: string, level?: SafetyLevel): SafetyResource[] {
+  const list = country
+    ? (EMERGENCY_RESOURCES[country.toUpperCase()] ?? GENERIC_RESOURCES)
+    : GENERIC_RESOURCES;
+  if (level === 'emergency' || level == null) return list;
+
+  // Below an emergency, the first number offered should be the one built for
+  // the conversation the person is actually having. Someone saying they cannot
+  // go on needs the crisis line, not an ambulance dispatcher — leading with 112
+  // reads as an overreaction and makes the whole list easy to dismiss. The
+  // emergency number stays on the list; it just stops being the headline.
+  const rank = (resource: SafetyResource): number =>
+    resource.kind === 'crisis' ? 0 : resource.kind === 'helpline' ? 1 : resource.kind === 'health' ? 2 : 3;
+  return [...list].sort((a, b) => rank(a) - rank(b));
 }
 
 const LEVEL_RANK: Record<SafetyLevel, number> = {
@@ -359,7 +560,7 @@ export function triage(input: TriageInput): TriageResult {
   return {
     level,
     categories: [...categories],
-    resources: level === 'none' ? [] : emergencyResources(input.country),
+    resources: level === 'none' ? [] : emergencyResources(input.country, level),
     bypassCoach: level === 'emergency',
     messageKey: `safety.${level}`,
   };
