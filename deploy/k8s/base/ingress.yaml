@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: coldturkey
-  namespace: coldturkey
+  name: nivora
+  namespace: nivora
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
@@ -16,31 +16,31 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - app.coldturkey.example
-        - api.coldturkey.example
-      secretName: coldturkey-tls
+        - app.nivora.example
+        - api.nivora.example
+      secretName: nivora-tls
   rules:
-    - host: api.coldturkey.example
+    - host: api.nivora.example
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: coldturkey-api
+                name: nivora-api
                 port:
                   number: 80
-    # Organisation tenants are addressed by subdomain (clinic.coldturkey.example)
+    # Organisation tenants are addressed by subdomain (clinic.nivora.example)
     # and resolved server-side. Note that after login the tenant always comes
     # from the signed token, so the hostname cannot be used to reach another
     # organisation's data.
-    - host: app.coldturkey.example
+    - host: app.nivora.example
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: coldturkey-web
+                name: nivora-web
                 port:
                   number: 80

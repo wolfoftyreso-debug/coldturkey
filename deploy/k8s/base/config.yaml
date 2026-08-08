@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: coldturkey-config
-  namespace: coldturkey
+  name: nivora-config
+  namespace: nivora
 data:
   NODE_ENV: 'production'
   PORT: '8080'
@@ -13,12 +13,12 @@ data:
   DEFAULT_TENANT_SLUG: 'public'
   ALLOW_PUBLIC_SIGNUP: 'true'
   COACH_MODEL: 'claude-opus-5'
-  CORS_ORIGINS: 'https://app.coldturkey.example'
+  CORS_ORIGINS: 'https://app.nivora.example'
 ---
 # Template only — never commit real values.
 #
-#   kubectl -n coldturkey create secret generic coldturkey-secrets \
-#     --from-literal=DATABASE_URL='postgres://user:pass@host:5432/coldturkey' \
+#   kubectl -n nivora create secret generic nivora-secrets \
+#     --from-literal=DATABASE_URL='postgres://user:pass@host:5432/nivora' \
 #     --from-literal=JWT_SECRET="$(openssl rand -base64 48)" \
 #     --from-literal=ANTHROPIC_API_KEY='sk-ant-...'
 #
@@ -28,12 +28,12 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: coldturkey-secrets
-  namespace: coldturkey
+  name: nivora-secrets
+  namespace: nivora
   annotations:
-    coldturkey.app/note: 'Placeholder. Replace with a real secret or an external secret store.'
+    nivora.app/note: 'Placeholder. Replace with a real secret or an external secret store.'
 type: Opaque
 stringData:
-  DATABASE_URL: 'postgres://coldturkey:coldturkey@coldturkey-postgres:5432/coldturkey'
+  DATABASE_URL: 'postgres://nivora:nivora@nivora-postgres:5432/nivora'
   JWT_SECRET: 'replace-me-with-at-least-32-random-characters'
   ANTHROPIC_API_KEY: ''

@@ -8,9 +8,27 @@ import type { Catalog } from './sv.js';
  */
 export const en: Catalog = {
   // ---- Brand ----
-  'app.name': 'Cold Turkey',
-  'app.tagline': 'Quit the cycle. Rebuild the life.',
+  'app.name': 'Nivora',
+  'app.tagline': 'Rebuild your life.',
+  'app.challenger': 'Recovery without the sermon.',
+  'app.creed.religion': 'No religion.',
+  'app.creed.shame': 'No shame.',
+  'app.creed.judgment': 'No judgment.',
+  'app.creed.bullshit': 'No bullshit.',
+  'app.creed.recovery': 'Just recovery.',
   'app.subtitle': 'No shame. No religion. Just recovery.',
+
+  // ---- The five modes ----
+  'mode.reset': "I'M CRAVING",
+  'mode.reset.sub': 'Acute help when the craving hits',
+  'mode.now': "I'M STRUGGLING",
+  'mode.now.sub': "When you're losing your footing",
+  'mode.path': 'MY RECOVERY',
+  'mode.path.sub': 'Your plan, your phase, your why',
+  'mode.patterns': 'MY PATTERNS',
+  'mode.patterns.sub': 'Triggers, behaviours and what keeps recurring',
+  'mode.rebuild': 'REBUILD MY LIFE',
+  'mode.rebuild.sub': 'Relationships, sleep, money, work, identity',
 
   // ---- Navigation and shell ----
   'nav.home': 'Home',
@@ -18,6 +36,7 @@ export const en: Catalog = {
   'nav.checkin': 'Check-in',
   'nav.stats': 'Patterns',
   'nav.plan': 'My plan',
+  'nav.rebuild': 'Rebuild',
   'nav.settings': 'Settings',
   'action.back': 'Back',
   'action.next': 'Next',
@@ -175,7 +194,7 @@ export const en: Catalog = {
   'safety.resourcesTitle': 'Help you can call right now',
   'safety.helpMeSay': 'Help me put into words what to say to a clinician',
   'safety.disclaimer':
-    'Cold Turkey is a coach, not care. It does not replace a doctor, psychiatry, addiction treatment or emergency services.',
+    'Nivora is a coach, not care. It does not replace a doctor, psychiatry, addiction treatment or emergency services.',
 
   'safety.detox.none': '',
   'safety.detox.alcohol':
@@ -486,6 +505,49 @@ export const en: Catalog = {
   'tool.repair_a_relationship': 'Repair a relationship',
   'tool.do_something_you_like': 'Do something you actually like',
 
+  // ---- Rebuild my life ----
+  'rebuild.title': 'Rebuild my life',
+  'rebuild.intro':
+    "This is the bigger part. Stopping is the beginning — this is what means you don't have to start over.",
+  'rebuild.domain.health': 'Health',
+  'rebuild.domain.health.desc': "Sleep, food, body, the care you've been putting off.",
+  'rebuild.domain.sleep': 'Sleep',
+  'rebuild.domain.sleep.desc': 'The single biggest lever on your cravings.',
+  'rebuild.domain.relationships': 'Relationships',
+  'rebuild.domain.relationships.desc': 'Who was affected? What needs acknowledging?',
+  'rebuild.domain.money': 'Money',
+  'rebuild.domain.money.desc': 'A clear picture, debts, a plan you can actually follow.',
+  'rebuild.domain.work': 'Work',
+  'rebuild.domain.work.desc': 'Structure, meaning, a living.',
+  'rebuild.domain.exercise': 'Exercise',
+  'rebuild.domain.exercise.desc': 'Movement that regulates stress, not performance.',
+  'rebuild.domain.social': 'Social life',
+  'rebuild.domain.social.desc': 'People and places — which carry you, which pull you down?',
+  'rebuild.domain.home': 'Home',
+  'rebuild.domain.home.desc': 'A safe place to be.',
+  'rebuild.domain.identity': 'Identity',
+  'rebuild.domain.identity.desc': 'Who am I without the addiction?',
+  'rebuild.domain.purpose': 'Purpose',
+  'rebuild.domain.purpose.desc': 'Something that means something. Plans for the future.',
+  'rebuild.status.untouched': 'Not started',
+  'rebuild.status.working': 'In progress',
+  'rebuild.status.steady': 'Steady',
+  'rebuild.pickOne': 'Pick one area. Not all of them. One.',
+  'rebuild.lockedTitle': 'Comes later',
+  'rebuild.lockedBody':
+    "Nothing is being kept from you — this just isn't realistic to work on yet. It opens up once everyday life is holding.",
+  'rebuild.relationships.q1': 'Who was affected?',
+  'rebuild.relationships.q2': 'What needs acknowledging?',
+  'rebuild.relationships.q3': 'What promise can you actually keep?',
+  'rebuild.relationships.q4': 'What do you need to stop promising?',
+  'rebuild.relationships.lesson': 'Action counts for more than promise.',
+
+  'rebuild.reason.sleep_evidence':
+    'Your own data points here: sleep has been poor for several nights, and your cravings track it.',
+  'rebuild.reason.connection_low': 'Contact with people is thin right now. That is the one that goes first.',
+  'rebuild.reason.stability_low': 'Everyday life is shaky. We start with the basics.',
+  'rebuild.reason.default': 'This is the next thing that carries the most weight.',
+
   // ---- My why / future self ----
   'why.title': 'My why',
   'why.prompt': 'What do you want back?',
@@ -512,7 +574,7 @@ export const en: Catalog = {
   'support.phone': 'Phone',
   'support.primary': 'Call this one first',
   'support.noRequirement':
-    'Cold Turkey will never require you to join any organisation, group or movement.',
+    'Nivora will never require you to join any organisation, group or movement.',
 
   // ---- Coach ----
   'coach.title': 'Coach',
@@ -540,7 +602,7 @@ export const en: Catalog = {
   'auth.invalid': 'Wrong email or password.',
   'auth.weakPassword': 'Password must be at least 12 characters.',
   'auth.emailTaken': 'There is already an account with that email.',
-  'onboarding.welcome': 'Welcome to Cold Turkey',
+  'onboarding.welcome': 'Welcome to Nivora',
   'onboarding.intro':
     "This isn't a programme to complete. It's a tool for making the next good decision.",
   'onboarding.pickSubstance': 'What do you want to leave behind?',

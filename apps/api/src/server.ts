@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   await app.listen({ port: config.PORT, host: config.HOST });
   app.log.info(
     { port: config.PORT, coach: config.ANTHROPIC_API_KEY ? 'model' : 'local' },
-    'Cold Turkey API ready',
+    'Nivora API ready',
   );
 }
 

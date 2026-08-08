@@ -53,7 +53,7 @@ export async function createTenant(
 /**
  * Make sure the shared consumer tenant exists.
  *
- * Cold Turkey serves two shapes of customer from the same deployment: individual
+ * Nivora serves two shapes of customer from the same deployment: individual
  * people signing up on their own, who all live in one shared "public" tenant, and
  * organisations — clinics, employers, programmes — who get their own. Both use
  * exactly the same isolation mechanism, so there is no second, weaker code path
@@ -63,7 +63,7 @@ export async function ensureDefaultTenant(): Promise<Tenant> {
   const slug = loadConfig().DEFAULT_TENANT_SLUG;
   const existing = await findTenantBySlug(slug);
   if (existing) return existing;
-  return createTenant(slug, 'Cold Turkey', { publicSignup: true });
+  return createTenant(slug, 'Nivora', { publicSignup: true });
 }
 
 /**

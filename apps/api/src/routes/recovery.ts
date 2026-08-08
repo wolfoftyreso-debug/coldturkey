@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
   assessPhase,
+  availableDomains,
   buildCravingPlan,
   buildProtectionPlan,
   computeIndicators,
@@ -12,18 +13,23 @@ import {
   CRAVING_LOCATIONS,
   detoxWarning,
   emergencyResources,
+  LIFE_DOMAINS,
   findInsights,
   mantraOfTheDay,
   nextDayMilestone,
+  rebuildProgress,
   RELAPSE_AUTOPSY_QUESTIONS,
   RELAPSE_SAFETY_QUESTIONS,
   substanceProfile,
   suggestedDelayMinutes,
+  suggestNextDomain,
   TEN_MINUTE_PROTOCOL,
   TOOLBOX,
   URGE_SURFING_SCRIPT,
-} from '@coldturkey/core';
-import { localizeInsightParams, translate, type Locale } from '@coldturkey/i18n';
+  type DomainProgress,
+  type LifeDomainId,
+} from '@nivora/core';
+import { localizeInsightParams, translate, type Locale } from '@nivora/i18n';
 import { withTenant } from '../db/pool.js';
 import {
   createCraving,
@@ -32,11 +38,13 @@ import {
   deleteSupportContact,
   getActiveQuit,
   listCoachMessages,
+  listLifeDomains,
   loadSnapshot,
   recordRelapse,
   updateCravingOutcome,
   updateProfile,
   upsertCheckIn,
+  upsertLifeDomain,
   writeAudit,
 } from '../db/repository.js';
 import { badRequest, notFound } from '../lib/errors.js';
@@ -515,6 +523,97 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
     );
     if (!removed) throw notFound('Contact');
     return reply.code(204).send();
+  });
+
+  // ------------------------------------------------------- rebuild my life ---
+
+  /**
+   * The fifth mode. Returns only the domains it is honest to offer at this
+   * phase — someone on day two cannot work on their career, and showing it to
+   * them just adds a failure to a day that already has enough.
+   */
+  app.get('/v1/rebuild', async (request) => {
+    const user = currentUser(request);
+    const locale = user.locale as Locale;
+    const now = new Date();
+
+    return withTenant(user.tenant_id, async (client) => {
+      const snapshot = await loadSnapshot(client, user);
+      const rows = await listLifeDomains(client, user.id);
+      const phase = assessPhase(snapshot, now).phase;
+
+      const progress: DomainProgress[] = rows.map((r) => ({
+        id: r.domain as LifeDomainId,
+        status: r.status,
+        note: r.note,
+        updatedAt: r.updated_at,
+      }));
+      const byId = new Map(progress.map((p) => [p.id, p]));
+      const available = availableDomains(phase);
+      const suggestion = suggestNextDomain(snapshot, progress, phase, now);
+
+      return {
+        intro: translate(locale, 'rebuild.intro'),
+        pickOne: translate(locale, 'rebuild.pickOne'),
+        phase,
+        progress: rebuildProgress(progress),
+        suggestion: suggestion
+          ? {
+              domain: suggestion.domain.id,
+              label: translate(locale, `rebuild.domain.${suggestion.domain.id}`),
+              reason: translate(locale, suggestion.reasonKey),
+            }
+          : null,
+        domains: available.map((domain) => {
+          const current = byId.get(domain.id);
+          return {
+            id: domain.id,
+            dimension: domain.dimension,
+            label: translate(locale, `rebuild.domain.${domain.id}`),
+            description: translate(locale, `rebuild.domain.${domain.id}.desc`),
+            status: current?.status ?? 'untouched',
+            statusLabel: translate(locale, `rebuild.status.${current?.status ?? 'untouched'}`),
+            note: current?.note ?? null,
+          };
+        }),
+        // Locked domains are reported rather than hidden, so the person can see
+        // the whole map and that nothing is being kept from them — just deferred.
+        locked: LIFE_DOMAINS.filter((d) => !available.some((a) => a.id === d.id)).map((d) => ({
+          id: d.id,
+          label: translate(locale, `rebuild.domain.${d.id}`),
+        })),
+      };
+    });
+  });
+
+  app.put('/v1/rebuild/:domain', async (request) => {
+    const user = currentUser(request);
+    const locale = user.locale as Locale;
+    const { domain } = z
+      .object({ domain: z.enum(LIFE_DOMAINS.map((d) => d.id) as unknown as [string, ...string[]]) })
+      .parse(request.params);
+    const body = z
+      .object({
+        status: z.enum(['untouched', 'working', 'steady']),
+        note: z.string().max(4000).nullish(),
+      })
+      .parse(request.body);
+
+    return withTenant(user.tenant_id, async (client) => {
+      const row = await upsertLifeDomain(client, {
+        tenantId: user.tenant_id,
+        userId: user.id,
+        domain,
+        status: body.status,
+        note: body.note,
+      });
+      return {
+        domain: row.domain,
+        status: row.status,
+        statusLabel: translate(locale, `rebuild.status.${row.status}`),
+        note: row.note,
+      };
+    });
   });
 
   // --------------------------------------------------------------- toolbox ---

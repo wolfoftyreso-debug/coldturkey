@@ -37,7 +37,7 @@ interface Options {
  * Find patterns worth telling the person about.
  *
  * These are descriptive correlations over a small personal dataset, not clinical
- * findings — the wording in `@coldturkey/i18n` is hedged to match ("your
+ * findings — the wording in `@nivora/i18n` is hedged to match ("your
  * strongest cravings have mostly come after…"), and nothing here is presented as
  * a cause.
  */

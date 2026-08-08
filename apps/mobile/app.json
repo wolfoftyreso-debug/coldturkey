@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Cold Turkey",
-    "slug": "coldturkey",
+    "name": "Nivora",
+    "slug": "nivora",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "coldturkey",
+    "scheme": "nivora",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0b0d0f",
     "splash": {
@@ -13,13 +13,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.coldturkey.client",
+      "bundleIdentifier": "app.nivora.client",
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "app.coldturkey.client",
+      "package": "app.nivora.client",
       "adaptiveIcon": {
         "backgroundColor": "#0b0d0f"
       }

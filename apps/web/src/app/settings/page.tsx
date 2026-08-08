@@ -31,7 +31,7 @@ export default function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'coldturkey-export.json';
+      link.download = 'nivora-export.json';
       link.click();
       URL.revokeObjectURL(url);
       setMessage(t('privacy.exportDone'));

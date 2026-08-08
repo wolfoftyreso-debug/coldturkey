@@ -1,23 +1,23 @@
 {
-  "name": "coldturkey",
+  "name": "nivora",
   "version": "1.0.0",
   "private": true,
-  "description": "Cold Turkey — secular recovery and addiction support coach. Multi-tenant platform with web and mobile clients.",
+  "description": "Nivora — secular recovery and addiction support coach. Multi-tenant platform with web and mobile clients.",
   "license": "MIT",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "pnpm -r --filter=./packages/** build && pnpm --filter @coldturkey/api build",
+    "build": "pnpm -r --filter=./packages/** build && pnpm --filter @nivora/api build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "dev:api": "pnpm --filter @coldturkey/api dev",
-    "dev:web": "pnpm --filter @coldturkey/web dev",
-    "dev:mobile": "pnpm --filter @coldturkey/mobile start",
-    "db:migrate": "pnpm --filter @coldturkey/api migrate",
-    "db:seed": "pnpm --filter @coldturkey/api seed",
+    "dev:api": "pnpm --filter @nivora/api dev",
+    "dev:web": "pnpm --filter @nivora/web dev",
+    "dev:mobile": "pnpm --filter @nivora/mobile start",
+    "db:migrate": "pnpm --filter @nivora/api migrate",
+    "db:seed": "pnpm --filter @nivora/api seed",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml,yml}\""
   },
   "devDependencies": {

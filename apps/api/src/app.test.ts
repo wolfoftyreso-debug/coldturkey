@@ -29,7 +29,7 @@ async function json(response: { body: string }): Promise<Record<string, never>> 
   return JSON.parse(response.body);
 }
 
-suite('Cold Turkey API', () => {
+suite('Nivora API', () => {
   let accessToken: string;
   let refreshToken: string;
 
@@ -76,7 +76,7 @@ suite('Cold Turkey API', () => {
     it('exposes Prometheus metrics', async () => {
       const response = await app.inject({ method: 'GET', url: '/metrics' });
       expect(response.statusCode).toBe(200);
-      expect(response.body).toContain('coldturkey_requests_total');
+      expect(response.body).toContain('nivora_requests_total');
     });
   });
 
@@ -391,6 +391,63 @@ suite('Cold Turkey API', () => {
       });
       const messages = ((await json(response)) as never as { messages: unknown[] }).messages;
       expect(messages.length).toBeGreaterThanOrEqual(4);
+    });
+  });
+
+  describe('rebuild my life', () => {
+    it('offers only the domains the current phase makes realistic', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/rebuild',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = (await json(response)) as never as {
+        domains: { id: string }[];
+        locked: { id: string }[];
+        suggestion: { domain: string } | null;
+        progress: { total: number };
+      };
+      const ids = body.domains.map((d) => d.id);
+      expect(ids).toContain('sleep');
+      // The relapse recorded above put this account back into the acute phase,
+      // so identity work is deferred rather than offered.
+      expect(ids).not.toContain('identity');
+      expect(body.locked.map((d) => d.id)).toContain('identity');
+      expect(body.suggestion).not.toBeNull();
+      expect(body.progress.total).toBeGreaterThan(0);
+    });
+
+    it('records progress on a domain and reads it back', async () => {
+      const put = await app.inject({
+        method: 'PUT',
+        url: '/v1/rebuild/sleep',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { status: 'working', note: 'Ingen skärm efter 22' },
+      });
+      expect(put.statusCode).toBe(200);
+      expect((await json(put)) as never as { status: string }).toMatchObject({
+        status: 'working',
+      });
+
+      const view = await app.inject({
+        method: 'GET',
+        url: '/v1/rebuild',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+      const sleep = ((await json(view)) as never as { domains: { id: string; status: string }[] })
+        .domains.find((d) => d.id === 'sleep');
+      expect(sleep?.status).toBe('working');
+    });
+
+    it('rejects a domain that does not exist', async () => {
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/v1/rebuild/cryptocurrency',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { status: 'working' },
+      });
+      expect(response.statusCode).toBe(400);
     });
   });
 

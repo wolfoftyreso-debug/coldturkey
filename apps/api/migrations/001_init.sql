@@ -1,4 +1,4 @@
--- Cold Turkey initial schema.
+-- Nivora initial schema.
 --
 -- Multi-tenancy model: a single shared schema with a `tenant_id` column on every
 -- tenant-scoped table, enforced by PostgreSQL row-level security rather than by

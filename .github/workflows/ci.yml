@@ -25,13 +25,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: coldturkey
-          POSTGRES_PASSWORD: coldturkey
-          POSTGRES_DB: coldturkey
+          POSTGRES_USER: nivora
+          POSTGRES_PASSWORD: nivora
+          POSTGRES_DB: nivora
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U coldturkey"
+          --health-cmd="pg_isready -U nivora"
           --health-interval=5s
           --health-timeout=3s
           --health-retries=10
@@ -53,8 +53,8 @@ jobs:
 
       - name: Build shared packages
         run: |
-          pnpm --filter @coldturkey/core build
-          pnpm --filter @coldturkey/i18n build
+          pnpm --filter @nivora/core build
+          pnpm --filter @nivora/i18n build
 
       - name: Typecheck
         run: pnpm -r typecheck
@@ -62,16 +62,16 @@ jobs:
       - name: Test
         run: pnpm -r test
         env:
-          DATABASE_URL: postgres://coldturkey:coldturkey@localhost:5432/coldturkey
+          DATABASE_URL: postgres://nivora:nivora@localhost:5432/nivora
           JWT_SECRET: ci-secret-that-is-long-enough-for-hs256-signing
           NODE_ENV: test
           LOG_LEVEL: error
 
       - name: Build API
-        run: pnpm --filter @coldturkey/api build
+        run: pnpm --filter @nivora/api build
 
       - name: Build web
-        run: pnpm --filter @coldturkey/web build
+        run: pnpm --filter @nivora/web build
 
   images:
     name: Build container images

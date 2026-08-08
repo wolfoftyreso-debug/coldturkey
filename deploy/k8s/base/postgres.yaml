@@ -7,12 +7,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: coldturkey-postgres
-  namespace: coldturkey
+  name: nivora-postgres
+  namespace: nivora
 spec:
   clusterIP: None
   selector:
-    app.kubernetes.io/name: coldturkey-postgres
+    app.kubernetes.io/name: nivora-postgres
   ports:
     - name: postgres
       port: 5432
@@ -21,18 +21,18 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: coldturkey-postgres
-  namespace: coldturkey
+  name: nivora-postgres
+  namespace: nivora
 spec:
-  serviceName: coldturkey-postgres
+  serviceName: nivora-postgres
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: coldturkey-postgres
+      app.kubernetes.io/name: nivora-postgres
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: coldturkey-postgres
+        app.kubernetes.io/name: nivora-postgres
     spec:
       securityContext:
         runAsNonRoot: true
@@ -48,11 +48,11 @@ spec:
             - containerPort: 5432
           env:
             - name: POSTGRES_USER
-              value: coldturkey
+              value: nivora
             - name: POSTGRES_DB
-              value: coldturkey
+              value: nivora
             - name: POSTGRES_PASSWORD
-              value: coldturkey
+              value: nivora
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:
@@ -60,12 +60,12 @@ spec:
               mountPath: /var/lib/postgresql/data
           readinessProbe:
             exec:
-              command: ['pg_isready', '-U', 'coldturkey']
+              command: ['pg_isready', '-U', 'nivora']
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             exec:
-              command: ['pg_isready', '-U', 'coldturkey']
+              command: ['pg_isready', '-U', 'nivora']
             initialDelaySeconds: 30
             periodSeconds: 20
           resources:

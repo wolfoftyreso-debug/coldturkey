@@ -79,27 +79,38 @@ export default function HomeScreen() {
         </View>
       ) : null}
 
+      {/* The five modes, acute ones first and largest. Same spine as the web
+          client so a person moving between phone and browser is not relearning
+          the product. */}
       <Text style={styles.h2}>{t('home.quickActions').toUpperCase()}</Text>
 
       <TouchableOpacity
         style={[styles.action, styles.actionPrimary]}
         onPress={() => router.push('/craving')}
       >
-        <Text style={styles.actionTextPrimary}>{t('quick.craving')}</Text>
+        <Text style={styles.actionTextPrimary}>{t('mode.reset')}</Text>
+        <Text style={styles.actionSubPrimary}>{t('mode.reset.sub')}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.action} onPress={() => router.push('/coach')}>
+        <Text style={styles.actionText}>{t('mode.now')}</Text>
+        <Text style={styles.actionSub}>{t('mode.now.sub')}</Text>
       </TouchableOpacity>
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <TouchableOpacity
           style={[styles.action, { flex: 1 }]}
-          onPress={() => router.push('/coach')}
+          onPress={() => router.push('/checkin')}
         >
-          <Text style={styles.actionText}>{t('quick.talk')}</Text>
+          <Text style={styles.actionText}>{t('mode.path')}</Text>
+          <Text style={styles.actionSub}>{t('mode.path.sub')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.action, { flex: 1 }]}
-          onPress={() => router.push('/checkin')}
+          onPress={() => router.push('/rebuild')}
         >
-          <Text style={styles.actionText}>{t('quick.checkIn')}</Text>
+          <Text style={styles.actionText}>{t('mode.rebuild')}</Text>
+          <Text style={styles.actionSub}>{t('mode.rebuild.sub')}</Text>
         </TouchableOpacity>
       </View>
 

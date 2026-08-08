@@ -314,8 +314,8 @@ export function triage(input: TriageInput): TriageResult {
   }
 
   // Early abstinence from alcohol, benzodiazepines or other sedatives is the one
-  // situation where stopping abruptly and alone is itself the medical danger.
-  // Cold Turkey is the name of the product, not a medical instruction.
+  // situation where stopping abruptly and alone is itself the medical danger —
+  // the thing the person came here to do is the thing that could kill them.
   if (input.substance) {
     const profile = substanceProfile(input.substance);
     const hours = input.hoursSinceLastUse;

@@ -6,8 +6,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: coldturkey-migrate
-  namespace: coldturkey
+  name: nivora-migrate
+  namespace: nivora
   annotations:
     argocd.argoproj.io/hook: PreSync
     helm.sh/hook: pre-install,pre-upgrade
@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: coldturkey-migrate
+        app.kubernetes.io/name: nivora-migrate
     spec:
       restartPolicy: Never
       securityContext:
@@ -28,13 +28,13 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: ghcr.io/wolfoftyreso-debug/coldturkey-api:latest
+          image: ghcr.io/wolfoftyreso-debug/nivora-api:latest
           command: ['node', 'dist/db/migrate.js']
           envFrom:
             - configMapRef:
-                name: coldturkey-config
+                name: nivora-config
             - secretRef:
-                name: coldturkey-secrets
+                name: nivora-secrets
           resources:
             requests:
               cpu: 50m
@@ -50,13 +50,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: coldturkey-api
-  namespace: coldturkey
+  name: nivora-api
+  namespace: nivora
   labels:
-    app.kubernetes.io/name: coldturkey-api
+    app.kubernetes.io/name: nivora-api
 spec:
   selector:
-    app.kubernetes.io/name: coldturkey-api
+    app.kubernetes.io/name: nivora-api
   ports:
     - name: http
       port: 80
@@ -65,10 +65,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: coldturkey-api
-  namespace: coldturkey
+  name: nivora-api
+  namespace: nivora
   labels:
-    app.kubernetes.io/name: coldturkey-api
+    app.kubernetes.io/name: nivora-api
 spec:
   replicas: 2
   revisionHistoryLimit: 3
@@ -79,11 +79,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: coldturkey-api
+      app.kubernetes.io/name: nivora-api
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: coldturkey-api
+        app.kubernetes.io/name: nivora-api
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8080'
@@ -104,18 +104,18 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              app.kubernetes.io/name: coldturkey-api
+              app.kubernetes.io/name: nivora-api
       containers:
         - name: api
-          image: ghcr.io/wolfoftyreso-debug/coldturkey-api:latest
+          image: ghcr.io/wolfoftyreso-debug/nivora-api:latest
           ports:
             - name: http
               containerPort: 8080
           envFrom:
             - configMapRef:
-                name: coldturkey-config
+                name: nivora-config
             - secretRef:
-                name: coldturkey-secrets
+                name: nivora-secrets
           startupProbe:
             httpGet:
               path: /healthz
@@ -159,24 +159,24 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: coldturkey-api
-  namespace: coldturkey
+  name: nivora-api
+  namespace: nivora
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: coldturkey-api
+      app.kubernetes.io/name: nivora-api
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: coldturkey-api
-  namespace: coldturkey
+  name: nivora-api
+  namespace: nivora
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: coldturkey-api
+    name: nivora-api
   minReplicas: 2
   maxReplicas: 10
   metrics:

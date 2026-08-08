@@ -1,15 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: coldturkey
+namespace: nivora
 
 resources:
   - ../../base
 
 replicas:
-  - name: coldturkey-api
+  - name: nivora-api
     count: 3
-  - name: coldturkey-web
+  - name: nivora-web
     count: 2
 
 # Production uses a managed database with backups and point-in-time recovery.
@@ -21,22 +21,22 @@ patches:
       apiVersion: apps/v1
       kind: StatefulSet
       metadata:
-        name: coldturkey-postgres
-        namespace: coldturkey
+        name: nivora-postgres
+        namespace: nivora
   - patch: |
       $patch: delete
       apiVersion: v1
       kind: Service
       metadata:
-        name: coldturkey-postgres
-        namespace: coldturkey
+        name: nivora-postgres
+        namespace: nivora
   - patch: |
       $patch: delete
       apiVersion: networking.k8s.io/v1
       kind: NetworkPolicy
       metadata:
         name: postgres
-        namespace: coldturkey
+        namespace: nivora
   - target:
       kind: NetworkPolicy
       name: api
@@ -45,7 +45,7 @@ patches:
         path: /spec/egress/0
   - target:
       kind: ConfigMap
-      name: coldturkey-config
+      name: nivora-config
     patch: |
       - op: replace
         path: /data/LOG_LEVEL

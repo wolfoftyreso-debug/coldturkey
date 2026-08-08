@@ -6,7 +6,7 @@ import type {
   RecoverySnapshot,
   RelapseEvent,
   SupportContact,
-} from '@coldturkey/core';
+} from '@nivora/core';
 import type { Client } from './pool.js';
 
 /**
@@ -604,6 +604,49 @@ export async function appendCoachMessage(
      VALUES ($1, $2, $3, $4, $5, $6)`,
     [input.tenantId, input.userId, input.role, input.content, input.mode, input.safetyLevel],
   );
+}
+
+// ------------------------------------------------------ rebuild my life ---
+
+export interface LifeDomainRow {
+  domain: string;
+  status: 'untouched' | 'working' | 'steady';
+  note: string | null;
+  updated_at: Date;
+}
+
+export async function listLifeDomains(
+  client: Client,
+  userId: string,
+): Promise<LifeDomainRow[]> {
+  const { rows } = await client.query<LifeDomainRow>(
+    'SELECT domain, status, note, updated_at FROM life_domains WHERE user_id = $1',
+    [userId],
+  );
+  return rows;
+}
+
+export async function upsertLifeDomain(
+  client: Client,
+  input: {
+    tenantId: string;
+    userId: string;
+    domain: string;
+    status: 'untouched' | 'working' | 'steady';
+    note?: string | null;
+  },
+): Promise<LifeDomainRow> {
+  const { rows } = await client.query<LifeDomainRow>(
+    `INSERT INTO life_domains (tenant_id, user_id, domain, status, note)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (user_id, domain) DO UPDATE SET
+       status = EXCLUDED.status,
+       note = COALESCE(EXCLUDED.note, life_domains.note),
+       updated_at = now()
+     RETURNING domain, status, note, updated_at`,
+    [input.tenantId, input.userId, input.domain, input.status, input.note ?? null],
+  );
+  return rows[0]!;
 }
 
 // ---------------------------------------------------------------- snapshot ---

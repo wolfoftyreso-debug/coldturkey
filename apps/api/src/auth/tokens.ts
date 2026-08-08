@@ -21,8 +21,8 @@ export async function signAccessToken(claims: AccessTokenClaims): Promise<string
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(claims.sub)
     .setIssuedAt()
-    .setIssuer('coldturkey')
-    .setAudience('coldturkey-app')
+    .setIssuer('nivora')
+    .setAudience('nivora-app')
     .setExpirationTime(config.ACCESS_TOKEN_TTL)
     .sign(secretKey());
 }
@@ -30,8 +30,8 @@ export async function signAccessToken(claims: AccessTokenClaims): Promise<string
 export async function verifyAccessToken(token: string): Promise<AccessTokenClaims> {
   try {
     const { payload } = await jwtVerify(token, secretKey(), {
-      issuer: 'coldturkey',
-      audience: 'coldturkey-app',
+      issuer: 'nivora',
+      audience: 'nivora-app',
     });
     if (typeof payload.sub !== 'string' || typeof payload.tid !== 'string') {
       throw unauthorized('Malformed token');

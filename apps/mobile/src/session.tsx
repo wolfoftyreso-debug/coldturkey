@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { translate, type Locale } from '@coldturkey/i18n';
+import { translate, type Locale } from '@nivora/i18n';
 import { api, tokenStore, type User } from './api';
 
 interface SessionValue {

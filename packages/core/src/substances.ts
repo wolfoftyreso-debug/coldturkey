@@ -3,7 +3,7 @@ import type { SubstanceKind } from './types.js';
 /**
  * How dangerous unsupervised withdrawal is for a given substance.
  *
- * This drives whether Cold Turkey is allowed to coach someone through stopping
+ * This drives whether Nivora is allowed to coach someone through stopping
  * at all, or must instead tell them plainly to get medical help first. It is
  * never softened for motivational reasons.
  */
@@ -14,8 +14,8 @@ export interface SubstanceProfile {
   withdrawalRisk: WithdrawalRisk;
   /**
    * True when stopping abruptly without medical supervision can kill or cause
-   * seizures. For these, the app must recommend professional detox up front —
-   * "cold turkey" is the name of the product, not a medical instruction.
+   * seizures. For these the app must recommend professional detox up front, and
+   * must never present quitting abruptly as the brave or preferable option.
    */
   medicalDetoxAdvised: boolean;
   /** Overdose is a realistic acute danger for this substance. */
@@ -26,7 +26,7 @@ export interface SubstanceProfile {
   unitKey: string;
   /**
    * Milestone timeline in hours since the last use. Keys resolve to text in
-   * `@coldturkey/i18n`; the wording there is deliberately non-clinical and
+   * `@nivora/i18n`; the wording there is deliberately non-clinical and
    * describes what people commonly report rather than promising outcomes.
    */
   milestones: { hours: number; key: string }[];

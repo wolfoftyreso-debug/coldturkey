@@ -1,8 +1,8 @@
 {
-  "name": "@coldturkey/web",
+  "name": "@nivora/web",
   "version": "1.0.0",
   "private": true,
-  "description": "Cold Turkey web client.",
+  "description": "Nivora web client.",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@coldturkey/core": "workspace:*",
-    "@coldturkey/i18n": "workspace:*",
+    "@nivora/core": "workspace:*",
+    "@nivora/i18n": "workspace:*",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

@@ -1,4 +1,4 @@
-# Deploying Cold Turkey
+# Deploying Nivora
 
 ## What you need
 
@@ -20,17 +20,17 @@ at 2am depends on the network reaching a model.
 export REGISTRY=ghcr.io/wolfoftyreso-debug
 export TAG=$(git rev-parse --short HEAD)
 
-docker build -f apps/api/Dockerfile -t $REGISTRY/coldturkey-api:$TAG .
-docker push $REGISTRY/coldturkey-api:$TAG
+docker build -f apps/api/Dockerfile -t $REGISTRY/nivora-api:$TAG .
+docker push $REGISTRY/nivora-api:$TAG
 
 # NEXT_PUBLIC_* values are inlined at build time — the API URL is baked into
 # the image and cannot be changed later with an environment variable. Build one
 # image per environment.
 docker build -f apps/web/Dockerfile \
-  --build-arg NEXT_PUBLIC_API_URL=https://api.coldturkey.example \
+  --build-arg NEXT_PUBLIC_API_URL=https://api.nivora.example \
   --build-arg NEXT_PUBLIC_DEFAULT_TENANT=public \
-  -t $REGISTRY/coldturkey-web:$TAG .
-docker push $REGISTRY/coldturkey-web:$TAG
+  -t $REGISTRY/nivora-web:$TAG .
+docker push $REGISTRY/nivora-web:$TAG
 ```
 
 Pin the tags in the overlay rather than deploying `latest`:
@@ -38,8 +38,8 @@ Pin the tags in the overlay rather than deploying `latest`:
 ```bash
 cd deploy/k8s/overlays/prod
 kustomize edit set image \
-  ghcr.io/wolfoftyreso-debug/coldturkey-api=$REGISTRY/coldturkey-api:$TAG \
-  ghcr.io/wolfoftyreso-debug/coldturkey-web=$REGISTRY/coldturkey-web:$TAG
+  ghcr.io/wolfoftyreso-debug/nivora-api=$REGISTRY/nivora-api:$TAG \
+  ghcr.io/wolfoftyreso-debug/nivora-web=$REGISTRY/nivora-web:$TAG
 ```
 
 ## 2. Create the secret
@@ -48,10 +48,10 @@ Never commit it. The placeholder in `base/config.yaml` exists only so
 `kustomize build` produces a complete manifest.
 
 ```bash
-kubectl create namespace coldturkey
+kubectl create namespace nivora
 
-kubectl -n coldturkey create secret generic coldturkey-secrets \
-  --from-literal=DATABASE_URL='postgres://user:pass@db.internal:5432/coldturkey?sslmode=require' \
+kubectl -n nivora create secret generic nivora-secrets \
+  --from-literal=DATABASE_URL='postgres://user:pass@db.internal:5432/nivora?sslmode=require' \
   --from-literal=JWT_SECRET="$(openssl rand -base64 48)" \
   --from-literal=ANTHROPIC_API_KEY='sk-ant-…'
 ```
@@ -78,12 +78,12 @@ Edit `deploy/k8s/base/config.yaml` (or patch it in your overlay):
 
 ```bash
 kubectl apply -k deploy/k8s/overlays/prod
-kubectl -n coldturkey rollout status deploy/coldturkey-api
+kubectl -n nivora rollout status deploy/nivora-api
 ```
 
 Order of operations:
 
-1. The `coldturkey-migrate` Job runs first (annotated as an Argo CD `PreSync` and
+1. The `nivora-migrate` Job runs first (annotated as an Argo CD `PreSync` and
    a Helm `pre-install`/`pre-upgrade` hook). Migrations are forward-only and
    idempotent — `schema_migrations` records what has run.
 2. Pods start. The API also calls `migrate()` at boot, which is a no-op behind
@@ -95,8 +95,8 @@ Order of operations:
 ## 5. Verify
 
 ```bash
-kubectl -n coldturkey run curl --rm -it --image=curlimages/curl --restart=Never -- \
-  curl -s http://coldturkey-api/readyz
+kubectl -n nivora run curl --rm -it --image=curlimages/curl --restart=Never -- \
+  curl -s http://nivora-api/readyz
 # {"status":"ready","database":"ok","coach":"configured"}
 ```
 
@@ -116,7 +116,7 @@ VALUES ('vardcentralen', 'Vårdcentralen Nord', '{"publicSignup": false}');
 
 Then create the owner account through the API with the `X-Tenant: vardcentralen`
 header, from a session that is allowed to do so, or directly with the seed
-helper. Their users reach the app at `vardcentralen.coldturkey.example`.
+helper. Their users reach the app at `vardcentralen.nivora.example`.
 
 After login the tenant always comes from the signed token, so a client cannot
 change a header to reach another organisation's data. There is a test asserting

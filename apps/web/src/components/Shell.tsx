@@ -5,12 +5,20 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useSession } from '../lib/session';
 
+/**
+ * The tab bar carries the three calm modes plus the coach.
+ *
+ * Reset (I'm craving) and Now (I'm struggling) are deliberately absent: they are
+ * acute states reached from the enormous buttons on the home screen, not places
+ * you browse to. Putting a craving button in permanent chrome would also mean it
+ * is on screen when someone is doing fine, which is its own kind of suggestion.
+ */
 const TABS = [
   { href: '/home', key: 'nav.home' },
-  { href: '/coach', key: 'nav.coach' },
-  { href: '/checkin', key: 'nav.checkin' },
-  { href: '/patterns', key: 'nav.stats' },
   { href: '/plan', key: 'nav.plan' },
+  { href: '/patterns', key: 'nav.stats' },
+  { href: '/rebuild', key: 'nav.rebuild' },
+  { href: '/coach', key: 'nav.coach' },
 ];
 
 export function Shell({ children, title }: { children: ReactNode; title?: string }) {

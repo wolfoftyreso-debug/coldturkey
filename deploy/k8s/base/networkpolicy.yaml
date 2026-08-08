@@ -7,7 +7,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny
-  namespace: coldturkey
+  namespace: nivora
 spec:
   podSelector: {}
   policyTypes: [Ingress, Egress]
@@ -16,11 +16,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: api
-  namespace: coldturkey
+  namespace: nivora
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: coldturkey-api
+      app.kubernetes.io/name: nivora-api
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
@@ -29,7 +29,7 @@ spec:
               kubernetes.io/metadata.name: ingress-nginx
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: coldturkey-web
+              app.kubernetes.io/name: nivora-web
       ports:
         - port: 8080
     # Prometheus scrapes /metrics; those counters carry no personal data.
@@ -43,7 +43,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: coldturkey-postgres
+              app.kubernetes.io/name: nivora-postgres
       ports:
         - port: 5432
     - ports:
@@ -60,11 +60,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: web
-  namespace: coldturkey
+  namespace: nivora
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: coldturkey-web
+      app.kubernetes.io/name: nivora-web
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
@@ -77,7 +77,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: coldturkey-api
+              app.kubernetes.io/name: nivora-api
       ports:
         - port: 8080
     - ports:
@@ -92,19 +92,19 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: postgres
-  namespace: coldturkey
+  namespace: nivora
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: coldturkey-postgres
+      app.kubernetes.io/name: nivora-postgres
   policyTypes: [Ingress]
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: coldturkey-api
+              app.kubernetes.io/name: nivora-api
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: coldturkey-migrate
+              app.kubernetes.io/name: nivora-migrate
       ports:
         - port: 5432

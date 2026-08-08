@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: coldturkey
+namespace: nivora
 
 # `labels` rather than the deprecated `commonLabels`, and deliberately without
 # selector injection: a Deployment's selector is immutable once created, so
@@ -10,7 +10,7 @@ namespace: coldturkey
 labels:
   - includeSelectors: false
     pairs:
-      app.kubernetes.io/part-of: coldturkey
+      app.kubernetes.io/part-of: nivora
       app.kubernetes.io/managed-by: kustomize
 
 resources:
@@ -23,7 +23,7 @@ resources:
   - networkpolicy.yaml
 
 images:
-  - name: ghcr.io/wolfoftyreso-debug/coldturkey-api
+  - name: ghcr.io/wolfoftyreso-debug/nivora-api
     newTag: latest
-  - name: ghcr.io/wolfoftyreso-debug/coldturkey-web
+  - name: ghcr.io/wolfoftyreso-debug/nivora-web
     newTag: latest

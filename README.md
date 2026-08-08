@@ -1,15 +1,41 @@
-# Cold Turkey
+# Nivora
 
-**Quit the cycle. Rebuild the life.**
-No shame. No religion. Just recovery.
+**Rebuild your life.**
 
-Cold Turkey is a secular recovery and addiction support coach. It is not a
-sobriety counter with a chat bot bolted on: the product's central question is not
-*"have you stayed clean?"* but *"what is happening in your life that makes you
-want to use?"* — and then helping change the system around the behaviour.
+```
+No religion.
+No shame.
+No judgment.
+No bullshit.
+Just recovery.
+```
+
+Nivora is a secular recovery platform. It is not a sobriety counter with a chat
+bot bolted on: the central question is not *"have you stayed clean?"* but *"what
+is happening in your life that makes you want to use?"* — and then helping change
+the system around the behaviour.
 
 This repository contains the whole product: a multi-tenant API, a web client, a
 mobile client, and the Kubernetes manifests to run it.
+
+> **The name is not cleared.** "Nivora" is a working name. Several unrelated
+> companies already use it, and a proper trademark clearance has not been done.
+> Read `BRAND.md` before spending money on it.
+
+---
+
+## The five modes
+
+| Mode | Sub-brand | What it is |
+|---|---|---|
+| **I'M CRAVING** | Nivora Reset | The acute craving engine. Safety question, feeling, place, intensity, a plan. Contains Relapse Autopsy. |
+| **I'M STRUGGLING** | Nivora Now | Losing your footing but not in an acute craving. The coach, immediately. |
+| **MY RECOVERY** | Nivora Path | Plan, phase, why statement, future self, milestones, check-ins. |
+| **MY PATTERNS** | Nivora Patterns | Triggers, behaviours, recurring patterns, seven indicators. |
+| **REBUILD MY LIFE** | Nivora Rebuild | Sleep, health, home, money, work, exercise, social, relationships, identity, purpose. |
+
+`MASTERPROMPT.md` is the full specification. `BRAND.md` covers naming,
+positioning and visual identity.
 
 ---
 
@@ -26,7 +52,7 @@ mobile client, and the Kubernetes manifests to run it.
 | **Personal recovery graph** | Finds patterns in your own data ("after bad nights your cravings run 2.4 points stronger, based on 6 occasions") and shows the evidence count behind every claim. |
 | **Money and time reclaimed** | Framed as reclamation, not savings. |
 | **Daily check-ins** | Morning and evening, feeding the indicators and the pattern engine. |
-| **AI coach** | Claude with the Cold Turkey system prompt, motivational-interviewing language, and coach memory. Falls back to a fully functional local coach when the model is unavailable. |
+| **AI coach** | Claude with the Nivora system prompt, motivational-interviewing language, and coach memory. Falls back to a fully functional local coach when the model is unavailable. |
 | **Privacy** | Export everything, delete everything. First-class controls, not a support ticket. |
 
 Both Swedish and English are shipped from day one; the Swedish catalog is the
@@ -39,7 +65,7 @@ source of truth and the English one is type-checked against it.
 ```
 packages/core      Pure domain engine. No I/O, no clock reads it did not receive.
                    Safety triage, phases, craving plans, streaks, indicators,
-                   insights, reclaimed money and time. 108 tests.
+                   insights, rebuild domains, reclaimed money and time. 119 tests.
 packages/i18n      Swedish + English catalogs, type-checked for completeness.
 
 apps/api           Fastify + PostgreSQL. Multi-tenant via row-level security.
@@ -94,14 +120,14 @@ Requires Node 22, pnpm 10 and PostgreSQL 16.
 
 ```bash
 pnpm install
-pnpm --filter @coldturkey/core build
-pnpm --filter @coldturkey/i18n build
+pnpm --filter @nivora/core build
+pnpm --filter @nivora/i18n build
 
-createdb coldturkey   # or use deploy/docker-compose.yml
+createdb nivora   # or use deploy/docker-compose.yml
 cp .env.example .env  # then set DATABASE_URL and JWT_SECRET
 
-pnpm --filter @coldturkey/api migrate
-pnpm --filter @coldturkey/api seed     # demo account with two weeks of history
+pnpm --filter @nivora/api migrate
+pnpm --filter @nivora/api seed     # demo account with two weeks of history
 
 pnpm dev:api    # http://localhost:8080
 pnpm dev:web    # http://localhost:3000
@@ -112,7 +138,7 @@ Seeded accounts:
 
 | Tenant | Email | Password |
 |---|---|---|
-| `public` (consumer) | `demo@coldturkey.app` | `demo-password-123` |
+| `public` (consumer) | `demo@nivora.app` | `demo-password-123` |
 | `demo-clinic` (organisation) | `patient@demo-clinic.se` | `demo-password-123` |
 
 Or the whole stack in containers:
@@ -134,7 +160,7 @@ response tells the client which source answered.
 ## Tests
 
 ```bash
-pnpm -r test        # 172 tests
+pnpm -r test        # 186 tests
 pnpm -r typecheck
 ```
 
@@ -160,7 +186,7 @@ Standard enforced at the namespace.
 Create the secret out of band:
 
 ```bash
-kubectl -n coldturkey create secret generic coldturkey-secrets \
+kubectl -n nivora create secret generic nivora-secrets \
   --from-literal=DATABASE_URL='postgres://…' \
   --from-literal=JWT_SECRET="$(openssl rand -base64 48)" \
   --from-literal=ANTHROPIC_API_KEY='sk-ant-…'
@@ -191,7 +217,7 @@ These are product decisions, written down where they cannot quietly erode:
 
 ## Safety
 
-Cold Turkey is a coach, not care. It does not replace a doctor, psychiatry,
+Nivora is a coach, not care. It does not replace a doctor, psychiatry,
 addiction treatment or emergency services. The application says so on the login
 screen, in the coach, and in settings.
 

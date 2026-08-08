@@ -1,5 +1,5 @@
 /*
- * Cold Turkey visual system.
+ * Nivora visual system.
  *
  * The brief rules out a lot: no hospital, no treatment centre, no twelve-step
  * iconography, no wellness pastel, no influencer self-help. What is left is a
@@ -9,26 +9,30 @@
  */
 
 :root {
-  /* A near-black with a slight cool cast — flat black reads cheap on OLED. */
-  --bg: #0b0d0f;
-  --surface: #14181b;
-  --surface-raised: #1b2126;
-  --surface-hover: #222a30;
-  --border: #262f36;
-  --border-strong: #38434c;
+  /* Near-black, neutral. Flat #000 reads cheap on OLED. */
+  --bg: #0a0b0d;
+  --surface: #131519;
+  --surface-raised: #1a1d23;
+  --surface-hover: #21252c;
+  --border: #262a31;
+  --border-strong: #38414c;
 
-  --text: #eceff1;
-  --text-dim: #a4aeb6;
-  --text-faint: #6d7880;
+  --text: #f0f1f3;
+  --text-dim: #a0a6af;
+  --text-faint: #6b7280;
 
-  /* Warm accent: terracotta. Warm enough to feel human, muted enough not to
-     look like a marketing gradient. */
-  --accent: #e8794a;
-  --accent-soft: rgba(232, 121, 74, 0.14);
-  --accent-strong: #f08e60;
+  /* Brass. Warm enough to feel human, gold enough to read as premium rather
+     than as a warning — the distinction that separates Nivora from every other
+     orange-accented health app. */
+  --accent: #dda05a;
+  --accent-soft: rgba(221, 160, 90, 0.14);
+  --accent-strong: #e9b274;
 
   --amber: #f2b950;
-  --teal: #4fa88b;
+  --teal: #6fa88e;
+
+  /* Red is reserved for safety and nothing else. The moment it is used for
+     decoration it stops meaning "this could kill you". */
   --danger: #e5484d;
   --danger-soft: rgba(229, 72, 77, 0.14);
 
@@ -102,7 +106,7 @@ button {
   justify-content: center;
   gap: 4px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: rgba(11, 13, 15, 0.92);
+  background: rgba(10, 11, 13, 0.92);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
   z-index: 20;
@@ -199,7 +203,7 @@ p {
 }
 
 .card.accent {
-  border-color: rgba(232, 121, 74, 0.35);
+  border-color: rgba(221, 160, 90, 0.35);
   background: linear-gradient(180deg, var(--accent-soft), transparent 70%), var(--surface);
 }
 
@@ -246,13 +250,39 @@ p {
   transform: translateY(1px);
 }
 
+/* A mode's subtitle: present but subordinate, and it must never compete with
+   the label for attention in an acute state. */
+.action em {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--text-faint);
+}
+
+.action.span {
+  grid-column: 1 / -1;
+}
+
 .action.primary {
   grid-column: 1 / -1;
-  min-height: 96px;
+  min-height: 104px;
   background: var(--accent);
   border-color: var(--accent);
-  color: #17100c;
+  color: #14100a;
   font-size: 18px;
+}
+
+.action.primary em {
+  color: rgba(20, 16, 10, 0.68);
+}
+
+.danger-text {
+  color: #ffb9bb;
+  border-color: rgba(229, 72, 77, 0.45);
 }
 
 .action.primary:hover {
@@ -286,7 +316,7 @@ p {
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #17100c;
+  color: #14100a;
 }
 
 .btn.primary:hover {

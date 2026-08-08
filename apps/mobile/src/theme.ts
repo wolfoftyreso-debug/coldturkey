@@ -8,18 +8,18 @@ import { StyleSheet } from 'react-native';
  * would read as two products.
  */
 export const colors = {
-  bg: '#0b0d0f',
-  surface: '#14181b',
-  surfaceRaised: '#1b2126',
-  border: '#262f36',
-  borderStrong: '#38434c',
-  text: '#eceff1',
-  textDim: '#a4aeb6',
-  textFaint: '#6d7880',
-  accent: '#e8794a',
-  accentSoft: 'rgba(232,121,74,0.16)',
+  bg: '#0a0b0d',
+  surface: '#131519',
+  surfaceRaised: '#1a1d23',
+  border: '#262a31',
+  borderStrong: '#38414c',
+  text: '#f0f1f3',
+  textDim: '#a0a6af',
+  textFaint: '#6b7280',
+  accent: '#dda05a',
+  accentSoft: 'rgba(221,160,90,0.16)',
   amber: '#f2b950',
-  teal: '#4fa88b',
+  teal: '#6fa88e',
   danger: '#e5484d',
   dangerSoft: 'rgba(229,72,77,0.16)',
 } as const;
@@ -94,7 +94,7 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   cardAccent: {
-    borderColor: 'rgba(232,121,74,0.4)',
+    borderColor: 'rgba(221,160,90,0.4)',
     backgroundColor: colors.surface,
   },
   cardWarning: {
@@ -127,13 +127,26 @@ export const styles = StyleSheet.create({
     letterSpacing: 1.4,
   },
   actionTextPrimary: {
-    color: '#17100c',
+    color: '#14100a',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1.4,
   },
   actionTextDanger: {
     color: '#ffb9bb',
+  },
+  // A mode's subtitle: present but subordinate. It must never compete with the
+  // label for attention in an acute state.
+  actionSub: {
+    color: colors.textFaint,
+    fontSize: 12,
+    marginTop: 5,
+  },
+  actionSubPrimary: {
+    color: 'rgba(20,16,10,0.68)',
+    fontSize: 12,
+    marginTop: 5,
+    fontWeight: '600',
   },
   button: {
     minHeight: 50,
@@ -155,7 +168,7 @@ export const styles = StyleSheet.create({
     fontSize: 15,
   },
   buttonTextPrimary: {
-    color: '#17100c',
+    color: '#14100a',
   },
   chip: {
     paddingVertical: 11,

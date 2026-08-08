@@ -14,8 +14,8 @@ import {
   triage,
   type RecoverySnapshot,
   type SafetyResource,
-} from '@coldturkey/core';
-import { translate, type Locale } from '@coldturkey/i18n';
+} from '@nivora/core';
+import { translate, type Locale } from '@nivora/i18n';
 import { askCoach, coachEnabled, type CoachTurn } from './claude.js';
 import { buildContextBlock, type CoachMode } from './prompt.js';
 

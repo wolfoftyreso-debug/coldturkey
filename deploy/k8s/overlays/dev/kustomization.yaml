@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: coldturkey
+namespace: nivora
 
 resources:
   - ../../base
@@ -9,22 +9,22 @@ resources:
 # One replica of everything and the bundled Postgres: enough to click through the
 # whole product on a laptop cluster.
 replicas:
-  - name: coldturkey-api
+  - name: nivora-api
     count: 1
-  - name: coldturkey-web
+  - name: nivora-web
     count: 1
 
 patches:
   - target:
       kind: HorizontalPodAutoscaler
-      name: coldturkey-api
+      name: nivora-api
     patch: |
       - op: replace
         path: /spec/minReplicas
         value: 1
   - target:
       kind: ConfigMap
-      name: coldturkey-config
+      name: nivora-config
     patch: |
       - op: replace
         path: /data/LOG_LEVEL

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { translate, type Locale } from '@coldturkey/i18n';
+import { translate, type Locale } from '@nivora/i18n';
 import { withTenant } from '../db/pool.js';
 import { appendCoachMessage, listCoachMessages, loadSnapshot } from '../db/repository.js';
 import { coach } from '../coach/service.js';

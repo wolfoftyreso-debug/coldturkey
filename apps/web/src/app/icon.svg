@@ -1,14 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <!--
-    A broken ring: the cycle, opened. Deliberately abstract — no bottles, no
-    pills, no silhouettes of people looking sad out of windows.
+    The Nivora mark: an arc opened at the top, with the terminal rising past the
+    circle it came from. The cycle broken, moving up.
+
+    Abstract on purpose. No bottles, no pills, no chains, no silhouettes at
+    windows — nothing that tells a bystander glancing at the tab what the person
+    is dealing with. It has to read as a company at 16px, not as a support group.
   -->
-  <rect width="32" height="32" rx="7" fill="#0b0d0f"/>
-  <path
-    d="M16 6.5a9.5 9.5 0 1 0 9.5 9.5"
-    fill="none"
-    stroke="#e8794a"
-    stroke-width="3.2"
-    stroke-linecap="round"
-  />
+  <rect width="32" height="32" rx="7" fill="#0a0b0d"/>
+  <g fill="none" stroke="#dda05a" stroke-width="3" stroke-linecap="round">
+    <!-- The open cycle: sweeps from the top gap clockwise round to the right. -->
+    <path d="M13.4 7.1a9.2 9.2 0 1 0 11.4 11.6"/>
+    <!-- The terminal, rising clear of it. -->
+    <path d="M19.6 12.4 L25.4 6.6"/>
+  </g>
 </svg>

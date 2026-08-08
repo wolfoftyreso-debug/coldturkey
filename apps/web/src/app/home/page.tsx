@@ -64,24 +64,43 @@ export default function HomePage() {
         </div>
       ) : null}
 
+      {/*
+        The five modes, in the order a person in trouble needs them. The two
+        acute ones come first and are the largest targets on the screen —
+        everything else can wait, and at 2am the scroll is the enemy.
+      */}
       <h2>{t('home.quickActions')}</h2>
       <div className="actions">
         <Link className="action primary" href="/craving">
-          {t('quick.craving')}
+          {t('mode.reset')}
+          <em>{t('mode.reset.sub')}</em>
         </Link>
-        <Link className="action" href="/coach">
-          {t('quick.talk')}
+        <Link className="action span" href="/coach?mode=struggling">
+          {t('mode.now')}
+          <em>{t('mode.now.sub')}</em>
         </Link>
-        <Link className="action" href="/checkin">
+        <Link className="action" href="/plan">
+          {t('mode.path')}
+          <em>{t('mode.path.sub')}</em>
+        </Link>
+        <Link className="action" href="/patterns">
+          {t('mode.patterns')}
+          <em>{t('mode.patterns.sub')}</em>
+        </Link>
+        <Link className="action span" href="/rebuild">
+          {t('mode.rebuild')}
+          <em>{t('mode.rebuild.sub')}</em>
+        </Link>
+      </div>
+
+      <div className="btn-row" style={{ marginTop: 12 }}>
+        <Link className="btn" href="/checkin">
           {t('quick.checkIn')}
         </Link>
-        <Link className="action" href="/plan#why">
-          {t('quick.myWhy')}
-        </Link>
-        <Link className="action" href="/plan#support">
+        <Link className="btn" href="/plan#support">
           {t('quick.callSomeone')}
         </Link>
-        <Link className="action danger" href="/relapse">
+        <Link className="btn danger-text" href="/relapse">
           {t('quick.messedUp')}
         </Link>
       </div>

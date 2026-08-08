@@ -12,9 +12,31 @@
  */
 export const sv = {
   // ---- Brand ----
-  'app.name': 'Cold Turkey',
-  'app.tagline': 'Lämna beroendet. Bygg tillbaka livet.',
+  'app.name': 'Nivora',
+  'app.tagline': 'Bygg upp ditt liv igen.',
+  'app.challenger': 'Återhämtning utan predikan.',
+  // The creed is used in full or not at all. Never shortened for a banner.
+  'app.creed.religion': 'Ingen religion.',
+  'app.creed.shame': 'Ingen skam.',
+  'app.creed.judgment': 'Inget dömande.',
+  'app.creed.bullshit': 'Inget skitsnack.',
+  'app.creed.recovery': 'Bara återhämtning.',
   'app.subtitle': 'Ingen skam. Ingen religion. Bara återhämtning.',
+
+  // ---- The five modes ----
+  // These are the product's spine. Sub-brand names (Nivora Reset, Nivora Now,
+  // Nivora Path, Nivora Patterns, Nivora Rebuild) live in marketing and support;
+  // the interface shows the person's own words for what they need right now.
+  'mode.reset': 'JAG HAR SUG',
+  'mode.reset.sub': 'Akut hjälp när suget kommer',
+  'mode.now': 'JAG KÄMPAR',
+  'mode.now.sub': 'När du håller på att tappa fotfästet',
+  'mode.path': 'MIN ÅTERHÄMTNING',
+  'mode.path.sub': 'Din plan, din fas, ditt varför',
+  'mode.patterns': 'MINA MÖNSTER',
+  'mode.patterns.sub': 'Triggers, beteenden och det som återkommer',
+  'mode.rebuild': 'BYGG UPP MITT LIV',
+  'mode.rebuild.sub': 'Relationer, sömn, ekonomi, arbete, identitet',
 
   // ---- Navigation and shell ----
   'nav.home': 'Hem',
@@ -22,6 +44,7 @@ export const sv = {
   'nav.checkin': 'Incheckning',
   'nav.stats': 'Mönster',
   'nav.plan': 'Min plan',
+  'nav.rebuild': 'Bygg upp',
   'nav.settings': 'Inställningar',
   'action.back': 'Tillbaka',
   'action.next': 'Nästa',
@@ -178,7 +201,7 @@ export const sv = {
   'safety.resourcesTitle': 'Hjälp du kan ringa nu',
   'safety.helpMeSay': 'Hjälp mig formulera vad jag ska säga till vården',
   'safety.disclaimer':
-    'Cold Turkey är en coach, inte vård. Appen ersätter inte läkare, psykiatri, beroendebehandling eller akutvård.',
+    'Nivora är en coach, inte vård. Appen ersätter inte läkare, psykiatri, beroendebehandling eller akutvård.',
 
   'safety.detox.none': '',
   'safety.detox.alcohol':
@@ -487,6 +510,51 @@ export const sv = {
   'tool.repair_a_relationship': 'Reparera en relation',
   'tool.do_something_you_like': 'Gör något du faktiskt gillar',
 
+  // ---- Rebuild my life ----
+  // SAMHSA describes recovery through health, home, purpose and community. These
+  // domains follow that structure with entirely secular language.
+  'rebuild.title': 'Bygg upp mitt liv',
+  'rebuild.intro':
+    'Det här är den större delen. Att sluta är början — det här är det som gör att du inte behöver börja om.',
+  'rebuild.domain.health': 'Hälsa',
+  'rebuild.domain.health.desc': 'Sömn, mat, kropp, vård du skjutit upp.',
+  'rebuild.domain.sleep': 'Sömn',
+  'rebuild.domain.sleep.desc': 'Den enskilt största hävstången på ditt sug.',
+  'rebuild.domain.relationships': 'Relationer',
+  'rebuild.domain.relationships.desc': 'Vem har påverkats? Vad behöver erkännas?',
+  'rebuild.domain.money': 'Ekonomi',
+  'rebuild.domain.money.desc': 'Överblick, skulder, en plan som går att följa.',
+  'rebuild.domain.work': 'Arbete',
+  'rebuild.domain.work.desc': 'Struktur, mening, försörjning.',
+  'rebuild.domain.exercise': 'Träning',
+  'rebuild.domain.exercise.desc': 'Rörelse som reglerar stress, inte som prestation.',
+  'rebuild.domain.social': 'Socialt liv',
+  'rebuild.domain.social.desc': 'Människor och platser — vilka bär, vilka drar ner?',
+  'rebuild.domain.home': 'Boende',
+  'rebuild.domain.home.desc': 'En trygg plats att vara på.',
+  'rebuild.domain.identity': 'Identitet',
+  'rebuild.domain.identity.desc': 'Vem är jag utan beroendet?',
+  'rebuild.domain.purpose': 'Mening',
+  'rebuild.domain.purpose.desc': 'Något som betyder något. Framtidsplaner.',
+  'rebuild.status.untouched': 'Inte påbörjat',
+  'rebuild.status.working': 'Pågår',
+  'rebuild.status.steady': 'Stabilt',
+  'rebuild.pickOne': 'Välj ett område. Inte alla. Ett.',
+  'rebuild.lockedTitle': 'Kommer senare',
+  'rebuild.lockedBody':
+    'Ingenting hålls undan från dig — det här är bara inte realistiskt att jobba med än. Vi öppnar upp det när vardagen bär.',
+  'rebuild.relationships.q1': 'Vem har påverkats?',
+  'rebuild.relationships.q2': 'Vad behöver erkännas?',
+  'rebuild.relationships.q3': 'Vilket löfte kan du faktiskt hålla?',
+  'rebuild.relationships.q4': 'Vad behöver du sluta lova?',
+  'rebuild.relationships.lesson': 'Handling väger tyngre än löfte.',
+
+  'rebuild.reason.sleep_evidence':
+    'Din egen data pekar hit: sömnen har varit dålig flera nätter, och dina sug följer den.',
+  'rebuild.reason.connection_low': 'Kontakten med människor är tunn just nu. Det är den som brister först.',
+  'rebuild.reason.stability_low': 'Vardagen är skakig. Vi börjar med grunderna.',
+  'rebuild.reason.default': 'Det här är nästa sak som bär mest.',
+
   // ---- My why / future self ----
   'why.title': 'Mitt varför',
   'why.prompt': 'Vad vill du få tillbaka?',
@@ -512,7 +580,7 @@ export const sv = {
   'support.phone': 'Telefon',
   'support.primary': 'Ring den här först',
   'support.noRequirement':
-    'Cold Turkey kräver aldrig att du går med i någon organisation, grupp eller rörelse.',
+    'Nivora kräver aldrig att du går med i någon organisation, grupp eller rörelse.',
 
   // ---- Coach ----
   'coach.title': 'Coach',
@@ -541,7 +609,7 @@ export const sv = {
   'auth.invalid': 'Fel e-post eller lösenord.',
   'auth.weakPassword': 'Lösenordet måste vara minst 12 tecken.',
   'auth.emailTaken': 'Det finns redan ett konto med den e-posten.',
-  'onboarding.welcome': 'Välkommen till Cold Turkey',
+  'onboarding.welcome': 'Välkommen till Nivora',
   'onboarding.intro':
     'Det här är inte ett program du ska klara av. Det är ett verktyg för att ta nästa bra beslut.',
   'onboarding.pickSubstance': 'Vad vill du lämna?',

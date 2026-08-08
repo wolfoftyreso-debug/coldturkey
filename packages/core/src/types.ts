@@ -1,5 +1,5 @@
 /**
- * Shared domain types for Cold Turkey.
+ * Shared domain types for Nivora.
  *
  * Everything in this package is pure: no I/O, no clock reads that are not passed
  * in explicitly. Callers hand in `now` so the same functions can be used on the
@@ -175,7 +175,7 @@ export interface RecoverySnapshot {
   supportContacts: SupportContact[];
 }
 
-/** A translation key plus its interpolation values. Rendering lives in `@coldturkey/i18n`. */
+/** A translation key plus its interpolation values. Rendering lives in `@nivora/i18n`. */
 export interface Localized {
   key: string;
   params?: Record<string, string | number>;
