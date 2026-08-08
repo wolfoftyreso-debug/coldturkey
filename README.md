@@ -134,7 +134,7 @@ response tells the client which source answered.
 ## Tests
 
 ```bash
-pnpm -r test        # 154 tests
+pnpm -r test        # 172 tests
 pnpm -r typecheck
 ```
 

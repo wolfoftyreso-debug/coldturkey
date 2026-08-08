@@ -81,16 +81,46 @@ export function tenantSlugFromRequest(
   const config = loadConfig();
   if (headerValue && headerValue.trim().length > 0) return headerValue.trim().toLowerCase();
 
-  if (host) {
-    const hostname = host.split(':')[0] ?? '';
-    const labels = hostname.split('.');
-    // clinic.coldturkey.app → "clinic"; localhost and bare domains fall through.
-    if (labels.length > 2 && labels[0] && labels[0] !== 'www' && labels[0] !== 'api') {
-      return labels[0].toLowerCase();
-    }
-  }
+  const slug = subdomainOf(host);
+  return slug ?? config.DEFAULT_TENANT_SLUG;
+}
 
-  return config.DEFAULT_TENANT_SLUG;
+/** Hostnames that are never a tenant, however many labels they have. */
+const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'app', 'admin', 'static', 'cdn']);
+
+/**
+ * Extract a tenant slug from a Host header, or null when there is not one.
+ *
+ * The subtlety is that plenty of legitimate hosts have three or more
+ * dot-separated parts without being a subdomain — an IPv4 literal being the
+ * obvious one. Treating `127.0.0.1` as the subdomain `127` makes every request
+ * to a bare IP resolve to a tenant that does not exist, which breaks Kubernetes
+ * probes, direct service-to-service calls and any deployment reached by address
+ * rather than by name.
+ */
+function subdomainOf(host: string | undefined): string | null {
+  if (!host) return null;
+
+  let hostname = host.trim().toLowerCase();
+  if (hostname.startsWith('[')) {
+    // IPv6 literal, e.g. "[::1]:8080".
+    return null;
+  }
+  hostname = hostname.split(':')[0] ?? '';
+  if (!hostname || hostname === 'localhost') return null;
+
+  // IPv4 literal.
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return null;
+  // Bare IPv6 with no brackets, or anything else containing a colon.
+  if (hostname.includes(':')) return null;
+
+  const labels = hostname.split('.');
+  if (labels.length <= 2) return null;
+
+  const first = labels[0];
+  if (!first || RESERVED_SUBDOMAINS.has(first)) return null;
+
+  return first;
 }
 
 export async function countTenantUsers(client: Client): Promise<number> {

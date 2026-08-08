@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-#
 # Cold Turkey web image, using Next.js standalone output so the runtime layer is
 # a few megabytes of server plus static assets rather than the whole workspace.
 #
@@ -45,8 +43,10 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 WORKDIR /app
 
-RUN apk add --no-cache tini \
- && addgroup -g 10001 -S app \
+# Next's standalone server installs its own signal handlers, and nothing here
+# forks, so no init shim is needed. addgroup/adduser are busybox built-ins, so
+# this layer needs no package repository.
+RUN addgroup -g 10001 -S app \
  && adduser -u 10001 -S app -G app
 
 COPY --from=build --chown=app:app /app/apps/web/.next/standalone ./
@@ -56,5 +56,4 @@ COPY --from=build --chown=app:app /app/apps/web/public ./apps/web/public
 USER 10001
 EXPOSE 3000
 
-ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "apps/web/server.js"]

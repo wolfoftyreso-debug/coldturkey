@@ -1,6 +1,9 @@
-# syntax=docker/dockerfile:1.7
-#
 # Cold Turkey API image.
+#
+# Deliberately no `# syntax=` directive: it makes every build fetch a frontend
+# image from Docker Hub first, which fails on restricted or air-gapped networks.
+# The only extended feature used here is `RUN --mount=type=cache`, which the
+# built-in BuildKit frontend has supported since Docker 23.
 #
 # Multi-stage: the build stage carries pnpm and the whole workspace, the runtime
 # stage carries only compiled JavaScript and production dependencies. The final
@@ -56,10 +59,14 @@ ENV NODE_ENV=production
 ENV PORT=8080
 WORKDIR /app
 
-# tini reaps zombies and forwards SIGTERM, so Kubernetes rolling updates drain
-# in-flight requests instead of being killed after the grace period.
-RUN apk add --no-cache tini \
- && addgroup -g 10001 -S app \
+# No init shim. The usual reasons for one do not apply here: `server.ts`
+# registers its own SIGTERM and SIGINT handlers so rolling updates drain
+# in-flight requests, and the process never forks, so there are no zombies to
+# reap. Skipping it also means the image build needs no package repository,
+# which keeps it working on restricted networks.
+#
+# addgroup/adduser are busybox built-ins — no network required.
+RUN addgroup -g 10001 -S app \
  && adduser -u 10001 -S app -G app
 
 COPY --from=build --chown=app:app /deploy /app
@@ -70,5 +77,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/server.js"]

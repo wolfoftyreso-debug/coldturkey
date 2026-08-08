@@ -143,8 +143,16 @@ Watch `DATABASE_POOL_MAX × replicas` against the database's connection limit
 before raising `maxReplicas`.
 
 **Zero-downtime deploys.** `maxUnavailable: 0`, PodDisruptionBudgets with
-`minAvailable: 1`, and `tini` forwarding SIGTERM so in-flight requests drain
-inside the 30-second grace period.
+`minAvailable: 1`, and explicit SIGTERM/SIGINT handlers in the server so
+in-flight requests drain inside the 30-second grace period. The images carry no
+init shim: nothing forks, so there are no zombies to reap, and the signal
+handling is the application's own.
+
+**Tenant resolution.** A request's tenant comes from the `X-Tenant` header, then
+the Host subdomain, then `DEFAULT_TENANT_SLUG`. Bare addresses — IPv4, IPv6,
+`localhost`, and single-label Kubernetes service names — always resolve to the
+default tenant rather than being parsed as a subdomain. After login the tenant
+comes from the signed token and the Host is not consulted at all.
 
 ---
 
