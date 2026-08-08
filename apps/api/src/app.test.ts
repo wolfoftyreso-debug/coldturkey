@@ -348,6 +348,81 @@ suite('Cleat API', () => {
     });
   });
 
+  describe('login is not a free guessing gallery', () => {
+    // The global limit is 300/minute. Without a per-route brake that is 300
+    // password guesses a minute against an account holding somebody's relapse
+    // history.
+    it('locks a single account out well before the global limit', async () => {
+      const attempt = () =>
+        app.inject({
+          method: 'POST',
+          url: '/v1/auth/login',
+          payload: { email: 'bruteforce@cleat.app', password: 'wrong-password' },
+        });
+
+      const codes: number[] = [];
+      for (let i = 0; i < 12; i += 1) codes.push((await attempt()).statusCode);
+
+      expect(codes).toContain(429);
+      expect(codes.indexOf(429)).toBeLessThan(10);
+    });
+
+    it('does not lock out everyone sharing an address', async () => {
+      // Mobile carriers put thousands of real people behind one IP via CGNAT.
+      // A per-IP limit tight enough to matter against an attacker would lock
+      // out an entire phone network, so the per-IP ceiling is deliberately far
+      // looser than the per-account one — and successes never count at all.
+      const email = `shared-${Date.now()}@cleat.app`;
+      await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: { email, password: 'correct-horse-battery', displayName: 'Shared' },
+      });
+      for (let i = 0; i < 5; i += 1) {
+        const ok = await app.inject({
+          method: 'POST',
+          url: '/v1/auth/login',
+          payload: { email, password: 'correct-horse-battery' },
+        });
+        expect(ok.statusCode).toBe(200);
+      }
+    });
+
+    it('says nothing that confirms the account exists', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: { email: 'bruteforce@cleat.app', password: 'wrong-password' },
+      });
+      // Same wording as a wrong password: a different message would tell an
+      // attacker they had found a real account.
+      const body = (await json(response)) as never as { error: { message: string } };
+      expect(body.error.message).toBe('Invalid credentials');
+    });
+
+    it('still lets the real person in after a couple of typos', async () => {
+      const email = `typo-${Date.now()}@cleat.app`;
+      await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: { email, password: 'correct-horse-battery', displayName: 'Typo' },
+      });
+      for (let i = 0; i < 2; i += 1) {
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/login',
+          payload: { email, password: 'nope' },
+        });
+      }
+      const ok = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: { email, password: 'correct-horse-battery' },
+      });
+      expect(ok.statusCode).toBe(200);
+    });
+  });
+
   describe('the coach', () => {
     it('never reaches the model for an emergency and returns resources instead', async () => {
       const response = await app.inject({

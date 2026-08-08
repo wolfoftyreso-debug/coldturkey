@@ -185,6 +185,8 @@ export const en: Catalog = {
     "I notice you're describing physical symptoms. Keep an eye on them, and get medical help if they get worse.",
   'safety.urgent':
     'This is bigger than what I can safely help you with in an app. You need human, professional help now.',
+  'safety.askDirectly':
+    "I want to ask you straight out, because I cannot tell how you mean it: are you thinking about hurting yourself, or about not being here? You do not have to explain. Yes or no is enough.",
   'safety.emergency':
     "Stop. This is an emergency and it should not be handled in an app. Call emergency services now. If you can: don't be alone.",
   'safety.emergencyTitle': 'Are you or someone else in immediate danger?',

@@ -90,11 +90,22 @@ Den viktigaste komponenten. Nuvarande utfall mot korpusen i
 
 | Kategori | Antal i korpus | Fångas |
 |---|---|---|
-| Nödlägen (uttalad avsikt, överdos, medvetslös person, medicinsk akut, krampanfall) | 34 | 34 |
-| Brådskande (passiv dödslängtan, psykos, risk mot annan, kan inte vara ensam) | 22 | 22 |
+| Nödlägen (uttalad avsikt, **plan eller medel**, överdos, medvetslös person, medicinsk akut, krampanfall) | 42 | 42 |
+| Brådskande (passiv dödslängtan, psykos, risk mot annan, kan inte vara ensam) | 28 | 28 |
 | Abstinens i vardagsspråk | 6 | 6 |
 | Vanligt återhämtningsprat som ska passera tyst | 29 | 29 |
+| Tvetydig slutgiltighet som besvaras med en direkt fråga | 13 | 13 |
 | **Kända falsklarm, fastnaglade i egen lista** | **3** | — |
+
+**Efter extern granskning (2026-08-08).** En djupsökningsgranskning hävdade att
+triagen fortfarande missade kodväxling, kortform och passiv suicidalitet utan
+klassiska nyckelord. Påståendet mättes mot 32 formuleringar: **29 missades.**
+Allvarligast var klassen *plan eller medel* — 7 av 7 missade, trots att plan och
+medel är den starkaste prediktorn i suicidologi. `"jag har sparat tabletter"`
+gav `none`. Den klassen är nu en egen kategori på `emergency`, och 30 av de 32
+hanteras. De två kvarvarande är medvetna: `"jag har köpt tabletter"` är oftast
+huvudvärkstabletter, och `"jag har en plan"` i en återhämtningsapp betyder en
+återhämtningsplan.
 
 De tre falsklarmen är inte utelämnade ur korpusen utan fastnaglade i en egen
 lista med motivering per rad, och ett test hävdar att de aldrig får stoppa
@@ -103,6 +114,20 @@ coachen. `"skakar av ilska"` delar ordet med abstinensbilden;
 uttrycket för passiv dödslängtan. Att skärpa reglerna förbi dem skulle kosta
 de äkta fallen. En korpus som utelämnar sina egna misslyckanden rapporterar en
 precision den inte har — samma sorts fel som den ursprungliga gröna sviten.
+
+**En tredje väg för det som varken går att larma på eller släppa igenom.**
+`"jag är klar"`, `"tack för allt"`, `"ta hand om hunden"` är ett avsked ungefär
+lika ofta som de är en punkt i en vardaglig mening, och ingen ordlista kan
+skilja dem åt. Nivån lämnas därför orörd och coachen ställer i stället en rak
+fråga först — vilket är vad en människa som lade märke till det hade gjort, och
+som kostar en mening när svaret är att någon blev klar med ett projekt. Frågan
+garanteras av appen även på modellvägen, i stället för att förlita sig på att
+modellen råkar ställa den.
+
+Kostnaden mättes: de korta formerna (`"orkar inte"`) utlöste frågan på tre
+vardagliga meningar tills en längdgräns lades in — `"jag orkar inte laga mat"`
+har ett objekt och är banal, `"orkar inte"` är ett fragment någon skrev klockan
+två. Efter gränsen: noll av 35 godartade meningar utlöser frågan.
 
 **Passiv dödslängtan är skild från uttalad avsikt.** "Jag orkar inte längre"
 ger `urgent`: krislinjen först i resurslistan och ett samtal som fortsätter.
@@ -210,12 +235,19 @@ fler.**
 ### C1. Blockerar lansering
 
 - **Ingen lösenordsåterställning.** Glömt lösenord = förlorat konto och
-  förlorad återhämtningshistorik. Ingen e-postinfrastruktur alls.
+  förlorad återhämtningshistorik. Ingen e-postinfrastruktur alls. Nu skarpare
+  än förut: den nya utlåsningen efter fem felförsök gör att en person som
+  glömt sitt lösenord blir låst i 15 minuter utan någon väg tillbaka.
 - **Ingen e-postverifiering.**
-- **Ingen skärpt rate limit på inloggning.** Globalt tak är 300/minut och
-  gäller alla rutter lika. Kommentaren i koden säger att inloggning och
-  sugskärmen är olika problem, men konfigurationen behandlar dem lika.
-  300 lösenordsgissningar per minut är credential stuffing.
+- ~~**Ingen skärpt rate limit på inloggning.**~~ **Åtgärdat.** Per konto: 5
+  misslyckade försök per 15 minuter. Per IP: 100, medvetet mycket lösare
+  eftersom mobiloperatörer sätter tusentals riktiga användare bakom en adress
+  via CGNAT — ett tight per-IP-tak stoppar inte ett botnät och låser ute ett
+  helt telefonnät. Bara misslyckanden räknas; en lyckad inloggning nollställer.
+  Räknarna ligger i minnet, så med flera repliker multipliceras taket med
+  antalet poddar. En delad lagring är uppföljningen.
+  **Bieffekt som gör nästa punkt mer akut:** efter utlåsning nekas även rätt
+  lösenord i 15 minuter.
 - **Ingen backupstrategi.** Ingen `pg_dump`-schemaläggning, ingen
   point-in-time recovery, ingen återställningsövning.
 - **Ingen kryptering i vila konfigurerad.** `pgcrypto` finns i schemat men
@@ -229,7 +261,10 @@ fler.**
   produkt under MDR.
 - **Ingen klinisk granskning.** Säkerhetstriagen är skriven av en utvecklare
   och testad mot en korpus som samma utvecklare skrev. Den har aldrig setts av
-  någon med klinisk kompetens inom beroende eller suicidprevention.
+  någon med klinisk kompetens inom beroende eller suicidprevention. En extern
+  granskning höjde täckningen kraftigt på en eftermiddag, vilket är det
+  starkaste argumentet för att en klinisk sådan skulle hitta mer — inte ett
+  argument för att det nu är tillräckligt.
 
 ### C2. Betydande luckor
 

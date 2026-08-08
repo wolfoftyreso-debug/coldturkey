@@ -192,6 +192,8 @@ export const sv = {
     'Jag noterar att du beskriver kroppsliga symtom. Håll koll på dem, och sök vård om de förvärras.',
   'safety.urgent':
     'Det här är större än vad jag säkert kan hjälpa dig med i en app. Du behöver mänsklig, professionell hjälp nu.',
+  'safety.askDirectly':
+    'Jag vill bara fråga rakt ut, för jag vet inte hur du menar: tänker du på att skada dig själv eller på att inte finnas kvar? Du behöver inte förklara. Ja eller nej räcker.',
   'safety.emergency':
     'Stopp. Det här är en akut situation och den ska inte hanteras i en app. Ring nödnumret nu. Om du kan: var inte ensam.',
   'safety.emergencyTitle': 'Är du eller någon annan i omedelbar fara?',

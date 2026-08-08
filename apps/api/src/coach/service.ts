@@ -98,7 +98,7 @@ export async function coach(request: CoachRequest): Promise<CoachResponse> {
   };
 
   if (!coachEnabled()) {
-    return { ...base, text: localCoach(request, safety.level, negotiation.matches.map((m) => m.type)), local: true };
+    return { ...base, text: localCoach(request, safety.level, negotiation.matches.map((m) => m.type), safety.askDirectly), local: true };
   }
 
   try {
@@ -133,19 +133,28 @@ export async function coach(request: CoachRequest): Promise<CoachResponse> {
     const reply = await askCoach(contextBlock, history, mode);
 
     if (reply.refused || reply.text.length === 0) {
-      return { ...base, text: localCoach(request, safety.level, base.negotiation.types), local: true };
+      return { ...base, text: localCoach(request, safety.level, base.negotiation.types, safety.askDirectly), local: true };
     }
 
     // An urgent safety level is appended, not delegated. The model is asked to
-    // handle it well; the app guarantees the words appear either way.
-    const text =
-      safety.level === 'urgent' ? `${reply.text}\n\n${t('safety.urgent')}` : reply.text;
+    // handle it well; the app guarantees the words appear either way. The
+    // direct question is guaranteed the same way and leads, because a goodbye
+    // should be answered before anything else in the reply — relying on the
+    // model to have noticed is exactly the delegation this layer exists to
+    // prevent.
+    const text = [
+      safety.askDirectly ? t('safety.askDirectly') : '',
+      reply.text,
+      safety.level === 'urgent' ? t('safety.urgent') : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
 
     return { ...base, text, local: false };
   } catch {
     // Network trouble, rate limits, an outage: the person in front of the screen
     // still gets a useful answer, because the tools do not need the model.
-    return { ...base, text: localCoach(request, safety.level, base.negotiation.types), local: true };
+    return { ...base, text: localCoach(request, safety.level, base.negotiation.types, safety.askDirectly), local: true };
   }
 }
 
@@ -161,6 +170,7 @@ export function localCoach(
   request: CoachRequest,
   safetyLevel: string,
   negotiationTypes: string[],
+  askDirectly = false,
 ): string {
   const { snapshot, locale, now } = request;
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -170,6 +180,14 @@ export function localCoach(
 
   if (safetyLevel === 'urgent') {
     parts.push(t('safety.urgent'));
+  }
+
+  // Ambiguous finality goes first and it goes before everything else. Somebody
+  // who wrote "tack för allt" and meant goodbye should not have to read a
+  // craving tip before anyone asks. And when they meant they finished a
+  // project, one direct question costs a sentence.
+  if (askDirectly) {
+    parts.push(t('safety.askDirectly'));
   }
 
   if (negotiationTypes.length > 0) {

@@ -30,6 +30,11 @@ export const notFound = (what = 'Resource') => new AppError(404, 'not_found', `$
 
 export const conflict = (code: string, message: string) => new AppError(409, code, message);
 
+/**
+ * Deliberately carries the same message as a failed login. Saying "too many
+ * attempts on this account" confirms the account exists, which is the one
+ * thing an attacker wanted to learn.
+ */
 export const tooManyRequests = (message = 'Too many requests') =>
   new AppError(429, 'rate_limited', message);
 

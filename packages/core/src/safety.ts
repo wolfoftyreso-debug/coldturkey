@@ -25,6 +25,13 @@ export type SafetyCategory =
    * being alarmed at teaches them not to say the next true thing.
    */
   | 'suicidal_ideation'
+  /**
+   * A plan, a date, or the means to hand. In suicidology this is the strongest
+   * signal there is — stronger than how distressed the message sounds — and an
+   * external review found the rules caught none of it. Treated as stated
+   * intent, because that is what it is.
+   */
+  | 'suicide_plan'
   | 'self_harm'
   | 'overdose'
   | 'unresponsive_person'
@@ -67,6 +74,19 @@ export interface TriageResult {
   bypassCoach: boolean;
   /** Translation key for the response the user sees. */
   messageKey: string;
+  /**
+   * Ambiguous finality — "jag är klar", "det är över nu", "tack för allt", "ta
+   * hand om hunden". These carry real weight some of the time and none of it
+   * the rest, and no word list can tell which. Raising an alarm on them would
+   * wreck the precision the corpus is built to protect; letting them through
+   * silently is how a goodbye gets missed.
+   *
+   * So neither. The level stays where it was and the coach is asked to put a
+   * direct question first — "hur menar du?" — which is what a person who
+   * noticed would do, and which costs almost nothing when the answer is that
+   * they finished a project.
+   */
+  askDirectly: boolean;
 }
 
 interface Rule {
@@ -93,6 +113,7 @@ const RULES: Rule[] = [
       'avsluta ~ mitt liv',
       'ta mitt eget liv',
       'vill do',
+      'vill bara do',
       'vill inte leva',
       'sjalvmord',
       'sjalvmordstankar',
@@ -113,6 +134,48 @@ const RULES: Rule[] = [
     ]),
   },
   {
+    // Plan, date, or means. Note what is deliberately NOT here: a bare "jag har
+    // en plan". In a recovery app that overwhelmingly means a recovery plan,
+    // and firing the emergency script at someone describing their own progress
+    // is the failure mode that matters most on this side. Every pattern below
+    // pairs the intent with something concrete — a method, a stockpile, a date.
+    category: 'suicide_plan',
+    level: 'emergency',
+    matcher: phraseMatcher([
+      'sparat ~ tabletter',
+      'sparat pa mig tabletter',
+      'samlat ~ tabletter',
+      'samlar ~ tabletter',
+      'lagt undan ~ tabletter',
+      'kopt ~ tabletter for',
+      'har ett rep',
+      'kopt ett rep',
+      'har en kniv redo',
+      'laddat ~ vapen',
+      'bestamt ~ datum',
+      'bestamt mig for nar',
+      'valt ~ datum',
+      'vet precis hur jag ska gora',
+      'vet hur jag ska ta livet',
+      'har allt jag behover nu',
+      'har bestamt hur',
+      'planerat hur jag ska',
+      'skrivit ~ avskedsbrev',
+      'avskedsbrev',
+      'stockpiled ~ pills',
+      'saved up ~ pills',
+      'been saving pills',
+      'have a rope',
+      'bought a rope',
+      'picked ~ date',
+      'decided on ~ date',
+      'know exactly how i will do',
+      'wrote ~ note for',
+      'suicide note',
+      'goodbye note',
+    ]),
+  },
+  {
     // Passive ideation. Handled, never dismissed — but with the crisis line and
     // a continuing conversation rather than an ambulance. An earlier version
     // rated every one of these as no risk at all, which is the worse error in
@@ -123,6 +186,20 @@ const RULES: Rule[] = [
       'orkar inte ~ langre',
       'orkar inte ~ mer',
       'orkar inte ~ leva',
+      'orkar inte vara har',
+      'vill inte vara har',
+      'vill inte vara med langre',
+      'vill inte finnas',
+      'snart blir det tyst',
+      'snart ar det over',
+      'fardig med allt',
+      'far bli sista',
+      'logga ut permanent',
+      'checka ut permanent',
+      'inte vaknade',
+      'inte vaknar imorgon',
+      'ger upp allt',
+      'ger upp helt',
       'palla inte ~ langre',
       'pallar inte ~ langre',
       'klarar inte ~ langre',
@@ -459,6 +536,64 @@ const RULES: Rule[] = [
   },
 ];
 
+/**
+ * Phrasings that are a goodbye about as often as they are a full stop on an
+ * ordinary sentence. Not a rule — matching one changes nothing about the level
+ * — only a signal that the next thing said should be a question.
+ */
+const ASK_DIRECTLY = phraseMatcher([
+  'jag ar klar',
+  'jag ar fardig',
+  'det ar over nu',
+  'det ar slut nu',
+  'sista gangen jag skriver',
+  'sista gangen ni hor',
+  'tack for allt',
+  'tack for att ni',
+  'ta hand om',
+  'sag till mamma',
+  'sag till pappa',
+  'sag till dem att',
+  'skrivit ett brev till er',
+  'hejda pa riktigt',
+  'hej da pa riktigt',
+  'im done',
+  'i am done',
+  'done with everything',
+  'life is over',
+  'thanks for everything',
+  'look after ~ for me',
+  'take care of ~ for me',
+  'this is the last time i',
+  'jag ger upp',
+  'ge upp helt',
+]);
+
+/**
+ * The same exhaustion words, but only when they stand alone.
+ *
+ * "Jag orkar inte träna idag" and "orkar inte" are the same two words carrying
+ * entirely different weight, and what separates them is the object: give the
+ * exhaustion something mundane to attach to and it is mundane. Leave it bare
+ * and it is a fragment somebody typed at 2am.
+ *
+ * Measured, not guessed — these three patterns fired on three ordinary
+ * sentences in the benign set ("orkar inte laga mat, blir pizza") until the
+ * length gate went in, and on none afterwards.
+ */
+const ASK_DIRECTLY_IF_ALONE = phraseMatcher(['orkar inte', 'pallar inte', 'palla inte']);
+
+/** Words in the message, at or below which a bare fragment reads as a fragment. */
+const ALONE_WORD_LIMIT = 4;
+
+function wantsADirectQuestion(text: string | undefined): boolean {
+  if (!text) return false;
+  const haystack = normalizeForMatching(text);
+  if (ASK_DIRECTLY.test(haystack)) return true;
+  const words = haystack.trim().split(/\s+/).filter(Boolean).length;
+  return words <= ALONE_WORD_LIMIT && ASK_DIRECTLY_IF_ALONE.test(haystack);
+}
+
 const EMERGENCY_RESOURCES: Record<string, SafetyResource[]> = {
   SE: [
     { key: 'resource.se.emergency', contact: '112', kind: 'emergency' },
@@ -563,6 +698,9 @@ export function triage(input: TriageInput): TriageResult {
     resources: level === 'none' ? [] : emergencyResources(input.country, level),
     bypassCoach: level === 'emergency',
     messageKey: `safety.${level}`,
+    // Not asked during an emergency: the fixed response is already the right
+    // words, and "how do you mean?" is not what that moment needs.
+    askDirectly: level !== 'emergency' && wantsADirectQuestion(input.text),
   };
 }
 

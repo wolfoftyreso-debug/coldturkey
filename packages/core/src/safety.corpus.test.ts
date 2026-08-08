@@ -74,6 +74,16 @@ const EMERGENCY = [
   'jag kräktes upp något som såg ut som kaffesump',
   'jag blöder och det slutar inte',
   'i cannot catch my breath',
+  // Plan, date or means. An external review probed these and the rules caught
+  // none of them — the strongest predictor in suicidology, rated no risk.
+  'jag har sparat tabletter',
+  'jag har bestämt ett datum',
+  'jag har ett rep i garaget',
+  'jag vet precis hur jag ska göra',
+  'jag har allt jag behöver nu',
+  'jag har skrivit ett avskedsbrev',
+  'i have been saving pills',
+  'i picked a date',
   // seizure and delirium — the reason abrupt alcohol withdrawal can kill
   'jag fick ett krampanfall igår',
   'jag krampade i morse',
@@ -101,6 +111,13 @@ const URGENT = [
   'everyone would be better off without me',
   'i have nothing left to live for',
   'i cannot go on',
+  // Passive, with none of the classic trigger words. Also from the review.
+  'orkar inte vara här',
+  'snart blir det tyst',
+  'jag ska logga ut permanent',
+  'vill inte vara med längre',
+  'jag är färdig med allt',
+  'det vore bättre om jag inte vaknade',
   // psychosis
   'det känns som att någon förföljer mig',
   'jag hör någon prata som inte är där',
@@ -278,5 +295,64 @@ describe('known false alarms are tracked, not hidden', () => {
 
   it('costs no more than three sentences in the benign set', () => {
     expect(KNOWN_FALSE_ALARMS.length).toBeLessThanOrEqual(3);
+  });
+});
+
+/**
+ * Ambiguous finality: a goodbye about as often as it is a full stop on an
+ * ordinary sentence. No word list can separate them, so the rules do not try.
+ * The level is left alone and the coach is told to ask a direct question —
+ * which is what a person who noticed would do, and which costs one sentence
+ * when the answer is that they finished a project.
+ */
+const ASK_DIRECTLY = [
+  'jag är klar',
+  'det är över nu',
+  'hejdå på riktigt',
+  'tack för allt, ni har varit snälla',
+  'säg till mamma att jag älskar henne',
+  'jag har skrivit ett brev till er',
+  'det här är sista gången jag skriver',
+  'ta hand om hunden',
+  'im done',
+  'done with everything',
+  'life is over',
+  // Bare fragments. The same words with something mundane attached — "orkar
+  // inte laga mat" — must stay silent, which is what the length gate is for.
+  'orkar inte',
+  'jag pallar inte',
+];
+
+describe('ambiguous finality is asked about, not alarmed at', () => {
+  for (const text of ASK_DIRECTLY) {
+    it(`"${text.slice(0, 44)}"`, () => {
+      const result = triage({ text });
+      expect(result.askDirectly, `"${text}" did not prompt a direct question`).toBe(true);
+      expect(result.bypassCoach).toBe(false);
+    });
+  }
+
+  it('leaves ordinary exhaustion with an object alone', () => {
+    for (const text of [
+      'jag orkar inte träna idag',
+      'jag orkar inte laga mat, blir pizza',
+      'chefen är omöjlig, jag pallar inte honom',
+    ]) {
+      expect(triage({ text }).askDirectly, `"${text}" prompted a question it should not`).toBe(
+        false,
+      );
+    }
+  });
+
+  it('does not ask during an emergency — the fixed response is already right', () => {
+    expect(triage({ text: 'jag är klar, jag tänker ta livet av mig' }).askDirectly).toBe(false);
+  });
+
+  it('never treats a recovery plan as a suicide plan', () => {
+    // "Jag har en plan" in a recovery app means a recovery plan. Firing the
+    // emergency script at someone describing their own progress is the failure
+    // that matters most on this side of the line.
+    expect(triage({ text: 'jag har en plan för veckan' }).level).toBe('none');
+    expect(triage({ text: 'jag har köpt tabletter mot huvudvärk' }).level).toBe('none');
   });
 });

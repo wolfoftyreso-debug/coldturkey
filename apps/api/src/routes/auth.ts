@@ -10,8 +10,74 @@ import { loadConfig } from '../config.js';
 import { withTenant } from '../db/pool.js';
 import { createUser, findUserByEmail, findUserById, writeAudit } from '../db/repository.js';
 import { ensureDefaultTenant, findTenantBySlug, tenantSlugFromRequest } from '../db/tenants.js';
-import { badRequest, conflict, forbidden, unauthorized } from '../lib/errors.js';
+import { badRequest, conflict, forbidden, tooManyRequests, unauthorized } from '../lib/errors.js';
 import { authenticate, currentUser } from '../plugins/auth.js';
+
+/**
+ * Credential-stuffing brake.
+ *
+ * The global limit is 300/minute because opening the craving screen repeatedly
+ * is the product working as intended. Applying that same number to the login
+ * endpoint means 300 password guesses a minute against an account holding
+ * somebody's relapse history.
+ *
+ * Two counters, because one attacker hammering a single account and one
+ * spraying many look nothing alike. The per-account limit is tight. The per-IP
+ * limit is deliberately far looser, because mobile carriers put thousands of
+ * real people behind one address via CGNAT — a tight per-IP number does not
+ * stop an attacker with a botnet and does lock out everyone on a phone
+ * network. That asymmetry is the whole design.
+ *
+ * Only failures count. An earlier version incremented on every attempt, which
+ * meant ordinary successful logins consumed the quota and the shared-IP case
+ * locked out immediately.
+ *
+ * Both counters are in memory, which is the honest limit here: with more than
+ * one replica each pod counts separately, so the effective ceiling multiplies
+ * by replica count. A shared store is the follow-up; a stricter imperfect
+ * number today still beats 300.
+ */
+const FAILURES_PER_IP = 100;
+const FAILURES_PER_ACCOUNT = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+
+interface Attempt {
+  failures: number;
+  resetAt: number;
+}
+
+const loginFailures = new Map<string, Attempt>();
+
+function isLockedOut(key: string, limit: number, now: number): boolean {
+  const existing = loginFailures.get(key);
+  if (!existing || existing.resetAt <= now) return false;
+  return existing.failures >= limit;
+}
+
+function recordFailure(key: string, now: number): void {
+  const existing = loginFailures.get(key);
+  if (!existing || existing.resetAt <= now) {
+    loginFailures.set(key, { failures: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return;
+  }
+  existing.failures += 1;
+}
+
+/** Clear on success, so someone who mistypes twice and then gets it right is not punished. */
+function clearFailures(keys: string[]): void {
+  for (const key of keys) loginFailures.delete(key);
+}
+
+/**
+ * Drop expired entries so the map cannot grow without bound on an endpoint
+ * anyone can reach unauthenticated — otherwise the brake becomes the leak.
+ */
+function sweepFailures(now: number): void {
+  if (loginFailures.size < 10_000) return;
+  for (const [key, attempt] of loginFailures) {
+    if (attempt.resetAt <= now) loginFailures.delete(key);
+  }
+}
 
 const registerBody = z.object({
   email: z.string().email(),
@@ -106,6 +172,19 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/v1/auth/login', async (request, reply) => {
     const body = loginBody.parse(request.body);
+
+    const now = Date.now();
+    sweepFailures(now);
+    const ipKey = `ip:${request.ip}`;
+    const accountKey = `account:${body.email.trim().toLowerCase()}`;
+    if (
+      isLockedOut(ipKey, FAILURES_PER_IP, now) ||
+      isLockedOut(accountKey, FAILURES_PER_ACCOUNT, now)
+    ) {
+      // Deliberately the same message as a wrong password: telling an attacker
+      // they found a real account worth locking is free information.
+      throw tooManyRequests('Invalid credentials');
+    }
     const slug = tenantSlugFromRequest(
       request.headers['x-tenant'] as string | undefined,
       request.headers.host,
@@ -134,7 +213,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return { user, refreshToken: refresh.token };
     });
 
-    if (!result) throw unauthorized('Invalid credentials');
+    if (!result) {
+      recordFailure(ipKey, now);
+      recordFailure(accountKey, now);
+      throw unauthorized('Invalid credentials');
+    }
+
+    clearFailures([ipKey, accountKey]);
 
     const accessToken = await signAccessToken({
       sub: result.user.id,
