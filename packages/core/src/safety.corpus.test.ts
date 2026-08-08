@@ -232,3 +232,51 @@ describe('the first number offered fits the level', () => {
     expect(result.resources.map((r) => r.contact)).toContain('112');
   });
 });
+
+/**
+ * Known false alarms.
+ *
+ * These are ordinary sentences that the rules do fire on. They are pinned here
+ * rather than quietly left out of BENIGN, because a corpus that omits its own
+ * failures reports a precision it does not have — the same shape of mistake as
+ * the original green suite that caught three emergencies in thirty-five.
+ *
+ * Each one is a deliberate trade: the phrasing it fires on is shared with real
+ * distress, and tightening the rule to exclude it would lose the real case too.
+ * If a rule change makes one of these fall silent without losing recall, delete
+ * the line — this list shrinking is progress.
+ */
+const KNOWN_FALSE_ALARMS: { text: string; level: SafetyLevel; because: string }[] = [
+  {
+    text: 'jag skakar av ilska efter det där mötet',
+    level: 'elevated',
+    because: 'shares "skakar" with the alcohol withdrawal presentation',
+  },
+  {
+    text: 'jag vill försvinna från jobbet ett tag',
+    level: 'urgent',
+    because: 'shares "vill försvinna" with the commonest Swedish phrasing of passive ideation',
+  },
+  {
+    text: 'i want to disappear on holiday somewhere warm',
+    level: 'urgent',
+    because: 'the English equivalent of the same overlap',
+  },
+];
+
+describe('known false alarms are tracked, not hidden', () => {
+  for (const { text, level, because } of KNOWN_FALSE_ALARMS) {
+    it(`"${text.slice(0, 40)}" — ${because}`, () => {
+      const result = triage({ text });
+      expect(result.level).toBe(level);
+      // The cost has to stay bounded: a false alarm may add a handoff line or
+      // show the crisis numbers, but it must never stop the coach and tell
+      // somebody having a normal day to call an ambulance.
+      expect(result.bypassCoach).toBe(false);
+    });
+  }
+
+  it('costs no more than three sentences in the benign set', () => {
+    expect(KNOWN_FALSE_ALARMS.length).toBeLessThanOrEqual(3);
+  });
+});
