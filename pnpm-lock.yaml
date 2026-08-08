@@ -22,10 +22,10 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.116.0
         version: 0.116.0(zod@3.25.76)
-      '@nivora/core':
+      '@cleat/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@nivora/i18n':
+      '@cleat/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
       '@fastify/cors':
@@ -68,10 +68,10 @@ importers:
 
   apps/mobile:
     dependencies:
-      '@nivora/core':
+      '@cleat/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@nivora/i18n':
+      '@cleat/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
       expo:
@@ -117,10 +117,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@nivora/core':
+      '@cleat/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@nivora/i18n':
+      '@cleat/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
       next:

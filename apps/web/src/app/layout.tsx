@@ -4,7 +4,7 @@ import { SessionProvider } from '../lib/session';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Nivora',
+  title: 'Cleat',
   description: 'Lämna beroendet. Bygg tillbaka livet. Ingen skam. Ingen religion.',
   // The app deals in addiction history; keep it out of search indexes entirely.
   robots: { index: false, follow: false },

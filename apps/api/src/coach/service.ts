@@ -14,8 +14,8 @@ import {
   triage,
   type RecoverySnapshot,
   type SafetyResource,
-} from '@nivora/core';
-import { translate, type Locale } from '@nivora/i18n';
+} from '@cleat/core';
+import { translate, type Locale } from '@cleat/i18n';
 import { askCoach, coachEnabled, type CoachTurn } from './claude.js';
 import { buildContextBlock, type CoachMode } from './prompt.js';
 

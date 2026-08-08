@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Nivora",
-    "slug": "nivora",
+    "name": "Cleat",
+    "slug": "cleat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "nivora",
+    "scheme": "cleat",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0b0d0f",
     "splash": {
@@ -13,13 +13,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.nivora.client",
+      "bundleIdentifier": "app.cleat.client",
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "app.nivora.client",
+      "package": "app.cleat.client",
       "adaptiveIcon": {
         "backgroundColor": "#0b0d0f"
       }

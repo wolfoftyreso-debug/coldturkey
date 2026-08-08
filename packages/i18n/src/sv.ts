@@ -12,7 +12,7 @@
  */
 export const sv = {
   // ---- Brand ----
-  'app.name': 'Nivora',
+  'app.name': 'Cleat',
   'app.tagline': 'Bygg upp ditt liv igen.',
   'app.challenger': 'Återhämtning utan predikan.',
   // The creed is used in full or not at all. Never shortened for a banner.
@@ -24,8 +24,8 @@ export const sv = {
   'app.subtitle': 'Ingen skam. Ingen religion. Bara återhämtning.',
 
   // ---- The five modes ----
-  // These are the product's spine. Sub-brand names (Nivora Reset, Nivora Now,
-  // Nivora Path, Nivora Patterns, Nivora Rebuild) live in marketing and support;
+  // These are the product's spine. Sub-brand names (Cleat Reset, Cleat Now,
+  // Cleat Path, Cleat Patterns, Cleat Rebuild) live in marketing and support;
   // the interface shows the person's own words for what they need right now.
   'mode.reset': 'JAG HAR SUG',
   'mode.reset.sub': 'Akut hjälp när suget kommer',
@@ -201,7 +201,7 @@ export const sv = {
   'safety.resourcesTitle': 'Hjälp du kan ringa nu',
   'safety.helpMeSay': 'Hjälp mig formulera vad jag ska säga till vården',
   'safety.disclaimer':
-    'Nivora är en coach, inte vård. Appen ersätter inte läkare, psykiatri, beroendebehandling eller akutvård.',
+    'Cleat är en coach, inte vård. Appen ersätter inte läkare, psykiatri, beroendebehandling eller akutvård.',
 
   'safety.detox.none': '',
   'safety.detox.alcohol':
@@ -580,7 +580,7 @@ export const sv = {
   'support.phone': 'Telefon',
   'support.primary': 'Ring den här först',
   'support.noRequirement':
-    'Nivora kräver aldrig att du går med i någon organisation, grupp eller rörelse.',
+    'Cleat kräver aldrig att du går med i någon organisation, grupp eller rörelse.',
 
   // ---- Coach ----
   'coach.title': 'Coach',
@@ -609,7 +609,7 @@ export const sv = {
   'auth.invalid': 'Fel e-post eller lösenord.',
   'auth.weakPassword': 'Lösenordet måste vara minst 12 tecken.',
   'auth.emailTaken': 'Det finns redan ett konto med den e-posten.',
-  'onboarding.welcome': 'Välkommen till Nivora',
+  'onboarding.welcome': 'Välkommen till Cleat',
   'onboarding.intro':
     'Det här är inte ett program du ska klara av. Det är ett verktyg för att ta nästa bra beslut.',
   'onboarding.pickSubstance': 'Vad vill du lämna?',

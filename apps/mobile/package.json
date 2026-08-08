@@ -1,8 +1,8 @@
 {
-  "name": "@nivora/mobile",
+  "name": "@cleat/mobile",
   "version": "1.0.0",
   "private": true,
-  "description": "Nivora mobile client (Expo / React Native).",
+  "description": "Cleat mobile client (Expo / React Native).",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@nivora/core": "workspace:*",
-    "@nivora/i18n": "workspace:*",
+    "@cleat/core": "workspace:*",
+    "@cleat/i18n": "workspace:*",
     "expo": "~52.0.27",
     "expo-constants": "~17.0.4",
     "expo-linking": "~7.0.4",

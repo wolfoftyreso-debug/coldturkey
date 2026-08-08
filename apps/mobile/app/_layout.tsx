@@ -20,11 +20,11 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="home" options={{ headerShown: false }} />
-          <Stack.Screen name="craving" options={{ title: 'Nivora' }} />
-          <Stack.Screen name="relapse" options={{ title: 'Nivora' }} />
+          <Stack.Screen name="craving" options={{ title: 'Cleat' }} />
+          <Stack.Screen name="relapse" options={{ title: 'Cleat' }} />
           <Stack.Screen name="coach" options={{ title: 'Coach' }} />
-          <Stack.Screen name="checkin" options={{ title: 'Nivora' }} />
-          <Stack.Screen name="rebuild" options={{ title: 'Nivora' }} />
+          <Stack.Screen name="checkin" options={{ title: 'Cleat' }} />
+          <Stack.Screen name="rebuild" options={{ title: 'Cleat' }} />
         </Stack>
       </SessionProvider>
     </SafeAreaProvider>

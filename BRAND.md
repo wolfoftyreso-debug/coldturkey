@@ -1,4 +1,4 @@
-# Nivora — brand book
+# Cleat — brand book
 
 **Working name for the recovery platform.** This document is the source of truth
 for naming, positioning, voice and visual identity. Where it disagrees with the
@@ -8,40 +8,59 @@ code, the code is wrong.
 
 ## 1. Name clearance — read this before spending money on the name
 
-**Status: not cleared. Preliminary research only.**
+**Status: not cleared. Preliminary research only — but the cleanest result of
+everything tested.**
 
 I could not complete a clearance from this environment: the trademark registers
 that matter (Justia, Trademarkia) are blocked by the network egress policy, and
 TMview and EUIPO are JavaScript applications that cannot be queried
-programmatically. DNS and RDAP are also blocked here, so **every domain
-availability claim below is unverified** — check them yourself before believing
-them.
+programmatically. DNS and RDAP are also blocked, so every domain claim below is
+unverified.
 
-What the open web does show is that "Nivora" is already in commercial use by at
-least five unrelated entities:
+Ten names were tested against the health and software categories. Nine had
+conflicts. Cleat had none:
 
-| Entity | Field | Nice class (likely) | Jurisdiction |
-|---|---|---|---|
-| Nivora Group | Consumer private equity; acquired the beauty brand AAVRANI in April 2026 | 35, 36 | US (New York) |
-| Nivora Brand Ltd | Retail of watches and jewellery; incorporated Oct 2025 | 14, 35 | UK |
-| Nivora Global Ltd / Nivora Essence Ltd | Spice, tea and lemongrass oil export | 30, 31 | UK / India |
-| Nivoraa | Sustainable clothing (hemp, linen, kala cotton) | 25 | India |
-| Nivora Apparel | Apparel | 25 | — |
+| Name | Conflict found | Verdict |
+|---|---|---|
+| Kilter | kilterhealth.com; fitness app acquired by Blackbaud | dead |
+| Even Keel | EvenKeel — a mental-health app with streaks and data export | dead |
+| Cairn | Cairns Health (YC), Cairn Health, Cairn Software | dead |
+| Verto | verto.health — 100+ health systems | dead |
+| Rivet | Rivet Health, $31.5M raised | dead |
+| Trove | Trove Health — medical records | dead |
+| Vaka | Vaka Health Foundation | dead |
+| Stark | STARK Group — 1,050 Nordic building-materials stores | dead |
+| Nivora | Nivora Group — US consumer private equity | adjacent |
+| **Cleat** | **none in health or software** | **live** |
 
-**The good news:** none of them are in software or health. I found no app,
-platform or service called Nivora in recovery, addiction, mental health or
-wellbeing.
+### The two real risks
 
-**The risk that actually matters:** Nivora Group is a US consumer-brand private
-equity firm. Consumer PE firms acquire across categories and defend house marks
-broadly. They are the most likely party to oppose a Nivora filing, and they have
-the budget to do it. That is a business risk, not a legal opinion.
+**1. "Cleats" means sports footwear in American English.** Americans will hear a
+sports brand. Expect crowded prior art in **class 25** (footwear) and in
+fitness-adjacent software.
+
+This is also, unexpectedly, the name's best feature. The brief says a bystander
+glancing at the home screen must not be able to guess the category. "Cleat" reads
+as a training app. That is close to perfect cover for a product people do not
+want to explain.
+
+**2. Swedish hear-test.** Pronounced *kliit*, a Swede may write it "klit" —
+slang for clitoris. Not fatal, because the spelling is visible in the App Store,
+the icon and the address bar, but it will surface in pure word-of-mouth. Decide
+now whether you can live with it, rather than discovering it in a focus group.
+
+### One thing in the name's favour, legally
+
+"Cleat" for a recovery platform is an **arbitrary mark**: a common word applied
+to something entirely unrelated to its dictionary meaning. Arbitrary marks are
+among the strongest and easiest to defend — the same category as Apple for
+computers. That is a better legal position than a coined name is usually assumed
+to have, provided the filing avoids the footwear classes.
 
 ### What you need to do
 
-1. **Instruct a trademark attorney** for a full clearance in the classes below.
-   Nothing in this document substitutes for that, and a coined name that "looks
-   free" on Google is exactly how expensive rebrands start.
+1. **Instruct a trademark attorney.** Nothing here substitutes for that, and a
+   name that "looks free" on Google is exactly how expensive rebrands start.
 
 2. **File in these classes:**
    - **Class 9** — downloadable software; mobile applications
@@ -49,26 +68,19 @@ the budget to do it. That is a business risk, not a legal opinion.
    - **Class 44** — medical and health services; counselling, health coaching
    - **Class 41** — education, training, coaching (defensive; recovery coaching
      sits ambiguously between 41 and 44)
-   - Consider **Class 45** if Nivora Circle becomes a peer-support service
+   - Consider **Class 45** if Cleat Circle becomes a peer-support service
+   - **Do not** attempt class 25. Concede footwear; it is not your business and
+     fighting for it is how a clearance turns into a lawsuit.
 
 3. **Jurisdictions, in order:** EUIPO (covers Sweden and the whole EU in one
    filing), then US, then a Madrid Protocol designation for the rest.
 
-4. **Searches to run**, exactly: `NIVORA`, plus phonetic and visual neighbours
-   `NIVORA*`, `NEVORA`, `NIVARA`, `NIVORAA`, `NUVORA`, `NIVEA` (the last one
-   matters — Beiersdorf defends NIVEA aggressively and `NIVORA` is one vowel
-   away in a category adjacent to personal care). If your attorney does not
-   raise NIVEA unprompted, get a different attorney.
+4. **Searches to run:** `CLEAT`, plus `KLEAT`, `CLEET`, `CLEAT*` and the plural
+   `CLEATS`. Ask specifically about class 25 prior art and whether any of it is
+   broad enough to reach class 9.
 
-5. **Do not** announce the name publicly, buy the domains at premium prices, or
-   file the app-store listings until the clearance comes back.
-
-### Fallback names
-
-Have two ready before clearance comes back, so a bad result costs you a week
-rather than a quarter. Criteria that made Nivora good in the first place:
-coined, three syllables, no negative meaning in Swedish or English, says nothing
-about addiction.
+5. **Do not** announce the name, buy premium domains, or file the store listings
+   until clearance comes back.
 
 ---
 
@@ -77,25 +89,26 @@ about addiction.
 **None of the availability below has been confirmed.** DNS and RDAP were blocked
 in the environment where this was written.
 
+`cleat.com` is a common English noun and is almost certainly registered. Assume
+you are buying it, not claiming it, and get a price before you commit.
+
 **Priority order:**
 
-1. `nivora.com` — the only one worth a premium. If it is parked, get a quote
-   before committing to the name; a squatter's price is part of the name's cost.
-2. `nivora.app` — Google-run TLD, HTTPS-only by policy, reads as a product.
-   A strong primary if `.com` is out of reach.
-3. `nivora.se` — required for the Swedish market whatever else you do.
-4. `nivora.health` / `nivora.care` — defensive only. Do not build on them:
-   a health TLD in the URL tells anyone glancing at the address bar what the
-   person is dealing with. That is a privacy leak in the shape of a domain.
+1. `cleat.app` — Google-run TLD, HTTPS-only by policy, reads as a product.
+   The most realistic primary.
+2. `cleat.se` — required for the Swedish market whatever else you do.
+3. `cleat.com` — worth a quote; walk away if the number is silly.
+4. `getcleat.com`, `trycleat.com`, `cleatapp.com` — defensive.
 
-**Defensive registrations:** `nivoraapp.com`, `getnivora.com`, `trynivora.com`,
-`nivora.eu`, plus the obvious typos (`nivoria`, `nivorra`, `nivara`).
+**Do not** register `cleat.health` or `cleat.care`. A health TLD in the address
+bar tells anyone glancing at the screen what the person is dealing with. That is
+a privacy leak in the shape of a domain, and it throws away the camouflage the
+name just bought you.
 
-**A specific recommendation about subdomains.** The platform resolves
-organisation tenants by subdomain — `clinic.nivora.app`. That means a clinic's
-name appears in the URL of every request their patients make. For consumer users
-keep everything on the apex; for organisations, offer a neutral tenant slug
-(`t-4821.nivora.app`) as the default and let the clinic opt into a readable one.
+**Subdomains.** Organisation tenants resolve by subdomain — `clinic.cleat.app` —
+which puts a clinic's name in the URL of every request its patients make. Keep
+consumers on the apex; default organisations to a neutral slug (`t-4821.cleat.app`)
+and let them opt into a readable one.
 
 ---
 
@@ -103,7 +116,7 @@ keep everything on the apex; for organisations, offer a neutral tenant slug
 
 ### The change I made to your structure, and why
 
-You specified **Nivora Rebuild** for relapse analysis, and **REBUILD MY LIFE** as
+You specified **Cleat Rebuild** for relapse analysis, and **REBUILD MY LIFE** as
 mode 5. That is the same word carrying two unrelated meanings in the same
 product — one of them a post-relapse forensic exercise, the other the long-term
 life-building surface. Users would meet "Rebuild" on their worst day and again on
@@ -112,7 +125,7 @@ ambiguous.
 
 I resolved it by giving **Rebuild** to the life-building mode, where the word is
 doing its most natural work, and demoting relapse analysis from a sub-brand to a
-feature name — **Relapse Autopsy**, inside Nivora Reset. Sub-brands should map to
+feature name — **Relapse Autopsy**, inside Cleat Reset. Sub-brands should map to
 places in the product; a flow that runs for twenty minutes after a specific event
 is a feature, not a destination.
 
@@ -124,19 +137,19 @@ the change is a one-line revert in the i18n catalog.
 
 | Sub-brand | Mode | What it is |
 |---|---|---|
-| **Nivora Reset** | I'M CRAVING | The acute craving engine. Safety question, feeling, place, intensity, a plan. Contains Relapse Autopsy. |
-| **Nivora Now** | I'M STRUGGLING | Losing your footing but not in an acute craving. The coach, immediately, with the ten-minute protocol one tap away. |
-| **Nivora Path** | MY RECOVERY | Personal plan, phase, why statement, future self, milestones. |
-| **Nivora Patterns** | MY PATTERNS | Triggers, behaviours, recurring patterns, the seven indicators. |
-| **Nivora Rebuild** | REBUILD MY LIFE | Relationships, sleep, money, work, exercise, social life, identity, future. |
-| **Nivora Coach** | *cross-cutting* | The AI. Present inside every mode rather than being a mode. |
-| **Nivora Circle** | *post-v1* | Community and peer support. |
+| **Cleat Reset** | I'M CRAVING | The acute craving engine. Safety question, feeling, place, intensity, a plan. Contains Relapse Autopsy. |
+| **Cleat Now** | I'M STRUGGLING | Losing your footing but not in an acute craving. The coach, immediately, with the ten-minute protocol one tap away. |
+| **Cleat Path** | MY RECOVERY | Personal plan, phase, why statement, future self, milestones. |
+| **Cleat Patterns** | MY PATTERNS | Triggers, behaviours, recurring patterns, the seven indicators. |
+| **Cleat Rebuild** | REBUILD MY LIFE | Relationships, sleep, money, work, exercise, social life, identity, future. |
+| **Cleat Coach** | *cross-cutting* | The AI. Present inside every mode rather than being a mode. |
+| **Cleat Circle** | *post-v1* | Community and peer support. |
 
-**Nivora Recovery** is the product name for the whole thing; **Nivora** is the
-masterbrand. In the interface the user sees "Nivora" and the mode names — the
+**Cleat Recovery** is the product name for the whole thing; **Cleat** is the
+masterbrand. In the interface the user sees "Cleat" and the mode names — the
 sub-brand names are for marketing, support and the roadmap, not for chrome.
 
-**On Nivora Circle:** hold it. Peer support is genuinely valuable and it is also
+**On Cleat Circle:** hold it. Peer support is genuinely valuable and it is also
 the single highest-risk surface in a product like this — one bad actor in a
 recovery community does real harm, and moderation is a staffing problem, not a
 feature. Ship it when you can staff it.
@@ -145,7 +158,7 @@ feature. Ship it when you can staff it.
 
 ## 4. Positioning
 
-**Primary: Nivora — Rebuild your life.**
+**Primary: Cleat — Rebuild your life.**
 
 **Secondary, for challenger contexts: Recovery without the sermon.**
 
@@ -168,7 +181,7 @@ Just recovery.
 
 Use it in full or not at all. Do not shorten it to three lines for a banner.
 
-### What Nivora is not
+### What Cleat is not
 
 Not an app for addicts. Not a sobriety counter. Not a clinic. Not a wellness
 brand. Not a friend who is always available.
@@ -179,7 +192,7 @@ comfortable having open on a train.
 
 ### The one-sentence positioning
 
-> For people who want to leave an addiction and build a life that holds, Nivora
+> For people who want to leave an addiction and build a life that holds, Cleat
 > is a secular recovery platform that asks what is happening in your life that
 > makes you want to use — and then helps you change it. Unlike sobriety trackers,
 > it treats the counter as the least interesting thing about recovery.
@@ -252,7 +265,7 @@ wellness app. Influencer self-help.
 
 ## 7. App Store and Google Play
 
-**Listing name:** `Nivora` (not "Nivora — Recovery Coach"; the subtitle carries
+**Listing name:** `Cleat` (not "Cleat — Recovery Coach"; the subtitle carries
 that and a bare masterbrand ages better).
 
 **Subtitle / short description:** `Rebuild your life.`
@@ -286,7 +299,7 @@ Things I could not decide for you, in rough priority order:
 2. **Consumer, clinic, or both?** The platform is multi-tenant and can serve
    both, but the brand cannot be neutral about it forever — a clinic-first brand
    and a consumer-first brand make opposite choices about tone and pricing.
-3. **What does Nivora cost?** A free tier that gates the acute craving flow
+3. **What does Cleat cost?** A free tier that gates the acute craving flow
    behind a paywall would be indefensible. Whatever the model, Reset and Now stay
    free.
 4. **Who moderates Circle?** Answer before building it.

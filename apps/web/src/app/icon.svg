@@ -1,17 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <!--
-    The Nivora mark: an arc opened at the top, with the terminal rising past the
-    circle it came from. The cycle broken, moving up.
+    The Cleat mark: a horn cleat — the fitting you lay a line around so it holds.
+    Not strength, grip. The line is not tied and not knotted; it holds because of
+    the shape it is laid against, and it comes free the moment you want it to.
 
-    Abstract on purpose. No bottles, no pills, no chains, no silhouettes at
-    windows — nothing that tells a bystander glancing at the tab what the person
-    is dealing with. It has to read as a company at 16px, not as a support group.
+    Abstract enough that a non-sailor just sees a mark. Nothing here tells a
+    bystander glancing at the tab what the person is dealing with.
   -->
   <rect width="32" height="32" rx="7" fill="#0a0b0d"/>
-  <g fill="none" stroke="#dda05a" stroke-width="3" stroke-linecap="round">
-    <!-- The open cycle: sweeps from the top gap clockwise round to the right. -->
-    <path d="M13.4 7.1a9.2 9.2 0 1 0 11.4 11.6"/>
-    <!-- The terminal, rising clear of it. -->
-    <path d="M19.6 12.4 L25.4 6.6"/>
+  <g fill="none" stroke="#dda05a" stroke-width="2.6" stroke-linecap="round">
+    <!-- The bar, and the two horns turning up at its ends. -->
+    <path d="M6 13 H26" />
+    <path d="M6 13 L2.5 8.5" />
+    <path d="M26 13 L29.5 8.5" />
+    <!-- The base it stands on. -->
+    <path d="M16 13 V25" />
   </g>
 </svg>

@@ -1,4 +1,4 @@
-# Nivora API image.
+# Cleat API image.
 #
 # Deliberately no `# syntax=` directive: it makes every build fetch a frontend
 # image from Docker Hub first, which fails on restricted or air-gapped networks.
@@ -25,9 +25,9 @@ COPY packages/i18n/package.json packages/i18n/
 COPY apps/api/package.json apps/api/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile \
-      --filter @nivora/api... \
-      --filter @nivora/core \
-      --filter @nivora/i18n
+      --filter @cleat/api... \
+      --filter @cleat/core \
+      --filter @cleat/i18n
 
 # ------------------------------------------------------------------ build ---
 FROM deps AS build
@@ -35,9 +35,9 @@ COPY tsconfig.base.json ./
 COPY packages/core packages/core
 COPY packages/i18n packages/i18n
 COPY apps/api apps/api
-RUN pnpm --filter @nivora/core build \
- && pnpm --filter @nivora/i18n build \
- && pnpm --filter @nivora/api build
+RUN pnpm --filter @cleat/core build \
+ && pnpm --filter @cleat/i18n build \
+ && pnpm --filter @cleat/api build
 
 # Strip dev dependencies and flatten the workspace links into a self-contained
 # tree, so the runtime stage needs no pnpm and no workspace at all.
@@ -50,7 +50,7 @@ RUN pnpm --filter @nivora/core build \
 # `deploy` copies the whole package directory regardless of the `files` field, so
 # the build inputs are removed explicitly — the runtime image should contain what
 # runs and nothing else.
-RUN pnpm --filter @nivora/api --prod --legacy deploy /deploy \
+RUN pnpm --filter @cleat/api --prod --legacy deploy /deploy \
  && rm -rf /deploy/src /deploy/tsconfig.json /deploy/vitest.config.ts /deploy/Dockerfile
 
 # ---------------------------------------------------------------- runtime ---

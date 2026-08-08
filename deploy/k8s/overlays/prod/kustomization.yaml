@@ -1,15 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: nivora
+namespace: cleat
 
 resources:
   - ../../base
 
 replicas:
-  - name: nivora-api
+  - name: cleat-api
     count: 3
-  - name: nivora-web
+  - name: cleat-web
     count: 2
 
 # Production uses a managed database with backups and point-in-time recovery.
@@ -21,22 +21,22 @@ patches:
       apiVersion: apps/v1
       kind: StatefulSet
       metadata:
-        name: nivora-postgres
-        namespace: nivora
+        name: cleat-postgres
+        namespace: cleat
   - patch: |
       $patch: delete
       apiVersion: v1
       kind: Service
       metadata:
-        name: nivora-postgres
-        namespace: nivora
+        name: cleat-postgres
+        namespace: cleat
   - patch: |
       $patch: delete
       apiVersion: networking.k8s.io/v1
       kind: NetworkPolicy
       metadata:
         name: postgres
-        namespace: nivora
+        namespace: cleat
   - target:
       kind: NetworkPolicy
       name: api
@@ -45,7 +45,7 @@ patches:
         path: /spec/egress/0
   - target:
       kind: ConfigMap
-      name: nivora-config
+      name: cleat-config
     patch: |
       - op: replace
         path: /data/LOG_LEVEL

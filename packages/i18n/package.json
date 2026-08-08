@@ -1,8 +1,8 @@
 {
-  "name": "@nivora/i18n",
+  "name": "@cleat/i18n",
   "version": "1.0.0",
   "private": true,
-  "description": "Swedish and English catalogs for Nivora. The Swedish catalog is the source of truth; English is type-checked against it.",
+  "description": "Swedish and English catalogs for Cleat. The Swedish catalog is the source of truth; English is type-checked against it.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

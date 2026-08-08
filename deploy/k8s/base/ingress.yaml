@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nivora
-  namespace: nivora
+  name: cleat
+  namespace: cleat
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
@@ -16,31 +16,31 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - app.nivora.example
-        - api.nivora.example
-      secretName: nivora-tls
+        - app.cleat.example
+        - api.cleat.example
+      secretName: cleat-tls
   rules:
-    - host: api.nivora.example
+    - host: api.cleat.example
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: nivora-api
+                name: cleat-api
                 port:
                   number: 80
-    # Organisation tenants are addressed by subdomain (clinic.nivora.example)
+    # Organisation tenants are addressed by subdomain (clinic.cleat.example)
     # and resolved server-side. Note that after login the tenant always comes
     # from the signed token, so the hostname cannot be used to reach another
     # organisation's data.
-    - host: app.nivora.example
+    - host: app.cleat.example
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: nivora-web
+                name: cleat-web
                 port:
                   number: 80

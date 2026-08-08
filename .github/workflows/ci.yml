@@ -25,13 +25,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: nivora
-          POSTGRES_PASSWORD: nivora
-          POSTGRES_DB: nivora
+          POSTGRES_USER: cleat
+          POSTGRES_PASSWORD: cleat
+          POSTGRES_DB: cleat
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U nivora"
+          --health-cmd="pg_isready -U cleat"
           --health-interval=5s
           --health-timeout=3s
           --health-retries=10
@@ -53,8 +53,8 @@ jobs:
 
       - name: Build shared packages
         run: |
-          pnpm --filter @nivora/core build
-          pnpm --filter @nivora/i18n build
+          pnpm --filter @cleat/core build
+          pnpm --filter @cleat/i18n build
 
       - name: Typecheck
         run: pnpm -r typecheck
@@ -62,16 +62,16 @@ jobs:
       - name: Test
         run: pnpm -r test
         env:
-          DATABASE_URL: postgres://nivora:nivora@localhost:5432/nivora
+          DATABASE_URL: postgres://cleat:cleat@localhost:5432/cleat
           JWT_SECRET: ci-secret-that-is-long-enough-for-hs256-signing
           NODE_ENV: test
           LOG_LEVEL: error
 
       - name: Build API
-        run: pnpm --filter @nivora/api build
+        run: pnpm --filter @cleat/api build
 
       - name: Build web
-        run: pnpm --filter @nivora/web build
+        run: pnpm --filter @cleat/web build
 
   images:
     name: Build container images

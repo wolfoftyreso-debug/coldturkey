@@ -1,8 +1,8 @@
 /**
- * Nivora's core principles, used as short recurring lines in the interface.
+ * Cleat's core principles, used as short recurring lines in the interface.
  *
  * They are short on purpose: in an acute craving, a sentence is the most a
- * person can hold. Each key resolves to a line in `@nivora/i18n`.
+ * person can hold. Each key resolves to a line in `@cleat/i18n`.
  */
 export const MANTRAS = [
   'mantra.craving_is_not_command',

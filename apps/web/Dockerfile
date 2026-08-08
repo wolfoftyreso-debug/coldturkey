@@ -1,4 +1,4 @@
-# Nivora web image, using Next.js standalone output so the runtime layer is
+# Cleat web image, using Next.js standalone output so the runtime layer is
 # a few megabytes of server plus static assets rather than the whole workspace.
 #
 # Note the build argument: NEXT_PUBLIC_* values are inlined at build time, so the
@@ -19,9 +19,9 @@ COPY packages/i18n/package.json packages/i18n/
 COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile \
-      --filter @nivora/web... \
-      --filter @nivora/core \
-      --filter @nivora/i18n
+      --filter @cleat/web... \
+      --filter @cleat/core \
+      --filter @cleat/i18n
 
 FROM deps AS build
 ARG NEXT_PUBLIC_API_URL=http://localhost:8080
@@ -33,9 +33,9 @@ COPY tsconfig.base.json ./
 COPY packages/core packages/core
 COPY packages/i18n packages/i18n
 COPY apps/web apps/web
-RUN pnpm --filter @nivora/core build \
- && pnpm --filter @nivora/i18n build \
- && pnpm --filter @nivora/web build
+RUN pnpm --filter @cleat/core build \
+ && pnpm --filter @cleat/i18n build \
+ && pnpm --filter @cleat/web build
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production

@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   // Workspace packages ship compiled ESM; Next still needs to know they are part
   // of the build rather than external node_modules.
-  transpilePackages: ['@nivora/core', '@nivora/i18n'],
+  transpilePackages: ['@cleat/core', '@cleat/i18n'],
   output: 'standalone',
   poweredByHeader: false,
   async headers() {

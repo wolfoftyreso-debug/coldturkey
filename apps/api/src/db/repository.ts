@@ -6,7 +6,7 @@ import type {
   RecoverySnapshot,
   RelapseEvent,
   SupportContact,
-} from '@nivora/core';
+} from '@cleat/core';
 import type { Client } from './pool.js';
 
 /**

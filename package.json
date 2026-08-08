@@ -1,23 +1,23 @@
 {
-  "name": "nivora",
+  "name": "cleat",
   "version": "1.0.0",
   "private": true,
-  "description": "Nivora — secular recovery and addiction support coach. Multi-tenant platform with web and mobile clients.",
+  "description": "Cleat — secular recovery and addiction support coach. Multi-tenant platform with web and mobile clients.",
   "license": "MIT",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "pnpm -r --filter=./packages/** build && pnpm --filter @nivora/api build",
+    "build": "pnpm -r --filter=./packages/** build && pnpm --filter @cleat/api build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "dev:api": "pnpm --filter @nivora/api dev",
-    "dev:web": "pnpm --filter @nivora/web dev",
-    "dev:mobile": "pnpm --filter @nivora/mobile start",
-    "db:migrate": "pnpm --filter @nivora/api migrate",
-    "db:seed": "pnpm --filter @nivora/api seed",
+    "dev:api": "pnpm --filter @cleat/api dev",
+    "dev:web": "pnpm --filter @cleat/web dev",
+    "dev:mobile": "pnpm --filter @cleat/mobile start",
+    "db:migrate": "pnpm --filter @cleat/api migrate",
+    "db:seed": "pnpm --filter @cleat/api seed",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml,yml}\""
   },
   "devDependencies": {

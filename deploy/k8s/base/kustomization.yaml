@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: nivora
+namespace: cleat
 
 # `labels` rather than the deprecated `commonLabels`, and deliberately without
 # selector injection: a Deployment's selector is immutable once created, so
@@ -10,7 +10,7 @@ namespace: nivora
 labels:
   - includeSelectors: false
     pairs:
-      app.kubernetes.io/part-of: nivora
+      app.kubernetes.io/part-of: cleat
       app.kubernetes.io/managed-by: kustomize
 
 resources:
@@ -23,7 +23,7 @@ resources:
   - networkpolicy.yaml
 
 images:
-  - name: ghcr.io/wolfoftyreso-debug/nivora-api
+  - name: ghcr.io/wolfoftyreso-debug/cleat-api
     newTag: latest
-  - name: ghcr.io/wolfoftyreso-debug/nivora-web
+  - name: ghcr.io/wolfoftyreso-debug/cleat-web
     newTag: latest

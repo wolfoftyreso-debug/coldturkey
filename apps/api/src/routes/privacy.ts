@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { translate, type Locale } from '@nivora/i18n';
+import { translate, type Locale } from '@cleat/i18n';
 import { withTenant } from '../db/pool.js';
 import { listCoachMessages, loadSnapshot, writeAudit } from '../db/repository.js';
 import { badRequest } from '../lib/errors.js';
@@ -58,7 +58,7 @@ export async function privacyRoutes(app: FastifyInstance): Promise<void> {
 
       return reply
         .header('content-type', 'application/json; charset=utf-8')
-        .header('content-disposition', 'attachment; filename="nivora-export.json"')
+        .header('content-disposition', 'attachment; filename="cleat-export.json"')
         .send({
           exportedAt: new Date().toISOString(),
           user: publicUser(user),

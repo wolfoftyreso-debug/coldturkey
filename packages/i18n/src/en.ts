@@ -8,7 +8,7 @@ import type { Catalog } from './sv.js';
  */
 export const en: Catalog = {
   // ---- Brand ----
-  'app.name': 'Nivora',
+  'app.name': 'Cleat',
   'app.tagline': 'Rebuild your life.',
   'app.challenger': 'Recovery without the sermon.',
   'app.creed.religion': 'No religion.',
@@ -194,7 +194,7 @@ export const en: Catalog = {
   'safety.resourcesTitle': 'Help you can call right now',
   'safety.helpMeSay': 'Help me put into words what to say to a clinician',
   'safety.disclaimer':
-    'Nivora is a coach, not care. It does not replace a doctor, psychiatry, addiction treatment or emergency services.',
+    'Cleat is a coach, not care. It does not replace a doctor, psychiatry, addiction treatment or emergency services.',
 
   'safety.detox.none': '',
   'safety.detox.alcohol':
@@ -574,7 +574,7 @@ export const en: Catalog = {
   'support.phone': 'Phone',
   'support.primary': 'Call this one first',
   'support.noRequirement':
-    'Nivora will never require you to join any organisation, group or movement.',
+    'Cleat will never require you to join any organisation, group or movement.',
 
   // ---- Coach ----
   'coach.title': 'Coach',
@@ -602,7 +602,7 @@ export const en: Catalog = {
   'auth.invalid': 'Wrong email or password.',
   'auth.weakPassword': 'Password must be at least 12 characters.',
   'auth.emailTaken': 'There is already an account with that email.',
-  'onboarding.welcome': 'Welcome to Nivora',
+  'onboarding.welcome': 'Welcome to Cleat',
   'onboarding.intro':
     "This isn't a programme to complete. It's a tool for making the next good decision.",
   'onboarding.pickSubstance': 'What do you want to leave behind?',

@@ -1,16 +1,16 @@
-# Nivora — master build prompt
+# Cleat — master build prompt
 
 The specification the product is built from. It is the source of truth for what
-Nivora does and refuses to do; `apps/api/src/coach/prompt.ts` holds the runtime
+Cleat does and refuses to do; `apps/api/src/coach/prompt.ts` holds the runtime
 system prompt derived from Part II.
 
 ---
 
 # PART I — THE PRODUCT
 
-## 1. What Nivora is
+## 1. What Cleat is
 
-Nivora is a secular recovery platform for people who want to leave an addiction
+Cleat is a secular recovery platform for people who want to leave an addiction
 and build a life that holds.
 
 It is **not** an app for addicts, a sobriety counter, a clinic, a wellness brand,
@@ -40,7 +40,7 @@ Just recovery.
 
 The product's spine. Everything is reachable from one of these.
 
-### 1 — I'M CRAVING (*Nivora Reset*)
+### 1 — I'M CRAVING (*Cleat Reset*)
 
 Acute help the moment the craving arrives. One question per screen, everything a
 tap, no typing required to get help.
@@ -56,23 +56,23 @@ with people who are using, the plan leads with leaving — not with resisting.
 Contains: the ten-minute protocol, urge surfing, who to call first, the person's
 own why statement, and **Relapse Autopsy** (the "I messed up" flow).
 
-### 2 — I'M STRUGGLING (*Nivora Now*)
+### 2 — I'M STRUGGLING (*Cleat Now*)
 
 Losing your footing, but not in an acute craving. The coach, immediately, with
 the ten-minute protocol one tap away. This is the mode for the hour before the
 craving, which is the hour that actually decides things.
 
-### 3 — MY RECOVERY (*Nivora Path*)
+### 3 — MY RECOVERY (*Cleat Path*)
 
 Personal plan, current phase, why statement, future self, milestones, support
 network, daily check-ins.
 
-### 4 — MY PATTERNS (*Nivora Patterns*)
+### 4 — MY PATTERNS (*Cleat Patterns*)
 
 The personal recovery graph. Triggers, behaviours, recurring patterns, and the
 seven indicators. Every claim carries its evidence count.
 
-### 5 — REBUILD MY LIFE (*Nivora Rebuild*)
+### 5 — REBUILD MY LIFE (*Cleat Rebuild*)
 
 Sleep, health, home, money, work, exercise, social life, relationships, identity,
 purpose. Structured on SAMHSA's four dimensions — health, home, purpose,
@@ -204,7 +204,7 @@ and the coach transcript.
 
 ## Identity
 
-You are Nivora — a secular recovery coach for people who want to leave an
+You are Cleat — a secular recovery coach for people who want to leave an
 addiction and build a working life.
 
 You are not a religious organisation, not a preacher, not a moral judge, and not

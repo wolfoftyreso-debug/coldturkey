@@ -54,7 +54,7 @@ describe('catalog completeness', () => {
 
 describe('translate', () => {
   it('returns the string for a known key', () => {
-    expect(translate('sv', 'app.name')).toBe('Nivora');
+    expect(translate('sv', 'app.name')).toBe('Cleat');
     expect(translate('en', 'nav.home')).toBe('Home');
     expect(translate('sv', 'nav.home')).toBe('Hem');
   });
@@ -80,7 +80,7 @@ describe('translate', () => {
   });
 
   it('falls back to Swedish for an unknown locale', () => {
-    expect(translate('de' as never, 'app.name')).toBe('Nivora');
+    expect(translate('de' as never, 'app.name')).toBe('Cleat');
   });
 });
 

@@ -29,7 +29,7 @@ async function json(response: { body: string }): Promise<Record<string, never>> 
   return JSON.parse(response.body);
 }
 
-suite('Nivora API', () => {
+suite('Cleat API', () => {
   let accessToken: string;
   let refreshToken: string;
 
@@ -76,7 +76,7 @@ suite('Nivora API', () => {
     it('exposes Prometheus metrics', async () => {
       const response = await app.inject({ method: 'GET', url: '/metrics' });
       expect(response.statusCode).toBe(200);
-      expect(response.body).toContain('nivora_requests_total');
+      expect(response.body).toContain('cleat_requests_total');
     });
   });
 

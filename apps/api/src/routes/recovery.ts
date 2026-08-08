@@ -28,8 +28,8 @@ import {
   URGE_SURFING_SCRIPT,
   type DomainProgress,
   type LifeDomainId,
-} from '@nivora/core';
-import { localizeInsightParams, translate, type Locale } from '@nivora/i18n';
+} from '@cleat/core';
+import { localizeInsightParams, translate, type Locale } from '@cleat/i18n';
 import { withTenant } from '../db/pool.js';
 import {
   createCraving,

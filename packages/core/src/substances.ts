@@ -3,7 +3,7 @@ import type { SubstanceKind } from './types.js';
 /**
  * How dangerous unsupervised withdrawal is for a given substance.
  *
- * This drives whether Nivora is allowed to coach someone through stopping
+ * This drives whether Cleat is allowed to coach someone through stopping
  * at all, or must instead tell them plainly to get medical help first. It is
  * never softened for motivational reasons.
  */
@@ -26,7 +26,7 @@ export interface SubstanceProfile {
   unitKey: string;
   /**
    * Milestone timeline in hours since the last use. Keys resolve to text in
-   * `@nivora/i18n`; the wording there is deliberately non-clinical and
+   * `@cleat/i18n`; the wording there is deliberately non-clinical and
    * describes what people commonly report rather than promising outcomes.
    */
   milestones: { hours: number; key: string }[];

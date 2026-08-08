@@ -1,5 +1,5 @@
 /*
- * Nivora visual system.
+ * Cleat visual system.
  *
  * The brief rules out a lot: no hospital, no treatment centre, no twelve-step
  * iconography, no wellness pastel, no influencer self-help. What is left is a
@@ -22,7 +22,7 @@
   --text-faint: #6b7280;
 
   /* Brass. Warm enough to feel human, gold enough to read as premium rather
-     than as a warning — the distinction that separates Nivora from every other
+     than as a warning — the distinction that separates Cleat from every other
      orange-accented health app. */
   --accent: #dda05a;
   --accent-soft: rgba(221, 160, 90, 0.14);

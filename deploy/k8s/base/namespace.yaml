@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: nivora
+  name: cleat
   labels:
-    app.kubernetes.io/part-of: nivora
+    app.kubernetes.io/part-of: cleat
     # Enforce the restricted Pod Security Standard. Everything here runs
     # non-root with no privilege escalation; this makes that a rule rather than
     # a convention someone can quietly break in a later manifest.
