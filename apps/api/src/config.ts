@@ -29,6 +29,14 @@ const schema = z.object({
 
   CORS_ORIGINS: z.string().default('*'),
 
+  // Per-IP request ceiling. Generous by default because opening the craving
+  // screen repeatedly is the product working as intended, and configurable
+  // because a shared-NAT deployment and a single-user one need different
+  // numbers. Load profiling also needs to be able to raise it — a benchmark
+  // that measures the rate limiter is a benchmark that measures nothing.
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+
   // Mail. Without SMTP_HOST the API falls back to a mailer that logs a digest
   // instead of sending, so development needs no relay — but see
   // `requireMailInProduction` below: shipping that fallback to production
@@ -45,6 +53,12 @@ const schema = z.object({
 
   /** Where reset and verification links point. Must be the public web origin. */
   PUBLIC_WEB_URL: z.string().default('http://localhost:3000'),
+
+  // Observability. Without a URL, reports go to the log — correct for a
+  // deployment that has not decided where to send them, and never silent.
+  ERROR_REPORTING_URL: z.string().optional(),
+  /** Stamped on every error report so a regression can be tied to a deploy. */
+  RELEASE: z.string().default('dev'),
 });
 
 export type Config = z.infer<typeof schema> & { corsOrigins: string[] | true };

@@ -119,3 +119,25 @@ jobs:
           curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.5.0/kustomize_v5.5.0_linux_amd64.tar.gz" | tar xz
           ./kustomize build deploy/k8s/overlays/dev > /dev/null
           ./kustomize build deploy/k8s/overlays/prod > /dev/null
+
+      # Validate the Prometheus config and alert rules, not just their
+      # ConfigMap wrapper. A ConfigMap can be perfectly valid Kubernetes and
+      # still hold a config Prometheus refuses to load — which is exactly what
+      # the first version of that file did.
+      - name: Validate Prometheus config and rules
+        run: |
+          python3 - <<'PY'
+          import yaml
+          docs = list(yaml.safe_load_all(open('deploy/k8s/platform/observability/observability.yaml')))
+          for d in docs:
+              if not d or d.get('kind') != 'ConfigMap':
+                  continue
+              if d['metadata']['name'] == 'prometheus-config':
+                  open('/tmp/prom.yml', 'w').write(d['data']['prometheus.yml'])
+              if d['metadata']['name'] == 'prometheus-rules':
+                  open('/tmp/rules.yaml', 'w').write(d['data']['cleat.yaml'])
+          PY
+          docker run --rm -v /tmp/prom.yml:/prom.yml:ro -v /tmp/rules.yaml:/rules.yaml:ro \
+            --entrypoint promtool prom/prometheus:v3.2.1 check config /prom.yml
+          docker run --rm -v /tmp/rules.yaml:/rules.yaml:ro \
+            --entrypoint promtool prom/prometheus:v3.2.1 check rules /rules.yaml

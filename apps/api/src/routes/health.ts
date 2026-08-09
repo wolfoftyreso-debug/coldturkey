@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { getPool } from '../db/pool.js';
 import { coachEnabled } from '../coach/claude.js';
+import { render } from '../observability/metrics.js';
 
 /**
  * Kubernetes probes and metrics.
@@ -9,14 +10,11 @@ import { coachEnabled } from '../coach/claude.js';
  * `/readyz` is a readiness probe and actually touches the database — a pod that
  * cannot reach Postgres must be pulled out of the service, not left serving
  * errors to someone in the middle of a craving.
+ *
+ * The metric definitions live in `observability/metrics.ts`, including the rule
+ * that no metric may carry anything about a person.
  */
-export const metrics = {
-  requests: 0,
-  errors: 0,
-  coachModelCalls: 0,
-  coachLocalFallbacks: 0,
-  safetyEmergencies: 0,
-};
+export { metrics } from '../observability/metrics.js';
 
 export async function healthRoutes(app: FastifyInstance): Promise<void> {
   app.get('/healthz', async () => ({ status: 'ok', uptime: process.uptime() }));
@@ -32,31 +30,7 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.get('/metrics', async (_request, reply) => {
-    const memory = process.memoryUsage();
-    const lines = [
-      '# HELP cleat_requests_total Total HTTP requests handled.',
-      '# TYPE cleat_requests_total counter',
-      `cleat_requests_total ${metrics.requests}`,
-      '# HELP cleat_errors_total Total HTTP responses with status >= 500.',
-      '# TYPE cleat_errors_total counter',
-      `cleat_errors_total ${metrics.errors}`,
-      '# HELP cleat_coach_model_calls_total Coach replies produced by the language model.',
-      '# TYPE cleat_coach_model_calls_total counter',
-      `cleat_coach_model_calls_total ${metrics.coachModelCalls}`,
-      '# HELP cleat_coach_local_total Coach replies produced by the built-in local coach.',
-      '# TYPE cleat_coach_local_total counter',
-      `cleat_coach_local_total ${metrics.coachLocalFallbacks}`,
-      '# HELP cleat_safety_emergencies_total Messages that triggered the emergency safety path.',
-      '# TYPE cleat_safety_emergencies_total counter',
-      `cleat_safety_emergencies_total ${metrics.safetyEmergencies}`,
-      '# HELP cleat_process_resident_memory_bytes Resident memory size in bytes.',
-      '# TYPE cleat_process_resident_memory_bytes gauge',
-      `cleat_process_resident_memory_bytes ${memory.rss}`,
-      '# HELP cleat_process_uptime_seconds Process uptime in seconds.',
-      '# TYPE cleat_process_uptime_seconds gauge',
-      `cleat_process_uptime_seconds ${Math.round(process.uptime())}`,
-    ];
-    return reply.header('content-type', 'text/plain; version=0.0.4').send(`${lines.join('\n')}\n`);
-  });
+  app.get('/metrics', async (_request, reply) =>
+    reply.header('content-type', 'text/plain; version=0.0.4').send(render()),
+  );
 }

@@ -16,10 +16,20 @@
   --surface-hover: #21252c;
   --border: #262a31;
   --border-strong: #38414c;
+  /* Form controls need 3:1 against their background: the border is how you
+     see where to type. --border and --border-strong are decorative and are
+     both below that, so inputs use their own token. */
+  --border-input: #5b6675;
 
   --text: #f0f1f3;
   --text-dim: #a0a6af;
-  --text-faint: #6b7280;
+  /* Raised from #6b7280, which measured 4.07:1 on the page background and
+     3.78:1 on a card — under the 4.5:1 WCAG AA needs for body text. This is
+     the token used for labels and secondary lines, so it was failing in
+     exactly the places somebody with low vision is already working hardest.
+     #7b8393 clears it on both surfaces (5.17 and 4.80) without brightening
+     the palette. Checked by a script, not by eye. */
+  --text-faint: #7b8393;
 
   /* Brass. Warm enough to feel human, gold enough to read as premium rather
      than as a warning — the distinction that separates Cleat from every other
@@ -356,7 +366,9 @@ select {
   width: 100%;
   padding: 13px 14px;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  /* Not --border: at 1.37:1 the edge of a field was invisible to anyone with
+     reduced contrast sensitivity, which on a form is not decoration. */
+  border: 1px solid var(--border-input);
   background: var(--bg);
   color: var(--text);
   font-family: inherit;

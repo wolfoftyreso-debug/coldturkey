@@ -7,8 +7,11 @@ import { loadConfig } from './config.js';
 import { AppError } from './lib/errors.js';
 import { authRoutes } from './routes/auth.js';
 import { coachRoutes } from './routes/coach.js';
-import { healthRoutes, metrics } from './routes/health.js';
+import { healthRoutes } from './routes/health.js';
+import { recordRequest } from './observability/metrics.js';
+import { reportError } from './observability/errors.js';
 import { publicRoutes } from './routes/public.js';
+import { openapiRoutes } from './routes/openapi.js';
 import { privacyRoutes } from './routes/privacy.js';
 import { recoveryRoutes } from './routes/recovery.js';
 
@@ -47,14 +50,17 @@ export async function buildApp(): Promise<FastifyInstance> {
   // repeatedly are different problems; the global limit is generous because the
   // second case is the product working as intended.
   await app.register(rateLimit, {
-    max: 300,
-    timeWindow: '1 minute',
+    max: config.RATE_LIMIT_MAX,
+    timeWindow: config.RATE_LIMIT_WINDOW,
     allowList: ['/healthz', '/readyz', '/metrics'],
   });
 
-  app.addHook('onResponse', async (_request, reply) => {
-    metrics.requests += 1;
-    if (reply.statusCode >= 500) metrics.errors += 1;
+  app.addHook('onResponse', async (request, reply) => {
+    // The route template, never the resolved URL. `/v1/cravings/:id` is an
+    // operational fact; `/v1/cravings/8f3e…` is a person's craving log turning
+    // up in a metrics store that gets shared far more casually than a database.
+    const route = request.routeOptions?.url ?? 'unmatched';
+    recordRequest(request.method, route, reply.statusCode, reply.elapsedTime);
   });
 
   app.setErrorHandler((error, request, reply) => {
@@ -83,9 +89,21 @@ export async function buildApp(): Promise<FastifyInstance> {
         .send({ error: { code: 'rate_limited', message: 'Too many requests' } });
     }
 
-    // Unexpected: log it with the request id, tell the client nothing useful to
-    // an attacker.
-    request.log.error({ err: error }, 'unhandled error');
+    // Unexpected: report it, log it with the request id, and tell the client
+    // nothing useful to an attacker. Reporting is not awaited — a reporting
+    // outage must not become an application outage, and the person waiting on
+    // this response is not interested in either.
+    void reportError(
+      error,
+      {
+        route: request.routeOptions?.url,
+        method: request.method,
+        statusCode: 500,
+        userId: (request as { user?: { id?: string } }).user?.id,
+        tenantId: (request as { tenantId?: string }).tenantId,
+      },
+      request.log,
+    );
     return reply
       .code(500)
       .send({ error: { code: 'internal_error', message: 'Something went wrong' } });
@@ -97,6 +115,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(healthRoutes);
   await app.register(publicRoutes);
+  await app.register(openapiRoutes);
   await app.register(authRoutes);
   await app.register(recoveryRoutes);
   await app.register(coachRoutes);

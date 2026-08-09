@@ -17,75 +17,18 @@ import {
   sendPasswordResetMail,
   sendVerificationMail,
 } from '../auth/recovery.js';
+import {
+  FAILURES_PER_ACCOUNT,
+  FAILURES_PER_IP,
+  RESETS_PER_ACCOUNT,
+  accountKey,
+  clearFailures,
+  ipKey,
+  isLockedOut,
+  recordFailure,
+  resetKey,
+} from '../auth/lockout.js';
 import { authenticate, currentUser } from '../plugins/auth.js';
-
-/**
- * Credential-stuffing brake.
- *
- * The global limit is 300/minute because opening the craving screen repeatedly
- * is the product working as intended. Applying that same number to the login
- * endpoint means 300 password guesses a minute against an account holding
- * somebody's relapse history.
- *
- * Two counters, because one attacker hammering a single account and one
- * spraying many look nothing alike. The per-account limit is tight. The per-IP
- * limit is deliberately far looser, because mobile carriers put thousands of
- * real people behind one address via CGNAT — a tight per-IP number does not
- * stop an attacker with a botnet and does lock out everyone on a phone
- * network. That asymmetry is the whole design.
- *
- * Only failures count. An earlier version incremented on every attempt, which
- * meant ordinary successful logins consumed the quota and the shared-IP case
- * locked out immediately.
- *
- * Both counters are in memory, which is the honest limit here: with more than
- * one replica each pod counts separately, so the effective ceiling multiplies
- * by replica count. A shared store is the follow-up; a stricter imperfect
- * number today still beats 300.
- */
-const FAILURES_PER_IP = 100;
-const FAILURES_PER_ACCOUNT = 5;
-/** Reset requests are cheaper to abuse as a mail bomb than as a guess. */
-const RESETS_PER_ACCOUNT = 3;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-
-interface Attempt {
-  failures: number;
-  resetAt: number;
-}
-
-const loginFailures = new Map<string, Attempt>();
-
-function isLockedOut(key: string, limit: number, now: number): boolean {
-  const existing = loginFailures.get(key);
-  if (!existing || existing.resetAt <= now) return false;
-  return existing.failures >= limit;
-}
-
-function recordFailure(key: string, now: number): void {
-  const existing = loginFailures.get(key);
-  if (!existing || existing.resetAt <= now) {
-    loginFailures.set(key, { failures: 1, resetAt: now + LOGIN_WINDOW_MS });
-    return;
-  }
-  existing.failures += 1;
-}
-
-/** Clear on success, so someone who mistypes twice and then gets it right is not punished. */
-function clearFailures(keys: string[]): void {
-  for (const key of keys) loginFailures.delete(key);
-}
-
-/**
- * Drop expired entries so the map cannot grow without bound on an endpoint
- * anyone can reach unauthenticated — otherwise the brake becomes the leak.
- */
-function sweepFailures(now: number): void {
-  if (loginFailures.size < 10_000) return;
-  for (const [key, attempt] of loginFailures) {
-    if (attempt.resetAt <= now) loginFailures.delete(key);
-  }
-}
 
 const registerBody = z.object({
   email: z.string().email(),
@@ -161,8 +104,31 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         action: 'auth.register',
       });
 
-      return { user, refreshToken: refresh.token };
+      // Issued inside the same transaction as the user, so an account can
+      // never exist without one.
+      const verification = await issueToken(client, {
+        tenantId: tenant.id,
+        userId: user.id,
+        purpose: 'email_verification',
+        ip: request.ip,
+      });
+
+      return { user, refreshToken: refresh.token, verification };
     });
+
+    // Sent after the commit, and a failure here does not fail the request.
+    // Registration succeeding while the mail fails is recoverable — the person
+    // can ask for it again — whereas rolling the registration back because a
+    // relay hiccuped loses the account they just made.
+    try {
+      await sendVerificationMail(
+        result.user.email,
+        result.user.locale as 'sv' | 'en',
+        result.verification.token,
+      );
+    } catch (error) {
+      request.log.error({ err: error }, 'verification mail failed');
+    }
 
     const accessToken = await signAccessToken({
       sub: result.user.id,
@@ -181,13 +147,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/v1/auth/login', async (request, reply) => {
     const body = loginBody.parse(request.body);
 
-    const now = Date.now();
-    sweepFailures(now);
-    const ipKey = `ip:${request.ip}`;
-    const accountKey = `account:${body.email.trim().toLowerCase()}`;
+    const byIp = ipKey(request.ip);
+    const byAccount = accountKey(body.email);
     if (
-      isLockedOut(ipKey, FAILURES_PER_IP, now) ||
-      isLockedOut(accountKey, FAILURES_PER_ACCOUNT, now)
+      (await isLockedOut(byIp, FAILURES_PER_IP)) ||
+      (await isLockedOut(byAccount, FAILURES_PER_ACCOUNT))
     ) {
       // Deliberately the same message as a wrong password: telling an attacker
       // they found a real account worth locking is free information.
@@ -222,12 +186,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     });
 
     if (!result) {
-      recordFailure(ipKey, now);
-      recordFailure(accountKey, now);
+      await recordFailure(byIp);
+      await recordFailure(byAccount);
       throw unauthorized('Invalid credentials');
     }
 
-    clearFailures([ipKey, accountKey]);
+    await clearFailures([byIp, byAccount]);
 
     const accessToken = await signAccessToken({
       sub: result.user.id,
@@ -320,18 +284,18 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const body = forgotBody.parse(request.body);
     const email = body.email.trim().toLowerCase();
 
-    const now = Date.now();
-    sweepFailures(now);
-    const ipKey = `reset-ip:${request.ip}`;
-    const accountKey = `reset:${email}`;
+    const byIp = ipKey(request.ip);
+    const byAccount = resetKey(email);
     if (
-      isLockedOut(ipKey, FAILURES_PER_IP, now) ||
-      isLockedOut(accountKey, RESETS_PER_ACCOUNT, now)
+      (await isLockedOut(byIp, FAILURES_PER_IP)) ||
+      (await isLockedOut(byAccount, RESETS_PER_ACCOUNT))
     ) {
+      // Still 202. A throttled request that answered differently would be the
+      // membership oracle this endpoint exists to avoid.
       return reply.code(202).send({ status: 'accepted' });
     }
-    recordFailure(ipKey, now);
-    recordFailure(accountKey, now);
+    await recordFailure(byIp);
+    await recordFailure(byAccount);
 
     const slug = tenantSlugFromRequest(
       request.headers['x-tenant'] as string | undefined,
@@ -423,7 +387,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     // mailbox, and leaving them locked out immediately after a successful
     // reset is the product fighting itself — especially since the lockout is
     // what sent many of them here.
-    if (resetEmail) clearFailures([`account:${resetEmail.trim().toLowerCase()}`]);
+    if (resetEmail) await clearFailures([accountKey(resetEmail), resetKey(resetEmail)]);
     return reply.send({ status: 'ok' });
   });
 

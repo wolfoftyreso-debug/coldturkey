@@ -7,6 +7,7 @@ import { createTenant, ensureDefaultTenant } from './db/tenants.js';
 import { hashPassword } from './auth/password.js';
 import { createUser } from './db/repository.js';
 import { issueToken } from './auth/recovery.js';
+import { buildReport } from './observability/errors.js';
 
 /**
  * End-to-end API tests against a real PostgreSQL instance.
@@ -81,6 +82,78 @@ suite('Cleat API', () => {
     });
   });
 
+  describe('observability leaks nothing about a person', () => {
+    it('labels metrics with the route template, never the resolved URL', async () => {
+      // Hit a route with an id in the path, then check the id is not in the
+      // metrics. A metrics store is scraped, kept for months and rendered on
+      // dashboards shared far more casually than a database.
+      const id = '11111111-2222-3333-4444-555555555555';
+      await app.inject({
+        method: 'PATCH',
+        url: `/v1/cravings/${id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { outcome: 'passed' },
+      });
+
+      const response = await app.inject({ method: 'GET', url: '/metrics' });
+      expect(response.body).not.toContain(id);
+      expect(response.body).toContain('/v1/cravings/:id');
+    });
+
+    it('records an unrecognised URL as "unmatched" rather than echoing it', async () => {
+      // A 404 must not put an attacker-chosen path into the metrics store, and
+      // must not create a new time series per probe.
+      await app.inject({ method: 'GET', url: '/v1/does-not-exist/secret-looking-value' });
+      const response = await app.inject({ method: 'GET', url: '/metrics' });
+      expect(response.body).not.toContain('secret-looking-value');
+      expect(response.body).toContain('route="unmatched"');
+    });
+
+    it('carries no tenant or user identifier in any metric', async () => {
+      const tenant = await ensureDefaultTenant();
+      const response = await app.inject({ method: 'GET', url: '/metrics' });
+      expect(response.body).not.toContain(tenant.id);
+      expect(response.body).not.toContain(alice);
+      // No label named after a person or an organisation, either.
+      expect(response.body).not.toMatch(/\b(user|tenant|email|patient)=/);
+    });
+
+    it('exposes latency as a histogram Prometheus can read', async () => {
+      const response = await app.inject({ method: 'GET', url: '/metrics' });
+      expect(response.body).toContain('# TYPE cleat_http_request_duration_ms histogram');
+      expect(response.body).toContain('cleat_http_request_duration_ms_bucket{');
+      expect(response.body).toContain('le="+Inf"');
+      expect(response.body).toContain('cleat_http_request_duration_ms_count{');
+    });
+
+    it('pseudonymises the user in an error report and keeps bodies out', () => {
+      const report = buildReport(new Error('boom while saving a craving'), {
+        route: '/v1/cravings/:id',
+        method: 'POST',
+        statusCode: 500,
+        userId: 'a-real-user-id',
+        tenantId: 'a-real-tenant-id',
+      });
+      expect(report.context.user).not.toBe('a-real-user-id');
+      expect(report.context.user).toMatch(/^[0-9a-f]{16}$/);
+      expect(report.context.tenant).not.toBe('a-real-tenant-id');
+      // Stable across reports, so the same person is recognisable without the
+      // reporter learning who they are.
+      expect(buildReport(new Error('again'), { userId: 'a-real-user-id' }).context.user).toBe(
+        report.context.user,
+      );
+      // Nothing in the shape can hold a request body.
+      expect(JSON.stringify(report)).not.toContain('password');
+      expect(Object.keys(report.context).sort()).toEqual([
+        'method',
+        'route',
+        'statusCode',
+        'tenant',
+        'user',
+      ]);
+    });
+  });
+
   describe('the public surface needs no account', () => {
     // The crisis numbers used to sit behind a login, so somebody who found the
     // product mid-crisis had to register before it would tell them what to
@@ -115,6 +188,32 @@ suite('Cleat API', () => {
       expect(body.level).toBe('emergency');
       expect(body.bypassCoach).toBe(true);
       expect(body.stored).toBe(false);
+    });
+
+    it('publishes an OpenAPI document that describes the endpoints that exist', async () => {
+      // /v1/public/meta advertises this path. An advertised document that
+      // 404s is the API lying about itself.
+      const meta = (await json(
+        await app.inject({ method: 'GET', url: '/v1/public/meta' }),
+      )) as never as { docs: string };
+
+      const response = await app.inject({ method: 'GET', url: meta.docs });
+      expect(response.statusCode).toBe(200);
+      const doc = (await json(response)) as never as {
+        openapi: string;
+        paths: Record<string, unknown>;
+      };
+      expect(doc.openapi).toMatch(/^3\./);
+
+      // Every documented path must actually answer. A spec describing routes
+      // that do not exist is worse than no spec.
+      for (const path of Object.keys(doc.paths)) {
+        const probe =
+          path === '/v1/public/safety/triage'
+            ? await app.inject({ method: 'POST', url: path, payload: { text: 'hej' } })
+            : await app.inject({ method: 'GET', url: path });
+        expect(probe.statusCode, `${path} is documented but did not answer`).toBeLessThan(400);
+      }
     });
 
     it('answers in the language the caller asked for', async () => {

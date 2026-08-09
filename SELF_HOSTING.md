@@ -250,6 +250,58 @@ Safety triage runs before the model in every case and cannot be disabled.
 
 ---
 
+## Observability
+
+`deploy/k8s/platform/observability/` runs Prometheus, Alertmanager and
+Grafana. The point is narrower than usual: not dashboards, but noticing that
+the craving screen has been failing since 2am before somebody's week goes past
+without the tool they were relying on.
+
+The alert rules worth knowing about:
+
+* **PostgresArchivingBroken** — WAL archiving failing means point-in-time
+  recovery has quietly stopped being possible. Nothing else reports this, and
+  it stays invisible until the restore that needed it.
+* **MailDeliveryFailing** — password reset is broken, which means people are
+  locked out of their own recovery history.
+* **ApiErrorRateHigh**, **ApiDown**, **NoRecentBackup**.
+
+The config and the rules are validated with `promtool` in CI, not only as
+Kubernetes objects. A ConfigMap can be perfectly valid Kubernetes and still
+contain a Prometheus config that refuses to load — which is exactly what
+happened on the first version of this file.
+
+**The `/metrics` endpoint carries nothing about a person.** No user id, no
+tenant id, no free text, route templates rather than resolved URLs, and an
+unmatched path recorded as `unmatched` rather than echoed. Enforced by tests
+in the API, because a metrics store is scraped, kept for months and rendered
+on dashboards shared far more casually than a database.
+
+Error reports are pseudonymised the same way: the user is a hash salted with a
+secret that never leaves the deployment, so the same person is recognisable
+across two reports without the error store learning who they are. No request
+bodies, no headers, no query strings. Point `ERROR_REPORTING_URL` at a
+self-hosted GlitchTip, or leave it unset and reports go to the log.
+
+## Capacity
+
+Measured on one process against a database on the same four-core machine, so
+treat these as a floor rather than a spec:
+
+| Endpoint | Saturates around | p99 at 50 concurrent |
+|---|---|---|
+| `GET /v1/dashboard` | ~990 req/s | 93 ms |
+| `POST /v1/coach/message` (local coach) | ~790 req/s | 87 ms |
+| `GET /v1/public/safety/resources` | ~6300 req/s | 16 ms |
+
+The work is database-bound, not CPU-bound, so CPU utilisation lags: latency
+degrades before the number moves. The HPA target is 60% rather than 70% for
+that reason.
+
+Note for anyone repeating this: the first run reported thousands of requests
+per second and was measuring nothing but the rate limiter saying no. Check
+the error count before believing a load test.
+
 ## What this does not give you
 
 Stated plainly, because a self-hosting guide that implies completeness is
@@ -266,10 +318,11 @@ worse than none:
   unused; coach transcripts and relapse history sit in the clear inside the
   database. Disk-level encryption is your storage layer's job and is not
   configured here.
-* **No error reporting.** A crash in production is currently invisible.
-* **No capacity profiling.** The HPA thresholds are a guess. Nobody has
-  measured what one pod handles.
-* **The login lockout has no shared store.** Counters are per-pod, so the
-  effective ceiling multiplies by replica count.
+* **No penetration test.** Nothing here has been attacked by anyone whose job
+  it is to attack it.
+* **No 2FA.** Password plus email recovery is the whole of the account
+  security story.
+* **No disaster-recovery run book beyond the restore drill above.** There is
+  no documented procedure for losing the whole cluster.
 
 See `DEEP_RESEARCH_BRIEF.md` for the full gap list and its reasoning.
