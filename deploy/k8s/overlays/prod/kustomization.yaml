@@ -12,9 +12,18 @@ replicas:
   - name: cleat-web
     count: 2
 
-# Production uses a managed database with backups and point-in-time recovery.
-# The in-cluster Postgres is for evaluation only, so it is removed here and
-# DATABASE_URL points elsewhere.
+# Production runs PostgreSQL through CloudNativePG — three instances,
+# synchronous replication, continuous WAL archiving and point-in-time
+# recovery — from deploy/k8s/platform/postgres. The single-pod StatefulSet in
+# base is for evaluation only and is deleted here.
+#
+# DATABASE_URL must be supplied in the `cleat-secrets` Secret, pointing at the
+# operator's read-write service:
+#
+#   postgres://cleat:<password>@cleat-db-rw.cleat.svc.cluster.local:5432/cleat?sslmode=require
+#
+# It goes in the Secret rather than the ConfigMap because it carries the
+# password, and `envFrom` lists the Secret after the ConfigMap so it wins.
 patches:
   - patch: |
       $patch: delete
@@ -37,12 +46,6 @@ patches:
       metadata:
         name: postgres
         namespace: cleat
-  - target:
-      kind: NetworkPolicy
-      name: api
-    patch: |
-      - op: remove
-        path: /spec/egress/0
   - target:
       kind: ConfigMap
       name: cleat-config

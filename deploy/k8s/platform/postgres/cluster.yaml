@@ -1,0 +1,129 @@
+# PostgreSQL, self-hosted and actually operable.
+#
+# This replaces the single-pod StatefulSet that used to carry a comment saying
+# "point this at a managed database before you put real data in it". That
+# comment was honest and it was also a way of never solving the problem. Here
+# it is solved: three instances with synchronous replication, continuous WAL
+# archiving, and point-in-time recovery.
+#
+# Why CloudNativePG rather than a hand-rolled StatefulSet: failover, backup,
+# and restore are the parts everyone writes badly and only discovers at 3am.
+# An operator that has been through those cases in other people's outages is
+# worth more than manifests we control every line of.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cleat-db
+  namespace: cleat
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.8
+
+  # Two data copies must confirm a write before the client is told it landed.
+  # Losing a node then loses no committed transaction — and for a product whose
+  # data is somebody's relapse history, the cost of a lost write is not a row,
+  # it is a person's record of the hardest thing they have done.
+  postgresql:
+    synchronous:
+      method: any
+      number: 1
+    parameters:
+      # Conservative and explicit. Tune against a real load profile rather than
+      # by copying numbers from a blog.
+      max_connections: '200'
+      shared_buffers: 512MB
+      effective_cache_size: 1536MB
+      work_mem: 8MB
+      maintenance_work_mem: 128MB
+      wal_compression: 'on'
+      # Log slow statements only. Logging every statement on this database
+      # would write recovery data into the log stream, which is a disclosure
+      # with extra steps.
+      log_min_duration_statement: '500'
+      log_statement: 'none'
+      # Row-level security is the isolation guarantee this product depends on.
+      # Refuse to start rather than run with it disabled cluster-wide.
+      row_security: 'on'
+    pg_hba:
+      # TLS-only from the pod network. No trust, no password-over-plaintext.
+      - hostssl all all 10.0.0.0/8 scram-sha-256
+      - hostssl all all 172.16.0.0/12 scram-sha-256
+      - hostssl all all 192.168.0.0/16 scram-sha-256
+
+  bootstrap:
+    initdb:
+      database: cleat
+      owner: cleat
+      secret:
+        name: cleat-db-app-user
+      # Deterministic collation. A locale change underneath an existing index
+      # silently corrupts ordering, and text indexes are how tenant lookups
+      # stay fast.
+      localeCollate: C
+      localeCType: C
+      encoding: UTF8
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS pgcrypto;
+        - CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+  storage:
+    size: 50Gi
+  walStorage:
+    # WAL on its own volume: a WAL disk that fills stops the database, and it
+    # should not be able to fill because the data volume did.
+    size: 20Gi
+
+  monitoring:
+    enablePodMonitor: true
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      memory: 3Gi
+
+  # Spread across nodes where there is more than one. On a single-node install
+  # this is a no-op rather than an error, so the same manifest works for both.
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: preferred
+
+  backup:
+    retentionPolicy: 30d
+    barmanObjectStore:
+      destinationPath: s3://cleat-backups/
+      endpointURL: http://minio.cleat-platform.svc.cluster.local:9000
+      s3Credentials:
+        accessKeyId:
+          name: minio-credentials
+          key: root-user
+        secretAccessKey:
+          name: minio-credentials
+          key: root-password
+      wal:
+        compression: gzip
+        # Parallel WAL upload: falling behind on archiving is how PITR quietly
+        # stops being possible while every dashboard stays green.
+        maxParallel: 4
+      data:
+        compression: gzip
+        immediateCheckpoint: false
+        jobs: 2
+---
+# A base backup every night. WAL archiving runs continuously, so recovery to
+# any point between backups is possible; the base backup is what keeps replay
+# time bounded.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: cleat-db-nightly
+  namespace: cleat
+spec:
+  # Second field first in CNPG's six-field cron. 02:30 UTC.
+  schedule: '0 30 2 * * *'
+  backupOwnerReference: self
+  cluster:
+    name: cleat-db
+  immediate: true

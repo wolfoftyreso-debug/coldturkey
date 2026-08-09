@@ -28,6 +28,23 @@ const schema = z.object({
   COACH_MODEL: z.string().default('claude-opus-5'),
 
   CORS_ORIGINS: z.string().default('*'),
+
+  // Mail. Without SMTP_HOST the API falls back to a mailer that logs a digest
+  // instead of sending, so development needs no relay — but see
+  // `requireMailInProduction` below: shipping that fallback to production
+  // would make password reset silently do nothing.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_REJECT_UNAUTHORIZED: z
+    .string()
+    .default('true')
+    .transform((v) => v !== 'false'),
+  MAIL_FROM: z.string().default('no-reply@cleat.app'),
+
+  /** Where reset and verification links point. Must be the public web origin. */
+  PUBLIC_WEB_URL: z.string().default('http://localhost:3000'),
 });
 
 export type Config = z.infer<typeof schema> & { corsOrigins: string[] | true };
@@ -46,6 +63,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   const value = parsed.data;
+
+  // A production deployment without a relay would accept a "reset your
+  // password" request, log a digest, and return 200. The person would wait for
+  // a mail that was never sent, and nothing would look broken from the
+  // outside. Refuse to start instead — a server that will not boot is a bug
+  // report; a server that silently swallows account recovery is not.
+  if (value.NODE_ENV === 'production' && !value.SMTP_HOST) {
+    throw new Error(
+      'Invalid configuration:\n  SMTP_HOST is required in production — ' +
+        'without it password reset and email verification silently do nothing.',
+    );
+  }
+
   cached = {
     ...value,
     corsOrigins:

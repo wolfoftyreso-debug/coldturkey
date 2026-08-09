@@ -187,6 +187,13 @@ export const sv = {
     'Du behöver inte testa. Du vet redan svaret — det är därför du är här.',
 
   // ---- Safety ----
+  'mail.reset.subject': 'Återställ ditt lösenord',
+  'mail.reset.body': 'Du (eller någon som skrev in din adress) bad om att återställa lösenordet till ditt Cleat-konto. Öppna länken för att välja ett nytt:',
+  'mail.reset.expiry': 'Länken slutar fungera om {hours} timmar och kan bara användas en gång.',
+  'mail.reset.ignore': 'Bad du inte om det här behöver du inte göra någonting. Ditt lösenord är oförändrat.',
+  'mail.verify.subject': 'Bekräfta din e-postadress',
+  'mail.verify.body': 'Bekräfta att adressen är din, så att du kan få tillbaka kontot om du glömmer lösenordet:',
+  'mail.signature': '— Cleat',
   'safety.none': '',
   'safety.elevated':
     'Jag noterar att du beskriver kroppsliga symtom. Håll koll på dem, och sök vård om de förvärras.',

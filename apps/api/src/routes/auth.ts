@@ -11,6 +11,12 @@ import { withTenant } from '../db/pool.js';
 import { createUser, findUserByEmail, findUserById, writeAudit } from '../db/repository.js';
 import { ensureDefaultTenant, findTenantBySlug, tenantSlugFromRequest } from '../db/tenants.js';
 import { badRequest, conflict, forbidden, tooManyRequests, unauthorized } from '../lib/errors.js';
+import {
+  consumeToken,
+  issueToken,
+  sendPasswordResetMail,
+  sendVerificationMail,
+} from '../auth/recovery.js';
 import { authenticate, currentUser } from '../plugins/auth.js';
 
 /**
@@ -39,6 +45,8 @@ import { authenticate, currentUser } from '../plugins/auth.js';
  */
 const FAILURES_PER_IP = 100;
 const FAILURES_PER_ACCOUNT = 5;
+/** Reset requests are cheaper to abuse as a mail bomb than as a guess. */
+const RESETS_PER_ACCOUNT = 3;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 interface Attempt {
@@ -288,6 +296,167 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       refreshToken: result.refreshToken,
       user: publicUser(result.user),
     });
+  });
+
+  const forgotBody = z.object({ email: z.string().email() });
+  const resetBody = z.object({
+    token: z.string().min(1),
+    password: z.string().min(1),
+  });
+
+  /**
+   * Request a password reset.
+   *
+   * Always answers 202, whether or not the address belongs to an account.
+   * Anything else turns this endpoint into a membership oracle: "is this
+   * person in a recovery app" is exactly the question an employer, an insurer
+   * or an abusive partner would like answered, and it is not a question this
+   * product will answer for anyone.
+   *
+   * The rate limits are the same two counters the login path uses, because
+   * without them the oracle comes back as a timing difference.
+   */
+  app.post('/v1/auth/forgot-password', async (request, reply) => {
+    const body = forgotBody.parse(request.body);
+    const email = body.email.trim().toLowerCase();
+
+    const now = Date.now();
+    sweepFailures(now);
+    const ipKey = `reset-ip:${request.ip}`;
+    const accountKey = `reset:${email}`;
+    if (
+      isLockedOut(ipKey, FAILURES_PER_IP, now) ||
+      isLockedOut(accountKey, RESETS_PER_ACCOUNT, now)
+    ) {
+      return reply.code(202).send({ status: 'accepted' });
+    }
+    recordFailure(ipKey, now);
+    recordFailure(accountKey, now);
+
+    const slug = tenantSlugFromRequest(
+      request.headers['x-tenant'] as string | undefined,
+      request.headers.host,
+    );
+    const tenant =
+      slug === config.DEFAULT_TENANT_SLUG
+        ? await ensureDefaultTenant()
+        : await findTenantBySlug(slug);
+
+    if (tenant) {
+      await withTenant(tenant.id, async (client) => {
+        const user = await findUserByEmail(client, email);
+        if (!user) return;
+        const { token } = await issueToken(client, {
+          tenantId: tenant.id,
+          userId: user.id,
+          purpose: 'password_reset',
+          ip: request.ip,
+        });
+        await writeAudit(client, {
+          tenantId: tenant.id,
+          userId: user.id,
+          action: 'auth.password_reset_requested',
+        });
+        // Awaited so a relay outage surfaces as a 5xx in the logs rather than
+        // an unhandled rejection, but the reply is the same either way.
+        try {
+          await sendPasswordResetMail(user.email, user.locale as 'sv' | 'en', token);
+        } catch (error) {
+          request.log.error({ err: error }, 'password reset mail failed');
+        }
+      });
+    }
+
+    return reply.code(202).send({ status: 'accepted' });
+  });
+
+  /**
+   * Complete a password reset.
+   *
+   * Consuming the token also revokes every refresh token for the account. A
+   * reset is what somebody does when they believe another person is in their
+   * account, and leaving that person's sessions alive would make the reset
+   * cosmetic.
+   */
+  app.post('/v1/auth/reset-password', async (request, reply) => {
+    const body = resetBody.parse(request.body);
+    const problem = passwordProblem(body.password);
+    if (problem) throw badRequest('weak_password', problem);
+
+    const slug = tenantSlugFromRequest(
+      request.headers['x-tenant'] as string | undefined,
+      request.headers.host,
+    );
+    const tenant =
+      slug === config.DEFAULT_TENANT_SLUG
+        ? await ensureDefaultTenant()
+        : await findTenantBySlug(slug);
+    if (!tenant) throw badRequest('invalid_token', 'This link is no longer valid');
+
+    const resetEmail = await withTenant(tenant.id, async (client) => {
+      const consumed = await consumeToken(client, 'password_reset', body.token);
+      if (!consumed) return null;
+
+      const hash = await hashPassword(body.password);
+      await client.query('UPDATE users SET password_hash = $1 WHERE id = $2', [
+        hash,
+        consumed.userId,
+      ]);
+      await client.query(
+        `UPDATE refresh_tokens SET revoked_at = now()
+          WHERE user_id = $1 AND revoked_at IS NULL`,
+        [consumed.userId],
+      );
+      await writeAudit(client, {
+        tenantId: tenant.id,
+        userId: consumed.userId,
+        action: 'auth.password_reset_completed',
+      });
+
+      const user = await findUserById(client, consumed.userId);
+      return user?.email ?? '';
+    });
+
+    if (resetEmail === null) throw badRequest('invalid_token', 'This link is no longer valid');
+
+    // Clear the login lockout as well. The person just proved control of the
+    // mailbox, and leaving them locked out immediately after a successful
+    // reset is the product fighting itself — especially since the lockout is
+    // what sent many of them here.
+    if (resetEmail) clearFailures([`account:${resetEmail.trim().toLowerCase()}`]);
+    return reply.send({ status: 'ok' });
+  });
+
+  /** Confirm an email address. Idempotent — a second click is not an error. */
+  app.post('/v1/auth/verify-email', async (request, reply) => {
+    const body = z.object({ token: z.string().min(1) }).parse(request.body);
+    const slug = tenantSlugFromRequest(
+      request.headers['x-tenant'] as string | undefined,
+      request.headers.host,
+    );
+    const tenant =
+      slug === config.DEFAULT_TENANT_SLUG
+        ? await ensureDefaultTenant()
+        : await findTenantBySlug(slug);
+    if (!tenant) throw badRequest('invalid_token', 'This link is no longer valid');
+
+    const done = await withTenant(tenant.id, async (client) => {
+      const consumed = await consumeToken(client, 'email_verification', body.token);
+      if (!consumed) return false;
+      await client.query(
+        'UPDATE users SET email_verified_at = coalesce(email_verified_at, now()) WHERE id = $1',
+        [consumed.userId],
+      );
+      await writeAudit(client, {
+        tenantId: tenant.id,
+        userId: consumed.userId,
+        action: 'auth.email_verified',
+      });
+      return true;
+    });
+
+    if (!done) throw badRequest('invalid_token', 'This link is no longer valid');
+    return reply.send({ status: 'ok' });
   });
 
   app.post('/v1/auth/logout', { preHandler: authenticate }, async (request, reply) => {

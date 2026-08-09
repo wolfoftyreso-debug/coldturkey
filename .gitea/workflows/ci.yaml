@@ -1,0 +1,151 @@
+# CI on Gitea Actions.
+#
+# Deliberately the same shape as .github/workflows/ci.yml rather than a
+# reduced version. A self-hosted forge that runs a weaker pipeline than the
+# one it replaced is a downgrade wearing the word "sovereignty", and the
+# defects this project has actually shipped — a mobile app that typechecked
+# and could not bundle, a safety net that caught three emergencies in
+# thirty-five — were all caught by steps that a "quick" pipeline drops first.
+#
+# Differences from the GitHub file, and only these:
+#   * images come from the in-cluster registry, so a build does not depend on
+#     somebody else's infrastructure being up;
+#   * the container build pushes to that registry rather than throwing the
+#     image away.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ gitea.workflow }}-${{ gitea.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  REGISTRY: git.cleat.app
+
+jobs:
+  verify:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/library/node:22-bookworm
+
+    # A real PostgreSQL, not a mock. The isolation this product depends on is
+    # enforced by row-level security policies, and a mocked repository would
+    # happily "prove" an isolation the database does not provide.
+    services:
+      postgres:
+        image: docker.io/library/postgres:16-alpine
+        env:
+          POSTGRES_USER: cleat
+          POSTGRES_PASSWORD: cleat
+          POSTGRES_DB: cleat
+        options: >-
+          --health-cmd="pg_isready -U cleat"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10 --activate
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @cleat/core build
+          pnpm --filter @cleat/i18n build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm -r test
+        env:
+          DATABASE_URL: postgres://cleat:cleat@postgres:5432/cleat
+          JWT_SECRET: ci-secret-that-is-long-enough-for-hs256-signing
+          NODE_ENV: test
+          LOG_LEVEL: error
+
+      - name: Build API
+        run: pnpm --filter @cleat/api build
+
+      - name: Build web
+        run: pnpm --filter @cleat/web build
+
+      # Metro resolves a different module graph than tsc does. A missing
+      # runtime dependency is invisible to the typechecker and fatal to the
+      # bundler, and a phone client that cannot bundle is one that cannot ship.
+      - name: Bundle mobile
+        run: pnpm --filter @cleat/mobile exec expo export --platform android --output-dir /tmp/expo-bundle
+
+  images:
+    name: Build and push images
+    runs-on: ubuntu-latest
+    needs: verify
+    if: gitea.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the in-cluster registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/cleat/api:${{ gitea.sha }}
+            ${{ env.REGISTRY }}/cleat/api:latest
+
+      - name: Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/cleat/web:${{ gitea.sha }}
+            ${{ env.REGISTRY }}/cleat/web:latest
+
+  manifests:
+    name: Validate Kubernetes manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build overlays
+        run: |
+          curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.5.0/kustomize_v5.5.0_linux_amd64.tar.gz" | tar xz
+          ./kustomize build deploy/k8s/overlays/dev > /dev/null
+          ./kustomize build deploy/k8s/overlays/prod > /dev/null
+
+      # Schema-validate the platform manifests too. These are the pieces that
+      # only fail at 3am — a mistyped field in a backup stanza is invisible
+      # until the restore that needed it.
+      - name: Validate platform manifests
+        run: |
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" | tar xz
+          ./kubeconform -strict -ignore-missing-schemas -summary \
+            deploy/k8s/platform/minio \
+            deploy/k8s/platform/postgres \
+            deploy/k8s/platform/gitea \
+            deploy/k8s/platform/observability

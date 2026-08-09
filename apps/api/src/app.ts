@@ -8,6 +8,7 @@ import { AppError } from './lib/errors.js';
 import { authRoutes } from './routes/auth.js';
 import { coachRoutes } from './routes/coach.js';
 import { healthRoutes, metrics } from './routes/health.js';
+import { publicRoutes } from './routes/public.js';
 import { privacyRoutes } from './routes/privacy.js';
 import { recoveryRoutes } from './routes/recovery.js';
 
@@ -95,6 +96,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   );
 
   await app.register(healthRoutes);
+  await app.register(publicRoutes);
   await app.register(authRoutes);
   await app.register(recoveryRoutes);
   await app.register(coachRoutes);

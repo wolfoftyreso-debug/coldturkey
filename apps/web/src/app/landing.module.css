@@ -1,0 +1,173 @@
+/*
+ * Landing page styling.
+ *
+ * Held to the same brief as the rest of the product: dark, calm, one warm
+ * accent, generous space. It must not read as a hospital, a meeting room, or
+ * a meditation app — so no soft gradients, no rounded pastel illustrations,
+ * no serif "wellness" type.
+ */
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 48px;
+}
+
+.wordmark {
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.signIn {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-decoration: none;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.signIn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.hero {
+  padding: 24px 0 56px;
+}
+
+.title {
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 24px;
+  font-weight: 700;
+}
+
+.titleDim {
+  color: var(--text-faint);
+}
+
+.lede {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+  max-width: 46ch;
+  margin: 0 0 32px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primary,
+.secondary {
+  display: inline-block;
+  padding: 14px 24px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.primary {
+  background: var(--accent);
+  color: #17120b;
+}
+
+.primary:hover {
+  background: var(--accent-strong);
+}
+
+.secondary {
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.secondary:hover {
+  background: var(--surface-hover);
+}
+
+/* Above the feature grid, and visually distinct without shouting. An alarm
+   red here would make the whole page read as an emergency and train people to
+   skip it. */
+.crisis {
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--amber);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 22px 24px;
+  margin-bottom: 56px;
+}
+
+.crisisTitle {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.crisisBody {
+  margin: 0 0 14px;
+  color: var(--text-dim);
+  line-height: 1.65;
+  max-width: 62ch;
+}
+
+.crisisLink {
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.crisisLink:hover {
+  text-decoration: underline;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 56px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 22px;
+}
+
+.cardTitle {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.cardBody {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.footerDim {
+  color: var(--text-faint);
+  opacity: 0.85;
+}

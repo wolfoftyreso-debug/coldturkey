@@ -180,6 +180,13 @@ export const en: Catalog = {
     "You don't need to test it. You already know the answer — that's why you're here.",
 
   // ---- Safety ----
+  'mail.reset.subject': 'Reset your password',
+  'mail.reset.body': 'You (or someone who typed in your address) asked to reset the password on your Cleat account. Open the link to choose a new one:',
+  'mail.reset.expiry': 'The link stops working in {hours} hours and can only be used once.',
+  'mail.reset.ignore': 'If you did not ask for this, you do not need to do anything. Your password is unchanged.',
+  'mail.verify.subject': 'Confirm your email address',
+  'mail.verify.body': 'Confirm the address is yours, so you can get the account back if you forget your password:',
+  'mail.signature': '— Cleat',
   'safety.none': '',
   'safety.elevated':
     "I notice you're describing physical symptoms. Keep an eye on them, and get medical help if they get worse.",

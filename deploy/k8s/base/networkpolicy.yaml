@@ -40,10 +40,19 @@ spec:
       ports:
         - port: 8080
   egress:
+    # Both database shapes are allowed by label rather than by name: the
+    # evaluation StatefulSet, and the CloudNativePG cluster that replaces it in
+    # production. CNPG labels every instance pod `cnpg.io/cluster: <name>`, and
+    # failover moves the primary between those pods — a policy naming one pod
+    # would survive exactly until the first failover, which is the moment it
+    # most needs to work.
     - to:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: cleat-postgres
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: cleat-db
       ports:
         - port: 5432
     - ports:

@@ -6,6 +6,7 @@ import { migrate } from './db/migrate.js';
 import { createTenant, ensureDefaultTenant } from './db/tenants.js';
 import { hashPassword } from './auth/password.js';
 import { createUser } from './db/repository.js';
+import { issueToken } from './auth/recovery.js';
 
 /**
  * End-to-end API tests against a real PostgreSQL instance.
@@ -77,6 +78,52 @@ suite('Cleat API', () => {
       const response = await app.inject({ method: 'GET', url: '/metrics' });
       expect(response.statusCode).toBe(200);
       expect(response.body).toContain('cleat_requests_total');
+    });
+  });
+
+  describe('the public surface needs no account', () => {
+    // The crisis numbers used to sit behind a login, so somebody who found the
+    // product mid-crisis had to register before it would tell them what to
+    // ring. Any change that puts them back behind auth must fail here.
+    it('serves emergency resources with no token at all', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/public/safety/resources?country=SE',
+      });
+      expect(response.statusCode).toBe(200);
+      const body = (await json(response)) as never as {
+        resources: { contact: string; label: string }[];
+      };
+      expect(body.resources.map((r) => r.contact)).toContain('112');
+      expect(body.resources.map((r) => r.contact)).toContain('90101');
+      // Labels must be translated, not raw keys.
+      expect(body.resources[0]?.label).not.toMatch(/^resource\./);
+    });
+
+    it('triages without an account and without storing anything', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/public/safety/triage',
+        payload: { text: 'jag tänker ta livet av mig', country: 'SE' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = (await json(response)) as never as {
+        level: string;
+        bypassCoach: boolean;
+        stored: boolean;
+      };
+      expect(body.level).toBe('emergency');
+      expect(body.bypassCoach).toBe(true);
+      expect(body.stored).toBe(false);
+    });
+
+    it('answers in the language the caller asked for', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/public/safety/resources?country=GB&locale=en',
+      });
+      const body = (await json(response)) as never as { disclaimer: string };
+      expect(body.disclaimer.length).toBeGreaterThan(0);
     });
   });
 
@@ -420,6 +467,146 @@ suite('Cleat API', () => {
         payload: { email, password: 'correct-horse-battery' },
       });
       expect(ok.statusCode).toBe(200);
+    });
+  });
+
+  describe('account recovery', () => {
+    const forgetful = `forgetful-${Date.now()}@cleat.app`;
+    let resetToken: string;
+
+    it('registers an account to lose the password to', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: { email: forgetful, password: 'the-original-password', displayName: 'F' },
+      });
+      expect(response.statusCode).toBe(201);
+    });
+
+    it('answers identically for a real and an unknown address', async () => {
+      // Anything else makes this endpoint a membership oracle. "Is this person
+      // in a recovery app" is precisely the question an employer, an insurer
+      // or an abusive partner would like answered.
+      const known = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/forgot-password',
+        payload: { email: forgetful },
+      });
+      const unknown = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/forgot-password',
+        payload: { email: `nobody-${Date.now()}@cleat.app` },
+      });
+      expect(known.statusCode).toBe(202);
+      expect(unknown.statusCode).toBe(202);
+      expect(known.body).toBe(unknown.body);
+    });
+
+    it('stores only a hash of the token', async () => {
+      const tenant = await ensureDefaultTenant();
+      const stored = await withTenant(tenant.id, async (client) => {
+        const { rows } = await client.query<{ token_hash: string }>(
+          `SELECT token_hash FROM account_tokens
+            WHERE purpose = 'password_reset' AND consumed_at IS NULL
+            ORDER BY created_at DESC LIMIT 1`,
+        );
+        return rows[0]?.token_hash ?? '';
+      });
+      // A sha256 hex digest, not something that could be pasted into a URL.
+      expect(stored).toMatch(/^[0-9a-f]{64}$/);
+    });
+
+    it('issues a token that resets the password exactly once', async () => {
+      const tenant = await ensureDefaultTenant();
+
+      // Mint one directly: the plaintext only ever exists in the mail, which
+      // is the property under test everywhere else.
+      const issued = await withTenant(tenant.id, async (client) => {
+        const { rows } = await client.query<{ id: string }>(
+          'SELECT id FROM users WHERE lower(email) = lower($1)',
+          [forgetful],
+        );
+        const userId = rows[0]!.id;
+        return issueToken(client, { tenantId: tenant.id, userId, purpose: 'password_reset' });
+      });
+      resetToken = issued.token;
+
+      const first = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/reset-password',
+        payload: { token: resetToken, password: 'a-brand-new-password' },
+      });
+      expect(first.statusCode).toBe(200);
+
+      const replay = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/reset-password',
+        payload: { token: resetToken, password: 'another-password-entirely' },
+      });
+      expect(replay.statusCode).toBe(400);
+    });
+
+    it('lets the new password in and the old one out', async () => {
+      const fresh = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: { email: forgetful, password: 'a-brand-new-password' },
+      });
+      expect(fresh.statusCode).toBe(200);
+
+      const stale = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: { email: forgetful, password: 'the-original-password' },
+      });
+      expect(stale.statusCode).toBe(401);
+    });
+
+    it('rejects a weak new password rather than accepting it quietly', async () => {
+      const tenant = await ensureDefaultTenant();
+      const issued = await withTenant(tenant.id, async (client) => {
+        const { rows } = await client.query<{ id: string }>(
+          'SELECT id FROM users WHERE lower(email) = lower($1)',
+          [forgetful],
+        );
+        return issueToken(client, {
+          tenantId: tenant.id,
+          userId: rows[0]!.id,
+          purpose: 'password_reset',
+        });
+      });
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/reset-password',
+        payload: { token: issued.token, password: 'short' },
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('refuses an expired token', async () => {
+      const tenant = await ensureDefaultTenant();
+      const issued = await withTenant(tenant.id, async (client) => {
+        const { rows } = await client.query<{ id: string }>(
+          'SELECT id FROM users WHERE lower(email) = lower($1)',
+          [forgetful],
+        );
+        const token = await issueToken(client, {
+          tenantId: tenant.id,
+          userId: rows[0]!.id,
+          purpose: 'password_reset',
+        });
+        await client.query(
+          `UPDATE account_tokens SET expires_at = now() - interval '1 minute'
+            WHERE consumed_at IS NULL AND purpose = 'password_reset'`,
+        );
+        return token;
+      });
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/reset-password',
+        payload: { token: issued.token, password: 'yet-another-password' },
+      });
+      expect(response.statusCode).toBe(400);
     });
   });
 
