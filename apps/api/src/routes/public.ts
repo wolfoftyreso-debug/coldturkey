@@ -68,7 +68,15 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
     locale: z.enum(['sv', 'en']).optional(),
   });
 
-  app.post('/v1/public/safety/triage', async (request) => {
+  app.post(
+    '/v1/public/safety/triage',
+    {
+      // Unauthenticated and computational. Generous, because an integrator
+      // running a helpline's tooling is a legitimate heavy caller, but bounded
+      // so it cannot be used as free CPU.
+      config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
+    },
+    async (request) => {
     const body = triageBody.parse(request.body);
     const locale = localeOf(request.headers['accept-language'], body.locale);
     const result = triage({ text: body.text, country: body.country, locale });
@@ -89,7 +97,8 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
       })),
       stored: false,
     };
-  });
+    },
+  );
 
   /** What this deployment is and speaks. Useful for a client deciding a locale. */
   app.get('/v1/public/meta', async (_request, reply) => {

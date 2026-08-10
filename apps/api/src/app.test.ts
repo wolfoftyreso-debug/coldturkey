@@ -82,6 +82,207 @@ suite('Cleat API', () => {
     });
   });
 
+  describe('attacks are blocked, not merely unlikely', () => {
+    // Each of these was probed against a running server first. They are here so
+    // the probe does not have to be re-run by hand to know they still fail.
+    let victim: { token: string; supportId: string; triggerId: string };
+    let attacker: string;
+
+    beforeAll(async () => {
+      const make = async (tag: string) => {
+        const response = await app.inject({
+          method: 'POST',
+          url: '/v1/auth/register',
+          payload: {
+            email: `atk-${tag}-${Date.now()}-${Math.random().toString(36).slice(2)}@cleat.app`,
+            password: 'a-long-enough-password',
+            displayName: tag,
+          },
+        });
+        return (await json(response)) as never as { accessToken: string };
+      };
+
+      const v = await make('victim');
+      const a = await make('attacker');
+      attacker = a.accessToken;
+
+      const support = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/support',
+          headers: { authorization: `Bearer ${v.accessToken}` },
+          payload: { name: 'Victim Sister', phone: '+46700000000' },
+        }),
+      )) as never as { contact: { id: string } };
+      const trigger = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/triggers',
+          headers: { authorization: `Bearer ${v.accessToken}` },
+          payload: { label: 'stress', kind: 'emotion' },
+        }),
+      )) as never as { trigger: { id: string } };
+
+      // Assert the ids exist. Reading the wrong field would put "undefined" in
+      // the URL, the uuid check would reject it, and an IDOR test that never
+      // reached an authorization check would pass forever.
+      expect(support.contact?.id).toMatch(/^[0-9a-f-]{36}$/);
+      expect(trigger.trigger?.id).toMatch(/^[0-9a-f-]{36}$/);
+
+      victim = {
+        token: v.accessToken,
+        supportId: support.contact.id,
+        triggerId: trigger.trigger.id,
+      };
+    });
+
+    it('IDOR: another account cannot delete a support contact by id', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/v1/support/${victim.supportId}`,
+        headers: { authorization: `Bearer ${attacker}` },
+      });
+      expect([403, 404]).toContain(response.statusCode);
+
+      // And it is still there. A 404 that deleted the row anyway would pass
+      // the status check and fail the person.
+      const still = (await json(
+        await app.inject({
+          method: 'GET',
+          url: '/v1/support',
+          headers: { authorization: `Bearer ${victim.token}` },
+        }),
+      )) as never as { contacts: { id: string }[] };
+      expect(still.contacts.map((c) => c.id)).toContain(victim.supportId);
+    });
+
+    it('IDOR: another account cannot delete a trigger by id', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/v1/triggers/${victim.triggerId}`,
+        headers: { authorization: `Bearer ${attacker}` },
+      });
+      expect([403, 404]).toContain(response.statusCode);
+    });
+
+    it('mass assignment: role cannot be set at registration', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: {
+          email: `esc-${Date.now()}@cleat.app`,
+          password: 'a-long-enough-password',
+          role: 'owner',
+        },
+      });
+      const body = (await json(response)) as never as { user: { role: string } };
+      expect(body.user.role).toBe('member');
+    });
+
+    it('a token signed with alg=none is rejected', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/dashboard',
+        headers: {
+          authorization:
+            'Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJhIiwidGlkIjoiYiJ9.',
+        },
+      });
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('malformed and oversized bodies are client errors, not 500s', async () => {
+      // These used to fall through to the generic 500 handler, which told the
+      // caller the server broke and polluted the error rate that pages
+      // somebody at 3am.
+      const malformed = await app.inject({
+        method: 'POST',
+        url: '/v1/cravings',
+        headers: { authorization: `Bearer ${attacker}`, 'content-type': 'application/json' },
+        payload: '{"intensity":',
+      });
+      expect(malformed.statusCode).toBe(400);
+
+      const empty = await app.inject({
+        method: 'DELETE',
+        url: `/v1/support/${victim.supportId}`,
+        headers: { authorization: `Bearer ${attacker}`, 'content-type': 'application/json' },
+      });
+      expect(empty.statusCode).toBeLessThan(500);
+    });
+
+    it('error responses disclose nothing internal', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/cravings',
+        headers: { authorization: `Bearer ${attacker}` },
+        payload: { intensity: 'not-a-number' },
+      });
+      const body = response.body;
+      for (const leak of ['at Object.', 'node_modules', '/workspace', 'SELECT ', 'pg_']) {
+        expect(body).not.toContain(leak);
+      }
+    });
+
+    it('SQL injection in a path or query parameter does not reach the database', async () => {
+      for (const payload of ["' OR '1'='1", "'; DROP TABLE users; --", "1' UNION SELECT null--"]) {
+        const byQuery = await app.inject({
+          method: 'GET',
+          url: `/v1/cravings?limit=${encodeURIComponent(payload)}`,
+          headers: { authorization: `Bearer ${attacker}` },
+        });
+        const byPath = await app.inject({
+          method: 'PATCH',
+          url: `/v1/cravings/${encodeURIComponent(payload)}`,
+          headers: { authorization: `Bearer ${attacker}` },
+          payload: { outcome: 'passed' },
+        });
+        expect(byQuery.statusCode).toBeLessThan(500);
+        expect(byPath.statusCode).toBeLessThan(500);
+      }
+      // The table is still there.
+      const alive = await app.inject({
+        method: 'GET',
+        url: '/v1/me',
+        headers: { authorization: `Bearer ${attacker}` },
+      });
+      expect(alive.statusCode).toBe(200);
+    });
+
+    it('account deletion requires the password, not just a confirmation word', async () => {
+      const wrong = await app.inject({
+        method: 'DELETE',
+        url: '/v1/privacy/account',
+        headers: { authorization: `Bearer ${attacker}` },
+        payload: { confirm: 'RADERA', password: 'not-the-password' },
+      });
+      expect(wrong.statusCode).toBe(401);
+
+      const missing = await app.inject({
+        method: 'DELETE',
+        url: '/v1/privacy/account',
+        headers: { authorization: `Bearer ${attacker}` },
+        payload: { confirm: 'RADERA' },
+      });
+      expect(missing.statusCode).toBe(400);
+
+      // The account survived both attempts.
+      const alive = await app.inject({
+        method: 'GET',
+        url: '/v1/me',
+        headers: { authorization: `Bearer ${attacker}` },
+      });
+      expect(alive.statusCode).toBe(200);
+    });
+
+    it('serves a content security policy and HSTS', async () => {
+      const response = await app.inject({ method: 'GET', url: '/v1/public/meta' });
+      expect(response.headers['content-security-policy']).toContain("default-src 'none'");
+      expect(response.headers['strict-transport-security']).toContain('max-age=31536000');
+      expect(response.headers['x-content-type-options']).toBe('nosniff');
+    });
+  });
+
   describe('observability leaks nothing about a person', () => {
     it('labels metrics with the route template, never the resolved URL', async () => {
       // Hit a route with an id in the path, then check the id is not in the
@@ -911,7 +1112,7 @@ suite('Cleat API', () => {
         method: 'DELETE',
         url: '/v1/privacy/account',
         headers: { authorization: `Bearer ${accessToken}` },
-        payload: { confirm: 'RADERA' },
+        payload: { confirm: 'RADERA', password },
       });
       expect(response.statusCode).toBe(200);
 

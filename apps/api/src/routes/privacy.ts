@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { translate, type Locale } from '@cleat/i18n';
 import { withTenant } from '../db/pool.js';
 import { listCoachMessages, loadSnapshot, writeAudit } from '../db/repository.js';
-import { badRequest } from '../lib/errors.js';
+import { badRequest, unauthorized } from '../lib/errors.js';
+import { verifyPassword } from '../auth/password.js';
 import { authenticate, currentUser } from '../plugins/auth.js';
 import { publicUser } from './auth.js';
 
@@ -84,12 +85,31 @@ export async function privacyRoutes(app: FastifyInstance): Promise<void> {
   app.delete('/v1/privacy/account', async (request, reply) => {
     const user = currentUser(request);
     const locale = user.locale as Locale;
-    const body = z.object({ confirm: z.string() }).parse(request.body ?? {});
+    const body = z
+      .object({ confirm: z.string(), password: z.string().min(1) })
+      .parse(request.body ?? {});
 
     const expected = translate(locale, 'privacy.deleteWord');
     if (body.confirm !== expected && body.confirm !== 'DELETE' && body.confirm !== 'RADERA') {
       throw badRequest('confirmation_required', `Send { "confirm": "${expected}" } to proceed`);
     }
+
+    // Re-authenticate. This is the one irreversible operation in the product,
+    // and an access token lives for fifteen minutes — long enough that a phone
+    // left unlocked on a table, or a token lifted from a shared machine, is
+    // enough to permanently destroy somebody's entire recovery history. A
+    // typed confirmation word stops an accident; only the password stops
+    // somebody else.
+    const ok = await withTenant(user.tenant_id, async (client) => {
+      const { rows } = await client.query<{ password_hash: string }>(
+        'SELECT password_hash FROM users WHERE id = $1',
+        [user.id],
+      );
+      const stored = rows[0]?.password_hash;
+      if (!stored) return false;
+      return verifyPassword(body.password, stored);
+    });
+    if (!ok) throw unauthorized('Invalid credentials');
 
     await withTenant(user.tenant_id, async (client) => {
       await writeAudit(client, {

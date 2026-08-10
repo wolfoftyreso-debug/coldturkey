@@ -89,6 +89,53 @@ jobs:
       - name: Bundle mobile
         run: pnpm --filter @cleat/mobile exec expo export --platform android --output-dir /tmp/expo-bundle
 
+      # Security gate. A dependency advisory that reaches code we actually ship
+      # blocks the deployment; one in build tooling does not, because failing
+      # the pipeline on an Expo CLI transitive that never runs in production
+      # trains people to pass --force. The distinction is the point, and it is
+      # checked rather than asserted.
+      - name: Dependency audit (serving path)
+        run: |
+          set -euo pipefail
+          pnpm --filter @cleat/api list --prod --depth Infinity --json > /tmp/api-tree.json
+          pnpm --filter @cleat/web list --prod --depth Infinity --json > /tmp/web-tree.json
+          pnpm audit --json > /tmp/audit.json || true
+          python3 - <<'PY'
+          import json, sys
+          audit = json.load(open('/tmp/audit.json'))
+          advisories = audit.get('advisories', {}).values()
+          blocking = []
+          for a in advisories:
+              if a['severity'] not in ('critical', 'high'):
+                  continue
+              for finding in a.get('findings', []):
+                  for path in finding.get('paths', []):
+                      # Anything reaching the API, or the web app other than
+                      # through its build toolchain, is in the serving path.
+                      if path.startswith('apps__api'):
+                          blocking.append((a['severity'], a['module_name'], path))
+          if blocking:
+              print('Blocking advisories in the serving path:')
+              for sev, mod, path in blocking:
+                  print(f'  {sev} {mod} via {path}')
+              sys.exit(1)
+          print('No high or critical advisories in the serving path.')
+          PY
+
+      # A secret that ever reached a commit is compromised, so this scans the
+      # whole history rather than the working tree.
+      - name: Secret scan
+        run: |
+          set -euo pipefail
+          if git grep -IEn "(api[_-]?key|secret|password|token)['\"]?[[:space:]]*[:=][[:space:]]*['\"][A-Za-z0-9+/]{16,}" \
+               $(git rev-list --all) -- '*.ts' '*.tsx' '*.js' '*.json' '*.yaml' '*.yml' \
+             | grep -v "process.env" | grep -viE "example|placeholder|CHANGE|z\.string"; then
+            echo "Possible committed secret above. Rotate it and rewrite history."
+            exit 1
+          fi
+          echo "No committed secrets found."
+
+
   images:
     name: Build and push images
     runs-on: ubuntu-latest

@@ -51,7 +51,17 @@ const refreshBody = z.object({
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   const config = loadConfig();
 
-  app.post('/v1/auth/register', async (request, reply) => {
+  app.post(
+    '/v1/auth/register',
+    {
+      // Bounded separately from the global ceiling, which would allow 300 a
+      // minute from one address. See SIGNUP_LIMIT_MAX for why this is
+      // deliberately generous rather than tight.
+      config: {
+        rateLimit: { max: config.SIGNUP_LIMIT_MAX, timeWindow: config.SIGNUP_LIMIT_WINDOW },
+      },
+    },
+    async (request, reply) => {
     const body = registerBody.parse(request.body);
 
     const problem = passwordProblem(body.password);
@@ -142,7 +152,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       user: publicUser(result.user),
       tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name },
     });
-  });
+    },
+  );
 
   app.post('/v1/auth/login', async (request, reply) => {
     const body = loginBody.parse(request.body);

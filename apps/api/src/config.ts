@@ -37,6 +37,17 @@ const schema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
   RATE_LIMIT_WINDOW: z.string().default('1 minute'),
 
+  // Registration, per IP. Deliberately generous: a tight cap here mostly
+  // punishes a household, an office or a school behind one address, and does
+  // nothing against an attacker with a botnet. The control that actually
+  // bounds fake accounts is email verification; this only stops a trivial
+  // script from filling the table in an afternoon.
+  SIGNUP_LIMIT_MAX: z.coerce.number().int().positive().default(30),
+  SIGNUP_LIMIT_WINDOW: z.string().default('1 hour'),
+  // Coach messages, per IP. Each one can reach a language model.
+  COACH_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  COACH_LIMIT_WINDOW: z.string().default('1 minute'),
+
   // Mail. Without SMTP_HOST the API falls back to a mailer that logs a digest
   // instead of sending, so development needs no relay — but see
   // `requireMailInProduction` below: shipping that fallback to production
@@ -83,6 +94,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   // a mail that was never sent, and nothing would look broken from the
   // outside. Refuse to start instead — a server that will not boot is a bug
   // report; a server that silently swallows account recovery is not.
+  // A wildcard origin combined with credentials means any site a signed-in
+  // person visits can call this API as them. It is the correct default for
+  // local development and never correct in production, so it is refused there
+  // rather than warned about.
+  if (value.NODE_ENV === 'production' && value.CORS_ORIGINS.trim() === '*') {
+    throw new Error(
+      'Invalid configuration:\n  CORS_ORIGINS must list explicit origins in production — ' +
+        '"*" would let any website call this API with a signed-in user\'s credentials.',
+    );
+  }
+
   if (value.NODE_ENV === 'production' && !value.SMTP_HOST) {
     throw new Error(
       'Invalid configuration:\n  SMTP_HOST is required in production — ' +

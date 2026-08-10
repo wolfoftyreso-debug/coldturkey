@@ -39,11 +39,61 @@ export async function buildApp(): Promise<FastifyInstance> {
     bodyLimit: 1_000_000,
   });
 
-  await app.register(helmet, { contentSecurityPolicy: false });
+  // Many HTTP clients set `content-type: application/json` on every request,
+  // including a DELETE with no body. Fastify's default parser rejects that
+  // before any handler runs, so an authorization check never happens and the
+  // caller gets a confusing 400 about a body they did not intend to send.
+  // An empty body is simply no body.
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (_request, payload: string, done) => {
+      if (payload === undefined || payload === null || payload.trim() === '') {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(payload));
+      } catch {
+        // Deliberately not the parser's own message: it echoes the payload.
+        done(new AppError(400, 'malformed_request', 'Request body could not be read'), undefined);
+      }
+    },
+  );
+
+  await app.register(helmet, {
+    // This API serves JSON and nothing else. The policy says so: no scripts,
+    // no styles, no frames, no plugins. If a response ever gets rendered as a
+    // document — by a browser sniffing, or by an error page — there is nothing
+    // in it that can execute.
+    contentSecurityPolicy: {
+      directives: {
+        'default-src': ["'none'"],
+        'frame-ancestors': ["'none'"],
+        'base-uri': ["'none'"],
+        'form-action': ["'none'"],
+      },
+    },
+    // A year, with subdomains. Set by the API as well as the ingress because
+    // an API reachable on its own hostname must not depend on somebody
+    // remembering to configure the proxy.
+    strictTransportSecurity: {
+      maxAge: 31_536_000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: 'no-referrer' },
+    crossOriginResourcePolicy: { policy: 'same-site' },
+  });
+
   await app.register(cors, {
     origin: config.corsOrigins,
-    credentials: true,
+    // Credentials are only meaningful against an explicit origin list. With a
+    // wildcard the browser refuses them anyway; being explicit here means the
+    // combination cannot be introduced by a config change alone.
+    credentials: config.corsOrigins !== true,
     allowedHeaders: ['content-type', 'authorization', 'x-tenant'],
+    maxAge: 600,
   });
 
   // Someone hammering the login endpoint and someone opening the craving screen
@@ -87,6 +137,23 @@ export async function buildApp(): Promise<FastifyInstance> {
       return reply
         .code(429)
         .send({ error: { code: 'rate_limited', message: 'Too many requests' } });
+    }
+
+    // Fastify's own client errors — empty body with a JSON content-type, a
+    // body over the limit, unparseable JSON — used to fall through to the
+    // generic 500. That is wrong twice over: it tells the caller the server
+    // broke when the request was malformed, and it pollutes the error rate
+    // that pages somebody at 3am. A malformed request is a 4xx.
+    const fastifyCode = (error as { code?: string }).code;
+    if (typeof fastifyCode === 'string' && fastifyCode.startsWith('FST_ERR_CTP_')) {
+      const tooLarge = fastifyCode === 'FST_ERR_CTP_BODY_TOO_LARGE';
+      return reply.code(tooLarge ? 413 : 400).send({
+        error: {
+          code: tooLarge ? 'payload_too_large' : 'malformed_request',
+          // Deliberately not the Fastify message: it names internals.
+          message: tooLarge ? 'Request body is too large' : 'Request body could not be read',
+        },
+      });
     }
 
     // Unexpected: report it, log it with the request id, and tell the client

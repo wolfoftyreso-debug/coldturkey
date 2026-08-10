@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { loadConfig } from '../config.js';
 import { z } from 'zod';
 import { translate, type Locale } from '@cleat/i18n';
 import { withTenant } from '../db/pool.js';
@@ -13,9 +14,22 @@ const messageBody = z.object({
 });
 
 export async function coachRoutes(app: FastifyInstance): Promise<void> {
+  const config = loadConfig();
   app.addHook('preHandler', authenticate);
 
-  app.post('/v1/coach/message', async (request, reply) => {
+  app.post<{ Body: unknown }>(
+    '/v1/coach/message',
+    {
+      // Each of these can reach a language model, which costs money and takes
+      // seconds. The global per-IP ceiling does not bound that: one signed-in
+      // account can burn the whole budget, and an attacker with an account is
+      // a paying customer for somebody else's bill. Twenty a minute is far
+      // above any real conversation and far below a useful abuse rate.
+      config: {
+        rateLimit: { max: config.COACH_LIMIT_MAX, timeWindow: config.COACH_LIMIT_WINDOW },
+      },
+    },
+    async (request, reply) => {
     const user = currentUser(request);
     const locale = user.locale as Locale;
     const body = messageBody.parse(request.body);
@@ -78,5 +92,6 @@ export async function coachRoutes(app: FastifyInstance): Promise<void> {
       // person should know the answer came from the built-in tools.
       source: result.local ? 'local' : 'model',
     });
-  });
+    },
+  );
 }
