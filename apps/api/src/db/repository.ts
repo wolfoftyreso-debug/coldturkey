@@ -28,6 +28,8 @@ export interface UserRow {
   country: string;
   timezone: string;
   created_at: Date;
+  /** Session generation; see migration 005. */
+  token_version: number;
 }
 
 export async function findUserByEmail(
@@ -35,7 +37,7 @@ export async function findUserByEmail(
   email: string,
 ): Promise<(UserRow & { password_hash: string }) | null> {
   const { rows } = await client.query<UserRow & { password_hash: string }>(
-    `SELECT id, tenant_id, email, password_hash, display_name, role, locale, country, timezone, created_at
+    `SELECT id, tenant_id, email, password_hash, display_name, role, locale, country, timezone, created_at, token_version
      FROM users
      WHERE lower(email) = lower($1) AND deleted_at IS NULL`,
     [email],
@@ -45,7 +47,7 @@ export async function findUserByEmail(
 
 export async function findUserById(client: Client, id: string): Promise<UserRow | null> {
   const { rows } = await client.query<UserRow>(
-    `SELECT id, tenant_id, email, display_name, role, locale, country, timezone, created_at
+    `SELECT id, tenant_id, email, display_name, role, locale, country, timezone, created_at, token_version
      FROM users
      WHERE id = $1 AND deleted_at IS NULL`,
     [id],
@@ -69,7 +71,7 @@ export async function createUser(
   const { rows } = await client.query<UserRow>(
     `INSERT INTO users (tenant_id, email, password_hash, display_name, role, locale, country, timezone)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id, tenant_id, email, display_name, role, locale, country, timezone, created_at`,
+     RETURNING id, tenant_id, email, display_name, role, locale, country, timezone, created_at, token_version`,
     [
       input.tenantId,
       input.email,

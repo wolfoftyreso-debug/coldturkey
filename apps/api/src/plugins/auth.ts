@@ -33,6 +33,11 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
   const user = await withTenant(claims.tid, async (client) => findUserById(client, claims.sub));
   if (!user) throw unauthorized('Account not found');
 
+  // The generation check is what makes signing out, resetting a password and
+  // reuse detection reach an access token that has already been issued.
+  // Without it, "log me out everywhere" meant "in fifteen minutes".
+  if ((user.token_version ?? 0) !== claims.ver) throw unauthorized('Session ended');
+
   request.currentUser = user;
 }
 

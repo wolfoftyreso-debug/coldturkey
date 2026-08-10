@@ -9,6 +9,12 @@ export interface AccessTokenClaims {
   /** Tenant id — the value that becomes `app.tenant_id` for the request. */
   tid: string;
   role: 'member' | 'admin' | 'owner';
+  /**
+   * The account's session generation. A stateless JWT cannot be recalled, so
+   * signing out, resetting a password, or detecting a stolen refresh token
+   * bumps this column and every token issued before the bump stops verifying.
+   */
+  ver: number;
 }
 
 function secretKey(): Uint8Array {
@@ -17,7 +23,7 @@ function secretKey(): Uint8Array {
 
 export async function signAccessToken(claims: AccessTokenClaims): Promise<string> {
   const config = loadConfig();
-  return new SignJWT({ tid: claims.tid, role: claims.role })
+  return new SignJWT({ tid: claims.tid, role: claims.role, ver: claims.ver })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(claims.sub)
     .setIssuedAt()
@@ -41,6 +47,10 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenClaim
       sub: payload.sub,
       tid: payload.tid,
       role: role === 'admin' || role === 'owner' ? role : 'member',
+      // Tokens minted before this claim existed verify as generation 0, which
+      // is the default on the column — so an upgrade does not sign everybody
+      // out at the moment of deploy.
+      ver: typeof payload.ver === 'number' ? payload.ver : 0,
     };
   } catch {
     // Never leak why: expired, wrong signature and malformed all look the same

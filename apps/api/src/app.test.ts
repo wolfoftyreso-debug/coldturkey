@@ -431,6 +431,118 @@ suite('Cleat API', () => {
       expect(alive.statusCode).toBe(200);
     });
 
+    it('a replayed refresh token ends every session for that account', async () => {
+      // Rotation alone meant a stolen token worked once and the loser of the
+      // race simply signed in again, while the winner kept a live session.
+      // Replaying a consumed token is proof two parties hold it.
+      const account = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/register',
+          payload: {
+            email: `reuse-${Date.now()}@cleat.app`,
+            password: 'a-long-enough-password',
+          },
+        }),
+      )) as never as { accessToken: string; refreshToken: string };
+
+      const rotated = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/refresh',
+          payload: { refreshToken: account.refreshToken },
+        }),
+      )) as never as { refreshToken: string; accessToken: string };
+
+      // The thief replays the original.
+      const replay = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/refresh',
+        payload: { refreshToken: account.refreshToken },
+      });
+      expect(replay.statusCode).toBe(401);
+
+      // Everything the legitimate client holds is now dead too — both the
+      // refresh token it rotated to and the access token it was issued.
+      const afterRefresh = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/refresh',
+        payload: { refreshToken: rotated.refreshToken },
+      });
+      expect(afterRefresh.statusCode).toBe(401);
+
+      const afterAccess = await app.inject({
+        method: 'GET',
+        url: '/v1/dashboard',
+        headers: { authorization: `Bearer ${rotated.accessToken}` },
+      });
+      expect(afterAccess.statusCode).toBe(401);
+    });
+
+    it('signing out invalidates the access token, not only the refresh token', async () => {
+      const account = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/register',
+          payload: {
+            email: `logout-${Date.now()}@cleat.app`,
+            password: 'a-long-enough-password',
+          },
+        }),
+      )) as never as { accessToken: string };
+      const auth = { authorization: `Bearer ${account.accessToken}` };
+
+      expect((await app.inject({ method: 'GET', url: '/v1/me', headers: auth })).statusCode).toBe(
+        200,
+      );
+      await app.inject({ method: 'POST', url: '/v1/auth/logout', headers: auth });
+
+      // Previously this stayed 200 for the token's full fifteen minutes.
+      expect((await app.inject({ method: 'GET', url: '/v1/me', headers: auth })).statusCode).toBe(
+        401,
+      );
+    });
+
+    it('a completed password reset ends existing sessions', async () => {
+      const email = `reset-sess-${Date.now()}@cleat.app`;
+      const account = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/register',
+          payload: { email, password: 'a-long-enough-password' },
+        }),
+      )) as never as { accessToken: string };
+
+      const tenant = await ensureDefaultTenant();
+      const issued = await withTenant(tenant.id, async (client) => {
+        const { rows } = await client.query<{ id: string }>(
+          'SELECT id FROM users WHERE lower(email) = lower($1)',
+          [email],
+        );
+        return issueToken(client, {
+          tenantId: tenant.id,
+          userId: rows[0]!.id,
+          purpose: 'password_reset',
+        });
+      });
+
+      await app.inject({
+        method: 'POST',
+        url: '/v1/auth/reset-password',
+        payload: { token: issued.token, password: 'a-completely-new-password' },
+      });
+
+      // The reason somebody resets a password is usually that they think
+      // another person is in the account. That person must lose access now,
+      // not when the token happens to expire.
+      const stillIn = await app.inject({
+        method: 'GET',
+        url: '/v1/me',
+        headers: { authorization: `Bearer ${account.accessToken}` },
+      });
+      expect(stillIn.statusCode).toBe(401);
+    });
+
     it('serves a content security policy and HSTS', async () => {
       const response = await app.inject({ method: 'GET', url: '/v1/public/meta' });
       expect(response.headers['content-security-policy']).toContain("default-src 'none'");
@@ -656,23 +768,36 @@ suite('Cleat API', () => {
     });
 
     it('rotates the refresh token on use', async () => {
+      // On its own account: replaying a consumed token now ends every session
+      // for that user, which is the point of the reuse-detection test further
+      // up — and would take the shared fixture down with it.
+      const own = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/register',
+          payload: {
+            email: `rotate-${Date.now()}@example.com`,
+            password,
+          },
+        }),
+      )) as never as { refreshToken: string };
+
       const first = await app.inject({
         method: 'POST',
         url: '/v1/auth/refresh',
-        payload: { refreshToken },
+        payload: { refreshToken: own.refreshToken },
       });
       expect(first.statusCode).toBe(200);
       const rotated = (await json(first)) as never as { refreshToken: string };
-      expect(rotated.refreshToken).not.toBe(refreshToken);
+      expect(rotated.refreshToken).not.toBe(own.refreshToken);
 
       // The old one is dead the moment it is used.
       const replay = await app.inject({
         method: 'POST',
         url: '/v1/auth/refresh',
-        payload: { refreshToken },
+        payload: { refreshToken: own.refreshToken },
       });
       expect(replay.statusCode).toBe(401);
-      refreshToken = rotated.refreshToken;
     });
   });
 

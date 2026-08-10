@@ -30,6 +30,67 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F7 — A stolen refresh token kept working · HIGH · FIXED
+
+**Attack.** Rotation was in place, so a stolen refresh token worked once and
+the legitimate client's next refresh failed. The comment in the code said that
+this "reveals that the theft happened" — but nothing acted on the revelation.
+In practice the victim saw a logout, signed in again, and the thief kept a
+live session nobody had ended.
+
+**Root cause.** Rotation without reuse detection. Detecting the replay and
+doing nothing with it is the gap.
+
+**Fix.** Replaying a consumed refresh token now revokes every refresh token
+for that account and bumps its session generation, ending the thief's access
+and the victim's at the same moment. Written to the audit log as
+`auth.refresh_token_reuse_detected`. Losing a session is an inconvenience;
+leaving the thief with one is not.
+
+**Regression test.** "a replayed refresh token ends every session for that
+account" — asserts the replay fails, the victim's rotated refresh token fails,
+and the victim's access token fails.
+
+**Worth recording:** this broke an existing test, correctly. "Rotates the
+refresh token on use" performs exactly this replay, and the new consequence
+took the shared fixture down with it. The test now uses its own account.
+
+### F8 — Signing out left the access token alive · MEDIUM · FIXED
+
+**Attack.** Logout revoked refresh tokens and nothing else, so the bearer kept
+working for its full fifteen minutes. On a shared machine that is fifteen
+minutes of somebody's recovery record after they believed they had left. A
+completed password reset had the same hole, and there it is worse: the reason
+people reset a password is usually that they think somebody else is in the
+account.
+
+**Root cause.** A stateless JWT cannot be recalled, and nothing stood in for
+recall.
+
+**Fix.** A `token_version` column on the user, carried as a claim and checked
+on every authenticated request. Logout, password reset and reuse detection
+bump it, which invalidates every token issued before the bump — immediately,
+with no denylist to keep or expire. Tokens minted before the claim existed
+verify as generation 0, so deploying this does not sign everybody out.
+
+**Regression test.** "signing out invalidates the access token, not only the
+refresh token" and "a completed password reset ends existing sessions".
+
+### F9 — Login timing disclosed whether an account existed · LOW · FIXED
+
+**Attack.** Measured over twelve requests, a login naming a real account took
+57ms longer than one naming an unknown address — an account oracle for anyone
+with a stopwatch, and the same question the forgot-password endpoint was
+carefully built to refuse.
+
+**Root cause.** The unknown-account path verified against the placeholder
+string `scrypt$AAAA$AAAA`, which is not a valid hash, so parsing failed and
+the function returned before doing any scrypt work.
+
+**Fix.** A real scrypt hash of a random value, computed once at module load.
+The unknown-account path now does the same work as the real one. Measured
+after: 0.8ms.
+
 ### F6 — Sensitive text stored in cleartext · HIGH · FIXED
 
 **Attack.** Not a live one. A backup restored on a laptop, a replica on a
@@ -193,7 +254,10 @@ Full script re-runnable; results after fixes:
 | ENUM-1 | Account enumeration via forgot-password | BLOCKED (identical 202) |
 | HDR-1 | Security headers | PRESENT |
 
-**15 of 15 blocked.** The IDOR result is worth one caution: it returns 404
+**15 of 15 blocked** in the first probe, and **10 of 10** in a second pass
+covering session handling, tenant header manipulation, email collision,
+parameter pollution, prototype pollution, login timing and coach throttling
+(`scripts/pentest-sessions.mjs`). The IDOR result is worth one caution: it returns 404
 rather than 403, which is correct — 403 would confirm the resource exists.
 
 **A note on how nearly this went wrong.** The first probe reported IDOR-2 and
@@ -366,6 +430,7 @@ Kubernetes API server. Pods have never actually run.
 | R4 | No DPIA, policy, terms, processor agreement | HIGH | NOT DONE |
 | R5 | `script-src 'unsafe-inline'` on the web app | MEDIUM | ACCEPTED, needs nonces |
 | R6 | No 2FA | MEDIUM | NOT DONE |
+| R13 | Access tokens live 15 minutes; revocation is immediate but relies on a database read per request | LOW | Accepted, measured |
 | R7 | Access token in `localStorage`, readable by any XSS | MEDIUM | ACCEPTED trade, mitigated by CSP |
 | R8 | Runtime behaviour never observed — no pod has started | MEDIUM | NOT VERIFIED |
 | R9 | No admin surface exists, so none is hardened | LOW | Revisit when one is added |
@@ -403,6 +468,6 @@ curl -sD- -o /dev/null http://localhost:3000/ | grep -i 'content-security\|stric
 curl -sD- -o /dev/null http://localhost:8080/v1/public/meta | grep -i 'content-security'
 ```
 
-**378 tests green** across four packages at the time of writing: 257 core, 78
+**382 tests green** across four packages at the time of writing: 257 core, 78
 API against real PostgreSQL (89, including the at-rest encryption checks), 19
 i18n, 13 web.

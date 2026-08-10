@@ -20,6 +20,22 @@ const SALT_LENGTH = 16;
 
 export const MIN_PASSWORD_LENGTH = 12;
 
+/**
+ * A real hash of a value nobody knows, used when a login names an account that
+ * does not exist.
+ *
+ * The point is that verifying against it costs exactly what verifying a real
+ * password costs. An earlier placeholder was a malformed string, so parsing
+ * failed and the function returned early — measured at 57ms faster than a
+ * wrong password, which turns the login endpoint into an account oracle for
+ * anyone with a stopwatch.
+ *
+ * Computed once at module load rather than per request: the cost that matters
+ * is the scrypt call in `verifyPassword`, and doing the derivation twice would
+ * make the unknown-account path slower instead of equal.
+ */
+export const DUMMY_PASSWORD_HASH = await hashPassword(randomBytes(32).toString('hex'));
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(SALT_LENGTH);
   const derived = await scrypt(password, salt, KEY_LENGTH);

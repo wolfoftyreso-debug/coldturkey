@@ -1,6 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { hashPassword, passwordProblem, verifyPassword } from '../auth/password.js';
+import {
+  DUMMY_PASSWORD_HASH,
+  hashPassword,
+  passwordProblem,
+  verifyPassword,
+} from '../auth/password.js';
 import {
   createRefreshToken,
   hashRefreshToken,
@@ -144,6 +149,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       sub: result.user.id,
       tid: tenant.id,
       role: result.user.role,
+      ver: result.user.token_version,
     });
 
     return reply.code(201).send({
@@ -180,9 +186,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     const result = await withTenant(tenant.id, async (client) => {
       const user = await findUserByEmail(client, body.email);
-      // Hash a throwaway password when the account does not exist so that a
-      // missing account and a wrong password take about the same time.
-      const stored = user?.password_hash ?? 'scrypt$AAAA$AAAA';
+      // Verify against a real hash when the account does not exist, so the
+      // work is the same either way. The previous placeholder was malformed,
+      // so verification failed to parse and returned early — measured at 57ms
+      // faster than a wrong password, which is an account oracle with extra
+      // steps.
+      const stored = user?.password_hash ?? DUMMY_PASSWORD_HASH;
       const ok = await verifyPassword(body.password, stored);
       if (!user || !ok) return null;
 
@@ -208,6 +217,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       sub: result.user.id,
       tid: tenant.id,
       role: result.user.role,
+      ver: result.user.token_version,
     });
 
     return reply.send({
@@ -239,10 +249,39 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         [hash],
       );
       const row = rows[0];
-      if (!row) return null;
+      if (!row) {
+        // Not live. If this hash was ever issued, the token has been consumed
+        // already and is now being replayed — proof that two parties hold it.
+        // Rotation alone only meant the loser of that race got a 401 and
+        // signed in again, while the winner kept a working session. End every
+        // session for the account instead: an inconvenience for the real
+        // person, and the end of the thief's access.
+        const { rows: seen } = await client.query<{ user_id: string }>(
+          'SELECT user_id FROM refresh_tokens WHERE token_hash = $1',
+          [hash],
+        );
+        const owner = seen[0]?.user_id;
+        if (owner) {
+          await client.query(
+            `UPDATE refresh_tokens SET revoked_at = now()
+              WHERE user_id = $1 AND revoked_at IS NULL`,
+            [owner],
+          );
+          await client.query(
+            'UPDATE users SET token_version = token_version + 1 WHERE id = $1',
+            [owner],
+          );
+          await writeAudit(client, {
+            tenantId: tenant.id,
+            userId: owner,
+            action: 'auth.refresh_token_reuse_detected',
+          });
+        }
+        return null;
+      }
 
       // Rotate on every use: a stolen refresh token is good for one request, and
-      // the legitimate client's next refresh reveals that the theft happened.
+      // replaying it trips the branch above.
       await client.query('UPDATE refresh_tokens SET revoked_at = now() WHERE token_hash = $1', [
         hash,
       ]);
@@ -264,6 +303,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       sub: result.user.id,
       tid: tenant.id,
       role: result.user.role,
+      ver: result.user.token_version,
     });
 
     return reply.send({
@@ -382,6 +422,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           WHERE user_id = $1 AND revoked_at IS NULL`,
         [consumed.userId],
       );
+      await client.query('UPDATE users SET token_version = token_version + 1 WHERE id = $1', [
+        consumed.userId,
+      ]);
       await writeAudit(client, {
         tenantId: tenant.id,
         userId: consumed.userId,
@@ -441,6 +484,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         'UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL',
         [user.id],
       );
+      // And the access token. Revoking only the refresh token left the bearer
+      // working for its full fifteen minutes — on a shared machine, fifteen
+      // minutes of somebody's recovery record after they thought they had
+      // left.
+      await client.query('UPDATE users SET token_version = token_version + 1 WHERE id = $1', [
+        user.id,
+      ]);
       await writeAudit(client, {
         tenantId: user.tenant_id,
         userId: user.id,
