@@ -218,10 +218,30 @@ HSTS one year with subdomains on both.
 **Regression test.** `app.test.ts` → "serves a content security policy and
 HSTS". Web headers verified against a running server.
 
-**Known limitation, not hidden:** `script-src` retains `'unsafe-inline'`
-because Next inlines its bootstrap. Removing it needs per-route nonces. The
-value that matters most — `default-src 'self'` blocking exfiltration — is in
-place.
+**`script-src 'unsafe-inline'` stays, and that is now a measured decision
+rather than an unfinished one.**
+
+Nonces were implemented and tested: middleware issuing a per-request nonce
+with `'strict-dynamic'`, scoped by matcher to the routes that render user
+content so `/` and `/kris` would keep static rendering. Under it the
+application was completely dead — zero scripts carried the nonce, every chunk
+was refused, and the login page did nothing at all. Next only stamps nonces
+when a page renders dynamically, and every page here is a statically
+prerendered client component; `export const dynamic = 'force-dynamic'` does
+not change that for a client component with no server data dependency, which
+was also tested.
+
+Making it work means restructuring twelve pages away from static rendering.
+What it would close is an XSS, and this codebase has no
+`dangerouslySetInnerHTML`, no `innerHTML`, no `eval` and no `Function()` —
+React escapes everything. Against a compromised dependency `'strict-dynamic'`
+would not help either: a poisoned chunk is loaded by the nonced bootstrap and
+inherits its trust.
+
+High cost, thin benefit, and the record says it was tried rather than skipped.
+The directive that matters most — `default-src 'self'` with a bounded
+`connect-src`, which stops an injected script sending anything off-origin — is
+in place.
 
 ### F4 — Client errors returned 500 · MEDIUM · FIXED
 
@@ -464,7 +484,7 @@ Kubernetes API server. Pods have never actually run.
 | R11 | Encryption keys must be backed up separately from the database | MEDIUM | Documented, operational |
 | ~~R12~~ | ~~Three narrative columns still cleartext~~ | — | CLOSED; every free-text column is now encrypted |
 | R4 | No DPIA, policy, terms, processor agreement | HIGH | NOT DONE |
-| R5 | `script-src 'unsafe-inline'` on the web app | MEDIUM | ACCEPTED, needs nonces |
+| R5 | `script-src 'unsafe-inline'` on the web app | LOW | ACCEPTED with evidence — nonces implemented, measured to break the app, reverted. See F3. |
 | ~~R6~~ | ~~No 2FA~~ | — | CLOSED (F10) |
 | R13 | Access tokens live 15 minutes; revocation is immediate but relies on a database read per request | LOW | Accepted, measured |
 | R7 | Access token in `localStorage`, readable by any XSS | MEDIUM | ACCEPTED trade, mitigated by CSP |
