@@ -289,11 +289,12 @@ Two properties worth knowing:
 is not a backup, and the key must not live in the same blast radius as the
 ciphertext.
 
+Every free-text column a person writes into is covered: coach transcripts, the
+why statement, craving, relapse, check-in and life-domain notes, trigger
+labels, support contact names and phone numbers, and the TOTP secret.
+
 Not encrypted, deliberately: anything queried, sorted or joined on. Encrypting
 an indexed column turns lookups into full scans or breaks them outright.
-`triggers.label`, `check_ins.note` and `life_domains.note` are also still in
-the clear — narrative, lower sensitivity than the above, and listed here so
-the boundary is stated rather than assumed.
 
 ## Observability
 

@@ -30,6 +30,9 @@ export interface UserRow {
   created_at: Date;
   /** Session generation; see migration 005. */
   token_version: number;
+  /** Encrypted TOTP secret, or null. See migration 006. */
+  totp_secret: string | null;
+  totp_enabled_at: Date | null;
 }
 
 export async function findUserByEmail(
@@ -37,7 +40,7 @@ export async function findUserByEmail(
   email: string,
 ): Promise<(UserRow & { password_hash: string }) | null> {
   const { rows } = await client.query<UserRow & { password_hash: string }>(
-    `SELECT id, tenant_id, email, password_hash, display_name, role, locale, country, timezone, created_at, token_version
+    `SELECT id, tenant_id, email, password_hash, display_name, role, locale, country, timezone, created_at, token_version, totp_secret, totp_enabled_at
      FROM users
      WHERE lower(email) = lower($1) AND deleted_at IS NULL`,
     [email],
@@ -47,7 +50,7 @@ export async function findUserByEmail(
 
 export async function findUserById(client: Client, id: string): Promise<UserRow | null> {
   const { rows } = await client.query<UserRow>(
-    `SELECT id, tenant_id, email, display_name, role, locale, country, timezone, created_at, token_version
+    `SELECT id, tenant_id, email, display_name, role, locale, country, timezone, created_at, token_version, totp_secret, totp_enabled_at
      FROM users
      WHERE id = $1 AND deleted_at IS NULL`,
     [id],
@@ -71,7 +74,7 @@ export async function createUser(
   const { rows } = await client.query<UserRow>(
     `INSERT INTO users (tenant_id, email, password_hash, display_name, role, locale, country, timezone)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id, tenant_id, email, display_name, role, locale, country, timezone, created_at, token_version`,
+     RETURNING id, tenant_id, email, display_name, role, locale, country, timezone, created_at, token_version, totp_secret, totp_enabled_at`,
     [
       input.tenantId,
       input.email,
@@ -313,7 +316,19 @@ interface CheckInRow {
   note: string | null;
 }
 
-function toCheckIn(row: CheckInRow): CheckIn {
+/** The narrative columns on a check-in. All five are somebody's own words. */
+const CHECK_IN_TEXT = ['biggest_risk', 'went_well', 'was_hard', 'learned', 'note'] as const;
+
+function toCheckIn(row: CheckInRow, ref?: { tenantId: string; ownerId: string }): CheckIn {
+  const open = (value: string | null, column: string): string | null =>
+    ref
+      ? decryptField(value, {
+          tenantId: ref.tenantId,
+          table: 'check_ins',
+          column,
+          ownerId: ref.ownerId,
+        })
+      : value;
   return {
     id: row.id,
     kind: row.kind,
@@ -325,11 +340,11 @@ function toCheckIn(row: CheckInRow): CheckIn {
     sleepQuality: row.sleep_quality,
     stress: row.stress,
     cravingIntensity: row.craving_intensity,
-    biggestRisk: row.biggest_risk,
-    wentWell: row.went_well,
-    wasHard: row.was_hard,
-    learned: row.learned,
-    note: row.note,
+    biggestRisk: open(row.biggest_risk, 'biggest_risk'),
+    wentWell: open(row.went_well, 'went_well'),
+    wasHard: open(row.was_hard, 'was_hard'),
+    learned: open(row.learned, 'learned'),
+    note: open(row.note, 'note'),
   };
 }
 
@@ -337,6 +352,7 @@ export async function listCheckIns(
   client: Client,
   userId: string,
   sinceDays = 90,
+  tenantId?: string,
 ): Promise<CheckIn[]> {
   const { rows } = await client.query<CheckInRow>(
     `SELECT id, kind, day::text AS day, created_at, mood, sleep_quality, stress,
@@ -346,7 +362,7 @@ export async function listCheckIns(
      ORDER BY created_at ASC`,
     [userId, String(sinceDays)],
   );
-  return rows.map(toCheckIn);
+  return rows.map((row) => toCheckIn(row, tenantId ? { tenantId, ownerId: userId } : undefined));
 }
 
 export async function upsertCheckIn(
@@ -368,6 +384,13 @@ export async function upsertCheckIn(
     note?: string | null;
   },
 ): Promise<CheckIn> {
+  const seal = (value: string | null, column: string): string | null =>
+    encryptField(value, {
+      tenantId: input.tenantId,
+      table: 'check_ins',
+      column,
+      ownerId: input.userId,
+    });
   const { rows } = await client.query<CheckInRow>(
     `INSERT INTO check_ins (tenant_id, user_id, kind, day, mood, sleep_quality, stress,
                             craving_intensity, biggest_risk, key_decision, went_well,
@@ -395,15 +418,15 @@ export async function upsertCheckIn(
       input.sleepQuality ?? null,
       input.stress ?? null,
       input.cravingIntensity ?? null,
-      input.biggestRisk ?? null,
+      seal(input.biggestRisk ?? null, 'biggest_risk'),
       input.keyDecision ?? null,
-      input.wentWell ?? null,
-      input.wasHard ?? null,
-      input.learned ?? null,
-      input.note ?? null,
+      seal(input.wentWell ?? null, 'went_well'),
+      seal(input.wasHard ?? null, 'was_hard'),
+      seal(input.learned ?? null, 'learned'),
+      seal(input.note ?? null, 'note'),
     ],
   );
-  return toCheckIn(rows[0]!);
+  return toCheckIn(rows[0]!, { tenantId: input.tenantId, ownerId: input.userId });
 }
 
 // ----------------------------------------------------------------- cravings ---
@@ -714,12 +737,29 @@ export interface TriggerRow {
   created_at: Date;
 }
 
-export async function listTriggers(client: Client, userId: string): Promise<TriggerRow[]> {
+export async function listTriggers(
+  client: Client,
+  userId: string,
+  tenantId?: string,
+): Promise<TriggerRow[]> {
   const { rows } = await client.query<TriggerRow>(
     'SELECT id, label, category, chain, created_at FROM triggers WHERE user_id = $1 ORDER BY created_at ASC',
     [userId],
   );
-  return rows;
+  // A trigger label is short but not harmless — "seeing my ex", "payday",
+  // "when he calls" is a sentence about somebody's life.
+  return tenantId
+    ? rows.map((r) => ({
+        ...r,
+        label:
+          decryptField(r.label, {
+            tenantId,
+            table: 'triggers',
+            column: 'label',
+            ownerId: userId,
+          }) ?? '',
+      }))
+    : rows;
 }
 
 export async function createTrigger(
@@ -736,9 +776,20 @@ export async function createTrigger(
     `INSERT INTO triggers (tenant_id, user_id, label, category, chain)
      VALUES ($1, $2, $3, $4, $5::jsonb)
      RETURNING id, label, category, chain, created_at`,
-    [input.tenantId, input.userId, input.label, input.category, JSON.stringify(input.chain)],
+    [
+      input.tenantId,
+      input.userId,
+      encryptField(input.label, {
+        tenantId: input.tenantId,
+        table: 'triggers',
+        column: 'label',
+        ownerId: input.userId,
+      }),
+      input.category,
+      JSON.stringify(input.chain),
+    ],
   );
-  return rows[0]!;
+  return { ...rows[0]!, label: input.label };
 }
 
 export async function deleteTrigger(
@@ -765,12 +816,23 @@ export interface LifeDomainRow {
 export async function listLifeDomains(
   client: Client,
   userId: string,
+  tenantId?: string,
 ): Promise<LifeDomainRow[]> {
   const { rows } = await client.query<LifeDomainRow>(
     'SELECT domain, status, note, updated_at FROM life_domains WHERE user_id = $1',
     [userId],
   );
-  return rows;
+  return tenantId
+    ? rows.map((r) => ({
+        ...r,
+        note: decryptField(r.note, {
+          tenantId,
+          table: 'life_domains',
+          column: 'note',
+          ownerId: userId,
+        }),
+      }))
+    : rows;
 }
 
 export async function upsertLifeDomain(
@@ -791,9 +853,20 @@ export async function upsertLifeDomain(
        note = COALESCE(EXCLUDED.note, life_domains.note),
        updated_at = now()
      RETURNING domain, status, note, updated_at`,
-    [input.tenantId, input.userId, input.domain, input.status, input.note ?? null],
+    [
+      input.tenantId,
+      input.userId,
+      input.domain,
+      input.status,
+      encryptField(input.note ?? null, {
+        tenantId: input.tenantId,
+        table: 'life_domains',
+        column: 'note',
+        ownerId: input.userId,
+      }),
+    ],
   );
-  return rows[0]!;
+  return { ...rows[0]!, note: input.note ?? rows[0]!.note };
 }
 
 // ---------------------------------------------------------------- snapshot ---
@@ -813,7 +886,7 @@ export async function loadSnapshot(
   const profile = await getProfile(client, user.id, user);
   const quit = await getActiveQuit(client, user.id);
   const relapses = await listRelapses(client, user.id, user.tenant_id);
-  const checkIns = await listCheckIns(client, user.id, windowDays);
+  const checkIns = await listCheckIns(client, user.id, windowDays, user.tenant_id);
   const cravings = await listCravings(client, user.id, windowDays, user.tenant_id);
   const supportContacts = await listSupportContacts(client, user.id, user.tenant_id);
   return { profile, quit, relapses, checkIns, cravings, supportContacts };

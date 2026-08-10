@@ -12,6 +12,7 @@ import { recordRequest } from './observability/metrics.js';
 import { reportError } from './observability/errors.js';
 import { publicRoutes } from './routes/public.js';
 import { openapiRoutes } from './routes/openapi.js';
+import { twoFactorRoutes } from './routes/twofactor.js';
 import { privacyRoutes } from './routes/privacy.js';
 import { recoveryRoutes } from './routes/recovery.js';
 
@@ -184,6 +185,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(publicRoutes);
   await app.register(openapiRoutes);
   await app.register(authRoutes);
+  await app.register(twoFactorRoutes);
   await app.register(recoveryRoutes);
   await app.register(coachRoutes);
   await app.register(privacyRoutes);

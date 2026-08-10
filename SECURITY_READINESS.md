@@ -30,6 +30,42 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F10 — No second factor · MEDIUM · FIXED
+
+**Attack.** Account takeover with a password alone. An account here is not a
+shopping history: whoever holds it can read a relapse log and a coach
+transcript, which is the raw material for blackmail, a custody dispute, or an
+employer who was never meant to know. Password plus email recovery is thin
+protection for that, and email is exactly what a controlling partner with the
+household account already has.
+
+**Fix.** TOTP (RFC 6238), optional rather than mandatory — forcing an
+authenticator app on somebody in early recovery would push people away from a
+tool they need. Enrolment is two steps so a failed QR scan cannot lock anyone
+out. Ten single-use recovery codes, hash-only, because a lost phone must not
+mean a lost account: that outcome is worse than the one 2FA prevents.
+
+The details that decide whether it is real:
+
+* The secret is encrypted with the field keyring before it is stored. A TOTP
+  secret sitting in the clear next to a password hash is a second factor in
+  name only once a backup leaks.
+* A correct password produces a five-minute challenge, not tokens. The
+  challenge is stored rather than signed so it can be consumed exactly once.
+* **Five attempts per challenge.** Six digits is a million possibilities,
+  which sounds like a lot and is not — unlimited guessing inside a
+  five-minute window is a few thousand requests a second away from certain.
+* Disabling requires the password, so an attacker holding a borrowed session
+  cannot simply take the second factor off.
+
+**Regression test.** Eight unit tests including the RFC 6238 published vectors
+— a home-grown TOTP that is self-consistent and wrong locks people out of
+their own accounts, so agreeing with a real authenticator is the property
+under test. Seven integration tests: two-step enrolment, the secret being
+ciphertext at rest, password-alone no longer logging in, completion, challenge
+replay, the five-attempt ceiling refusing even a correct code afterwards,
+single-use recovery codes, and disable requiring the password.
+
 ### F7 — A stolen refresh token kept working · HIGH · FIXED
 
 **Attack.** Rotation was in place, so a stolen refresh token worked once and
@@ -426,10 +462,10 @@ Kubernetes API server. Pods have never actually run.
 | R2 | Safety triage never clinically reviewed | HIGH | NOT VERIFIED |
 | ~~R3~~ | ~~No field-level encryption at rest~~ | — | CLOSED (F6) |
 | R11 | Encryption keys must be backed up separately from the database | MEDIUM | Documented, operational |
-| R12 | `triggers.label`, `check_ins.note`, `life_domains.note` still cleartext | LOW | Boundary stated in SELF_HOSTING.md |
+| ~~R12~~ | ~~Three narrative columns still cleartext~~ | — | CLOSED; every free-text column is now encrypted |
 | R4 | No DPIA, policy, terms, processor agreement | HIGH | NOT DONE |
 | R5 | `script-src 'unsafe-inline'` on the web app | MEDIUM | ACCEPTED, needs nonces |
-| R6 | No 2FA | MEDIUM | NOT DONE |
+| ~~R6~~ | ~~No 2FA~~ | — | CLOSED (F10) |
 | R13 | Access tokens live 15 minutes; revocation is immediate but relies on a database read per request | LOW | Accepted, measured |
 | R7 | Access token in `localStorage`, readable by any XSS | MEDIUM | ACCEPTED trade, mitigated by CSP |
 | R8 | Runtime behaviour never observed — no pod has started | MEDIUM | NOT VERIFIED |
@@ -468,6 +504,6 @@ curl -sD- -o /dev/null http://localhost:3000/ | grep -i 'content-security\|stric
 curl -sD- -o /dev/null http://localhost:8080/v1/public/meta | grep -i 'content-security'
 ```
 
-**382 tests green** across four packages at the time of writing: 257 core, 78
-API against real PostgreSQL (89, including the at-rest encryption checks), 19
-i18n, 13 web.
+**397 tests green** across four packages at the time of writing: 257 core, 78
+API against real PostgreSQL (108, including the at-rest encryption checks and
+the two-factor flow), 19 i18n, 13 web.

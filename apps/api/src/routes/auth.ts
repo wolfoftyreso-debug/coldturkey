@@ -34,6 +34,9 @@ import {
   resetKey,
 } from '../auth/lockout.js';
 import { authenticate, currentUser } from '../plugins/auth.js';
+import { createHash, randomBytes } from 'node:crypto';
+import { decryptField } from '../crypto/field.js';
+import { normaliseRecoveryCode, verifyCode } from '../auth/totp.js';
 
 const registerBody = z.object({
   email: z.string().email(),
@@ -52,6 +55,10 @@ const loginBody = z.object({
 const refreshBody = z.object({
   refreshToken: z.string().min(10),
 });
+
+const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
+const sha256Recovery = (value: string): string =>
+  createHash('sha256').update(normaliseRecoveryCode(value)).digest('hex');
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   const config = loadConfig();
@@ -195,6 +202,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const ok = await verifyPassword(body.password, stored);
       if (!user || !ok) return null;
 
+      // No session yet when a second factor is required: minting a refresh
+      // token here and discarding it would leave an orphan row per attempt.
+      if (user.totp_enabled_at) return { user, refreshToken: null };
+
       const refresh = createRefreshToken();
       await client.query(
         `INSERT INTO refresh_tokens (tenant_id, user_id, token_hash, expires_at)
@@ -212,6 +223,128 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
 
     await clearFailures([byIp, byAccount]);
+
+    // A correct password is no longer the whole of a login when a second
+    // factor is on. Issue a short-lived challenge instead of tokens.
+    if (result.refreshToken === null) {
+      const challenge = randomBytes(32).toString('base64url');
+      await withTenant(tenant.id, async (client) => {
+        await client.query(
+          `INSERT INTO login_challenges (tenant_id, user_id, token_hash, expires_at)
+           VALUES ($1, $2, $3, now() + interval '5 minutes')`,
+          [tenant.id, result.user.id, sha256(challenge)],
+        );
+      });
+      return reply.send({ mfaRequired: true, challenge });
+    }
+
+    const accessToken = await signAccessToken({
+      sub: result.user.id,
+      tid: tenant.id,
+      role: result.user.role,
+      ver: result.user.token_version,
+    });
+
+    return reply.send({
+      accessToken,
+      refreshToken: result.refreshToken,
+      user: publicUser(result.user),
+      tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name },
+    });
+  });
+
+  /**
+   * Complete a login that needed a second factor.
+   *
+   * The attempt counter on the challenge is the control that matters. A
+   * six-digit code is a million possibilities, which sounds like a lot and is
+   * not: unlimited guesses against a five-minute window is roughly three
+   * thousand attempts a second away from certain. Five attempts, then the
+   * challenge is dead and the password has to be entered again.
+   */
+  app.post('/v1/auth/totp/verify', async (request, reply) => {
+    const body = z
+      .object({ challenge: z.string().min(10), code: z.string().min(6).max(20) })
+      .parse(request.body);
+
+    const slug = tenantSlugFromRequest(
+      request.headers['x-tenant'] as string | undefined,
+      request.headers.host,
+    );
+    const tenant =
+      slug === config.DEFAULT_TENANT_SLUG
+        ? await ensureDefaultTenant()
+        : await findTenantBySlug(slug);
+    if (!tenant) throw unauthorized('Invalid challenge');
+
+    const result = await withTenant(tenant.id, async (client) => {
+      const { rows } = await client.query<{ id: string; user_id: string; attempts: number }>(
+        `SELECT id, user_id, attempts FROM login_challenges
+          WHERE token_hash = $1 AND consumed_at IS NULL AND expires_at > now()`,
+        [sha256(body.challenge)],
+      );
+      const challenge = rows[0];
+      if (!challenge) return null;
+
+      if (challenge.attempts >= 5) {
+        await client.query('UPDATE login_challenges SET consumed_at = now() WHERE id = $1', [
+          challenge.id,
+        ]);
+        return null;
+      }
+
+      const user = await findUserById(client, challenge.user_id);
+      if (!user) return null;
+
+      const secret = decryptField(user.totp_secret ?? null, {
+        tenantId: tenant.id,
+        table: 'users',
+        column: 'totp_secret',
+        ownerId: user.id,
+      });
+
+      let ok = Boolean(secret) && verifyCode(secret!, body.code);
+
+      // A recovery code, for the phone that ended up in a river. Single use,
+      // and only the hash is stored.
+      if (!ok) {
+        const { rowCount } = await client.query(
+          `UPDATE totp_recovery_codes SET used_at = now()
+            WHERE user_id = $1 AND code_hash = $2 AND used_at IS NULL`,
+          [user.id, sha256Recovery(body.code)],
+        );
+        ok = (rowCount ?? 0) > 0;
+        if (ok) {
+          await writeAudit(client, {
+            tenantId: tenant.id,
+            userId: user.id,
+            action: 'auth.totp_recovery_code_used',
+          });
+        }
+      }
+
+      if (!ok) {
+        await client.query('UPDATE login_challenges SET attempts = attempts + 1 WHERE id = $1', [
+          challenge.id,
+        ]);
+        return null;
+      }
+
+      await client.query('UPDATE login_challenges SET consumed_at = now() WHERE id = $1', [
+        challenge.id,
+      ]);
+
+      const refresh = createRefreshToken();
+      await client.query(
+        `INSERT INTO refresh_tokens (tenant_id, user_id, token_hash, expires_at)
+         VALUES ($1, $2, $3, now() + ($4 || ' days')::interval)`,
+        [tenant.id, user.id, refresh.hash, String(config.REFRESH_TOKEN_TTL_DAYS)],
+      );
+      await client.query('UPDATE users SET last_seen_at = now() WHERE id = $1', [user.id]);
+      return { user, refreshToken: refresh.token };
+    });
+
+    if (!result) throw unauthorized('Invalid challenge');
 
     const accessToken = await signAccessToken({
       sub: result.user.id,

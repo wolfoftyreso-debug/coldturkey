@@ -9,6 +9,7 @@ import { createUser } from './db/repository.js';
 import { issueToken } from './auth/recovery.js';
 import { buildReport } from './observability/errors.js';
 import { encryptionEnabled } from './crypto/field.js';
+import { currentCode } from './auth/totp.js';
 
 /**
  * End-to-end API tests against a real PostgreSQL instance.
@@ -94,6 +95,9 @@ suite('Cleat API', () => {
       relapse: 'ATERFALL-ANTECKNING-HEMLIG-4e8d',
       contact: 'STODKONTAKT-NAMN-HEMLIGT-1a6f',
       coach: 'COACH-MEDDELANDE-HEMLIGT-3b5e',
+      trigger: 'TRIGGER-ETIKETT-HEMLIG-5d1c',
+      checkin: 'INCHECK-ANTECKNING-HEMLIG-2f9a',
+      domain: 'LIVSDOMAN-ANTECKNING-HEMLIG-8b4e',
     };
     let token: string;
     let tenantId: string;
@@ -158,6 +162,24 @@ suite('Cleat API', () => {
         headers: auth,
         payload: { message: secrets.coach },
       });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/triggers',
+        headers: auth,
+        payload: { label: secrets.trigger, kind: 'emotion' },
+      });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/checkins',
+        headers: auth,
+        payload: { kind: 'evening', mood: 3, note: secrets.checkin },
+      });
+      await app.inject({
+        method: 'PUT',
+        url: '/v1/rebuild/sleep',
+        headers: auth,
+        payload: { status: 'working', note: secrets.domain },
+      });
     });
 
     it('is actually running with encryption configured', () => {
@@ -182,6 +204,9 @@ suite('Cleat API', () => {
           ['relapses', 'note', secrets.relapse],
           ['support_contacts', 'name', secrets.contact],
           ['coach_messages', 'content', secrets.coach],
+          ['triggers', 'label', secrets.trigger],
+          ['check_ins', 'note', secrets.checkin],
+          ['life_domains', 'note', secrets.domain],
         ];
         for (const [table, column, secret] of columns) {
           // Scoped to this test's own user. An unscoped scan would trip over
@@ -222,6 +247,16 @@ suite('Cleat API', () => {
         await app.inject({ method: 'GET', url: '/v1/cravings', headers: auth }),
       )) as never as { cravings: { note: string | null }[] };
       expect(cravings.cravings.map((c) => c.note)).toContain(secrets.craving);
+
+      const triggers = (await json(
+        await app.inject({ method: 'GET', url: '/v1/triggers', headers: auth }),
+      )) as never as { triggers: { label: string }[] };
+      expect(triggers.triggers.map((t) => t.label)).toContain(secrets.trigger);
+
+      const rebuild = (await json(
+        await app.inject({ method: 'GET', url: '/v1/rebuild', headers: auth }),
+      )) as never as { domains: { note: string | null }[] };
+      expect(rebuild.domains.map((d) => d.note)).toContain(secrets.domain);
     });
 
     it('exports plaintext, not envelopes', async () => {
@@ -235,6 +270,214 @@ suite('Cleat API', () => {
       expect(exported.body).toContain(secrets.why);
       expect(exported.body).toContain(secrets.coach);
       expect(exported.body).not.toContain('c1.');
+    });
+  });
+
+  describe('two-factor authentication', () => {
+    const email = `totp-${Date.now()}@cleat.app`;
+    const pw = 'a-long-enough-password';
+    let token: string;
+    let secret: string;
+    let recoveryCodes: string[];
+
+    it('enrols in two steps and will not enable without a proven code', async () => {
+      const registered = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/register',
+          payload: { email, password: pw },
+        }),
+      )) as never as { accessToken: string };
+      token = registered.accessToken;
+      const auth = { authorization: `Bearer ${token}` };
+
+      const setup = (await json(
+        await app.inject({ method: 'POST', url: '/v1/auth/totp/setup', headers: auth }),
+      )) as never as { secret: string; uri: string };
+      secret = setup.secret;
+      expect(setup.uri).toContain('otpauth://totp/');
+
+      // A wrong code must not switch it on. Enabling on the first request
+      // would lock people out whenever a QR code failed to scan.
+      const refused = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/enable',
+        headers: auth,
+        payload: { code: '000000' },
+      });
+      expect(refused.statusCode).toBe(400);
+
+      const enabled = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/totp/enable',
+          headers: auth,
+          payload: { code: currentCode(secret) },
+        }),
+      )) as never as { enabled: boolean; recoveryCodes: string[] };
+      expect(enabled.enabled).toBe(true);
+      expect(enabled.recoveryCodes).toHaveLength(10);
+      recoveryCodes = enabled.recoveryCodes;
+    });
+
+    it('stores the secret encrypted, not in the clear', async () => {
+      // A TOTP secret next to a password hash, both readable from a backup,
+      // is a second factor in name only.
+      const tenant = await ensureDefaultTenant();
+      const stored = await withTenant(tenant.id, async (client) => {
+        const { rows } = await client.query<{ totp_secret: string }>(
+          'SELECT totp_secret FROM users WHERE lower(email) = lower($1)',
+          [email],
+        );
+        return rows[0]?.totp_secret ?? '';
+      });
+      expect(stored).not.toContain(secret);
+      expect(stored.startsWith('c1.')).toBe(true);
+    });
+
+    it('a correct password alone no longer logs in', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: { email, password: pw },
+      });
+      const body = (await json(response)) as never as {
+        mfaRequired: boolean;
+        challenge: string;
+        accessToken?: string;
+      };
+      expect(body.mfaRequired).toBe(true);
+      expect(body.challenge).toBeTruthy();
+      expect(body.accessToken).toBeUndefined();
+    });
+
+    it('completes with a code from the authenticator', async () => {
+      const challenge = (
+        (await json(
+          await app.inject({
+            method: 'POST',
+            url: '/v1/auth/login',
+            payload: { email, password: pw },
+          }),
+        )) as never as { challenge: string }
+      ).challenge;
+
+      const done = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge, code: currentCode(secret) },
+      });
+      expect(done.statusCode).toBe(200);
+      const body = (await json(done)) as never as { accessToken: string };
+      expect(body.accessToken).toBeTruthy();
+
+      // Single use: the same challenge cannot be replayed.
+      const replay = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge, code: currentCode(secret) },
+      });
+      expect(replay.statusCode).toBe(401);
+    });
+
+    it('gives up after five wrong codes rather than allowing a brute force', async () => {
+      // Six digits is a million possibilities, which sounds like a lot and is
+      // not: unlimited guessing inside a five-minute window is a few thousand
+      // requests a second away from certain.
+      const challenge = (
+        (await json(
+          await app.inject({
+            method: 'POST',
+            url: '/v1/auth/login',
+            payload: { email, password: pw },
+          }),
+        )) as never as { challenge: string }
+      ).challenge;
+
+      for (let i = 0; i < 5; i += 1) {
+        const wrong = await app.inject({
+          method: 'POST',
+          url: '/v1/auth/totp/verify',
+          payload: { challenge, code: '000000' },
+        });
+        expect(wrong.statusCode).toBe(401);
+      }
+
+      // Now even the right code is refused: the challenge is spent.
+      const correct = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge, code: currentCode(secret) },
+      });
+      expect(correct.statusCode).toBe(401);
+    });
+
+    it('accepts a recovery code exactly once', async () => {
+      const challenge = (
+        (await json(
+          await app.inject({
+            method: 'POST',
+            url: '/v1/auth/login',
+            payload: { email, password: pw },
+          }),
+        )) as never as { challenge: string }
+      ).challenge;
+
+      const used = recoveryCodes[0]!;
+      const first = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge, code: used },
+      });
+      expect(first.statusCode).toBe(200);
+
+      const second = (
+        (await json(
+          await app.inject({
+            method: 'POST',
+            url: '/v1/auth/login',
+            payload: { email, password: pw },
+          }),
+        )) as never as { challenge: string }
+      ).challenge;
+      const replay = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge: second, code: used },
+      });
+      expect(replay.statusCode).toBe(401);
+    });
+
+    it('cannot be switched off with a borrowed session alone', async () => {
+      // Otherwise an attacker who already has a token simply removes the
+      // second factor, which makes it protection against nobody.
+      const auth = { authorization: `Bearer ${token}` };
+      const withoutPassword = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/disable',
+        headers: auth,
+        payload: { password: 'not-the-password' },
+      });
+      expect(withoutPassword.statusCode).toBe(401);
+
+      const withPassword = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/disable',
+        headers: auth,
+        payload: { password: pw },
+      });
+      expect(withPassword.statusCode).toBe(200);
+
+      // And a plain login works again.
+      const after = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/login',
+          payload: { email, password: pw },
+        }),
+      )) as never as { accessToken?: string; mfaRequired?: boolean };
+      expect(after.accessToken).toBeTruthy();
+      expect(after.mfaRequired).toBeUndefined();
     });
   });
 

@@ -540,7 +540,7 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
     const user = currentUser(request);
     const locale = user.locale as Locale;
     return withTenant(user.tenant_id, async (client) => {
-      const rows = await listTriggers(client, user.id);
+      const rows = await listTriggers(client, user.id, user.tenant_id);
       return {
         intro: translate(locale, 'trigger.intro'),
         steps: ['trigger', 'thought', 'feeling', 'impulse', 'action', 'consequence'].map(
@@ -604,7 +604,7 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
 
     return withTenant(user.tenant_id, async (client) => {
       const snapshot = await loadSnapshot(client, user);
-      const rows = await listLifeDomains(client, user.id);
+      const rows = await listLifeDomains(client, user.id, user.tenant_id);
       const phase = assessPhase(snapshot, now).phase;
 
       const progress: DomainProgress[] = rows.map((r) => ({
