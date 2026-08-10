@@ -350,7 +350,7 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
       .parse(request.body);
 
     const craving = await withTenant(user.tenant_id, async (client) =>
-      updateCravingOutcome(client, user.id, id, body.outcome, body.actionTaken),
+      updateCravingOutcome(client, user.id, id, body.outcome, body.actionTaken, user.tenant_id),
     );
     if (!craving) throw notFound('Craving');
     return { craving };
@@ -714,7 +714,7 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
       .parse(request.query).limit;
 
     return withTenant(user.tenant_id, async (client) => ({
-      messages: await listCoachMessages(client, user.id, limit),
+      messages: await listCoachMessages(client, user.id, limit, user.tenant_id),
     }));
   });
 }

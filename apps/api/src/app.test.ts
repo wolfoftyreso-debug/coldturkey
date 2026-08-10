@@ -8,6 +8,7 @@ import { hashPassword } from './auth/password.js';
 import { createUser } from './db/repository.js';
 import { issueToken } from './auth/recovery.js';
 import { buildReport } from './observability/errors.js';
+import { encryptionEnabled } from './crypto/field.js';
 
 /**
  * End-to-end API tests against a real PostgreSQL instance.
@@ -79,6 +80,161 @@ suite('Cleat API', () => {
       const response = await app.inject({ method: 'GET', url: '/metrics' });
       expect(response.statusCode).toBe(200);
       expect(response.body).toContain('cleat_requests_total');
+    });
+  });
+
+  describe('sensitive text is ciphertext at rest', () => {
+    // The claim this file exists to check: what a leaked backup, a
+    // decommissioned disk, or an operator running SELECT would actually see.
+    // Row level security protects none of those, and everything below is the
+    // most sensitive thing this product holds.
+    const secrets = {
+      why: 'MITT-VARFOR-HEMLIGT-7f3a',
+      craving: 'SUG-ANTECKNING-HEMLIG-9c2b',
+      relapse: 'ATERFALL-ANTECKNING-HEMLIG-4e8d',
+      contact: 'STODKONTAKT-NAMN-HEMLIGT-1a6f',
+      coach: 'COACH-MEDDELANDE-HEMLIGT-3b5e',
+    };
+    let token: string;
+    let tenantId: string;
+    let userId: string;
+
+    beforeAll(async () => {
+      const registered = (await json(
+        await app.inject({
+          method: 'POST',
+          url: '/v1/auth/register',
+          payload: {
+            email: `crypt-${Date.now()}@cleat.app`,
+            password: 'a-long-enough-password',
+            displayName: 'Crypt',
+          },
+        }),
+      )) as never as { accessToken: string; tenant: { id: string }; user: { id: string } };
+      token = registered.accessToken;
+      tenantId = registered.tenant.id;
+      userId = registered.user.id;
+      const auth = { authorization: `Bearer ${token}` };
+
+      await app.inject({
+        method: 'PUT',
+        url: '/v1/me/profile',
+        headers: auth,
+        payload: { whyStatement: secrets.why },
+      });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/quit',
+        headers: auth,
+        payload: {
+          substance: 'alcohol',
+          baselineUnitsPerDay: 4,
+          unitCostMinor: 2000,
+          currency: 'SEK',
+          startedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+        },
+      });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/cravings',
+        headers: auth,
+        payload: { intensity: 6, feeling: 'craving', location: 'home', note: secrets.craving },
+      });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/relapse',
+        headers: auth,
+        payload: { occurredAt: new Date().toISOString(), note: secrets.relapse },
+      });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/support',
+        headers: auth,
+        payload: { name: secrets.contact, relation: 'sister', phone: '+46700000001' },
+      });
+      await app.inject({
+        method: 'POST',
+        url: '/v1/coach/message',
+        headers: auth,
+        payload: { message: secrets.coach },
+      });
+    });
+
+    it('is actually running with encryption configured', () => {
+      // Without keys the at-rest assertions below would still pass — by
+      // finding plaintext they were never told to look for. Fail loudly
+      // instead of reporting a guarantee nobody switched on.
+      expect(
+        encryptionEnabled(),
+        'set FIELD_ENCRYPTION_KEYS to run the encryption tests',
+      ).toBe(true);
+    });
+
+    it('stores none of it in the clear', async () => {
+      // Read the raw columns, bypassing every application code path. This is
+      // the only check that cannot be satisfied by a decrypt-on-read that
+      // happens to work.
+      const leaks = await withTenant(tenantId, async (client) => {
+        const found: string[] = [];
+        const columns: [string, string, string][] = [
+          ['profiles', 'why_statement', secrets.why],
+          ['cravings', 'note', secrets.craving],
+          ['relapses', 'note', secrets.relapse],
+          ['support_contacts', 'name', secrets.contact],
+          ['coach_messages', 'content', secrets.coach],
+        ];
+        for (const [table, column, secret] of columns) {
+          // Scoped to this test's own user. An unscoped scan would trip over
+          // rows left by any other run — including one that deliberately ran
+          // without keys — and report a leak the code did not cause.
+          const { rows } = await client.query<{ hits: string }>(
+            `SELECT count(*)::text AS hits FROM ${table}
+              WHERE user_id = $1 AND ${column} LIKE $2`,
+            [userId, `%${secret}%`],
+          );
+          if (rows[0]?.hits !== '0') found.push(`${table}.${column}`);
+        }
+        return found;
+      });
+
+      expect(leaks, `plaintext found at rest in: ${leaks.join(', ')}`).toEqual([]);
+    });
+
+    it('gives the person their own words back unchanged', async () => {
+      // The other half. Ciphertext at rest is worthless if the product then
+      // shows somebody an envelope instead of their why statement.
+      const auth = { authorization: `Bearer ${token}` };
+      const dashboard = (await json(
+        await app.inject({ method: 'GET', url: '/v1/dashboard', headers: auth }),
+      )) as never as {
+        profile: { whyStatement: string };
+        supportContacts: { name: string }[];
+      };
+      expect(dashboard.profile.whyStatement).toBe(secrets.why);
+      expect(dashboard.supportContacts.map((c) => c.name)).toContain(secrets.contact);
+
+      const history = (await json(
+        await app.inject({ method: 'GET', url: '/v1/coach/history', headers: auth }),
+      )) as never as { messages: { content: string }[] };
+      expect(history.messages.map((m) => m.content)).toContain(secrets.coach);
+
+      const cravings = (await json(
+        await app.inject({ method: 'GET', url: '/v1/cravings', headers: auth }),
+      )) as never as { cravings: { note: string | null }[] };
+      expect(cravings.cravings.map((c) => c.note)).toContain(secrets.craving);
+    });
+
+    it('exports plaintext, not envelopes', async () => {
+      // A data export full of ciphertext would satisfy the letter of the right
+      // of access and none of its point.
+      const exported = await app.inject({
+        method: 'GET',
+        url: '/v1/privacy/export',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(exported.body).toContain(secrets.why);
+      expect(exported.body).toContain(secrets.coach);
+      expect(exported.body).not.toContain('c1.');
     });
   });
 

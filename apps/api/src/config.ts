@@ -65,6 +65,13 @@ const schema = z.object({
   /** Where reset and verification links point. Must be the public web origin. */
   PUBLIC_WEB_URL: z.string().default('http://localhost:3000'),
 
+  // Field-level encryption for the free text people write. Format:
+  // `id:base64key,id2:base64key2`, 32 bytes each. Absent means values are
+  // stored in the clear, which is refused in production below.
+  FIELD_ENCRYPTION_KEYS: z.string().optional(),
+  /** Which key id encrypts new values. Older keys stay loaded so they decrypt. */
+  FIELD_ENCRYPTION_ACTIVE_KEY: z.string().optional(),
+
   // Observability. Without a URL, reports go to the log — correct for a
   // deployment that has not decided where to send them, and never silent.
   ERROR_REPORTING_URL: z.string().optional(),
@@ -102,6 +109,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error(
       'Invalid configuration:\n  CORS_ORIGINS must list explicit origins in production — ' +
         '"*" would let any website call this API with a signed-in user\'s credentials.',
+    );
+  }
+
+  // Coach transcripts and relapse notes in the clear inside the database mean
+  // a leaked backup, a decommissioned disk or an operator's SELECT discloses
+  // the most sensitive thing this product holds. Row level security protects
+  // none of those.
+  if (value.NODE_ENV === 'production' && !value.FIELD_ENCRYPTION_KEYS) {
+    throw new Error(
+      'Invalid configuration:\n  FIELD_ENCRYPTION_KEYS is required in production — ' +
+        'without it recovery notes and coach transcripts are stored in cleartext.',
     );
   }
 

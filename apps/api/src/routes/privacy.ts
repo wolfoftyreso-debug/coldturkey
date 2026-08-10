@@ -50,7 +50,7 @@ export async function privacyRoutes(app: FastifyInstance): Promise<void> {
     const user = currentUser(request);
     return withTenant(user.tenant_id, async (client) => {
       const snapshot = await loadSnapshot(client, user, 3650);
-      const messages = await listCoachMessages(client, user.id, 1000);
+      const messages = await listCoachMessages(client, user.id, 1000, user.tenant_id);
       await writeAudit(client, {
         tenantId: user.tenant_id,
         userId: user.id,

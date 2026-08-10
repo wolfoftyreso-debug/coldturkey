@@ -250,6 +250,51 @@ Safety triage runs before the model in every case and cannot be disabled.
 
 ---
 
+## Encryption at rest
+
+Free text people write — coach transcripts, relapse notes, craving notes, the
+why statement, and support contacts' names and phone numbers — is encrypted
+with AES-256-GCM before it reaches Postgres.
+
+The threat this closes is not a live attacker with a valid session; row level
+security handles that. It is the copy of the data that leaves the database: a
+backup restored on a laptop, a replica on a decommissioned disk, a snapshot in
+an object store, an operator running a SELECT. Row level security protects
+none of those.
+
+```sh
+kubectl -n cleat create secret generic cleat-secrets \
+  --from-literal=FIELD_ENCRYPTION_KEYS="k1:$(openssl rand -base64 32)" \
+  --from-literal=FIELD_ENCRYPTION_ACTIVE_KEY=k1 \
+  …
+```
+
+**The API refuses to start in production without a key.** Storing recovery
+notes in cleartext should be a decision somebody makes, not a default they
+inherit.
+
+Two properties worth knowing:
+
+* **Every value is bound to its row.** The additional authenticated data is
+  `tenant/table/column/owner`, so a ciphertext cannot be moved from one
+  person's row into another's, or from a note into a why statement, and still
+  decrypt. Confidentiality alone is not enough when an attacker can shuffle
+  records.
+* **Rotation is lazy.** The stored format names the key that encrypted it.
+  Add a new key, point `FIELD_ENCRYPTION_ACTIVE_KEY` at it, and keep the old
+  one loaded; values re-encrypt as they are rewritten. Removing a key before
+  its data has been rewritten strands that data permanently.
+
+**Back up the keys separately from the database.** A backup you cannot decrypt
+is not a backup, and the key must not live in the same blast radius as the
+ciphertext.
+
+Not encrypted, deliberately: anything queried, sorted or joined on. Encrypting
+an indexed column turns lookups into full scans or breaks them outright.
+`triggers.label`, `check_ins.note` and `life_domains.note` are also still in
+the clear — narrative, lower sensitivity than the above, and listed here so
+the boundary is stated rather than assumed.
+
 ## Observability
 
 `deploy/k8s/platform/observability/` runs Prometheus, Alertmanager and

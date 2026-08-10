@@ -37,7 +37,7 @@ export async function coachRoutes(app: FastifyInstance): Promise<void> {
 
     const result = await withTenant(user.tenant_id, async (client) => {
       const snapshot = await loadSnapshot(client, user);
-      const history = (await listCoachMessages(client, user.id, 16)).map((m) => ({
+      const history = (await listCoachMessages(client, user.id, 16, user.tenant_id)).map((m) => ({
         role: m.role,
         content: m.content,
       }));

@@ -6,9 +6,10 @@ mobile, database, Kubernetes platform, CI/CD.
 ## Final status: **SECURITY NOT READY**
 
 Every blocking control that can be verified in code has been verified by
-attacking a running system and by regression tests. Four things remain that
-cannot be verified here at all, and one of them is a hard gate for this
-product specifically.
+attacking a running system and by regression tests. Encryption at rest was the
+last blocker that was engineering work, and it is now done and proven against
+a real database. What remains cannot be verified from inside this repository
+by anyone.
 
 **What blocks readiness:**
 
@@ -17,9 +18,9 @@ product specifically.
 | B1 | No independent penetration test | Requires an external party. Everything below was probed by the same person who wrote it. |
 | B2 | No clinical review of safety triage | Requires clinical competence in addiction and suicide prevention. Wrong triage is a safety failure, not only a security one. |
 | B3 | No DPIA, privacy policy, terms, or processor agreement | Health data is Article 9 special category. Required before the first real user. |
-| B4 | No field-level encryption at rest | Coach transcripts and relapse history are cleartext inside the database. Architectural change; see R3. |
+| ~~B4~~ | ~~No field-level encryption at rest~~ | **CLOSED.** See F6 below. |
 
-Nothing on that list is a code defect. They are the four things a person
+Nothing on that list is a code defect. They are the three things a person
 holding this report should not be talked out of.
 
 ---
@@ -28,6 +29,39 @@ holding this report should not be talked out of.
 
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
+
+### F6 — Sensitive text stored in cleartext · HIGH · FIXED
+
+**Attack.** Not a live one. A backup restored on a laptop, a replica on a
+decommissioned disk, a snapshot in an object store, or an operator running a
+SELECT — every one of which sees coach transcripts and relapse notes in full,
+and none of which row level security touches.
+
+**Root cause.** Encryption at rest was treated as a storage-layer concern.
+`pgcrypto` was installed and unused; encrypting inside the database with a key
+the database can read protects against nothing.
+
+**Fix.** AES-256-GCM at the application layer, key from the secret store and
+never in Postgres. Encrypted: `coach_messages.content`, `profiles.why_statement`,
+`cravings.note`, `relapses.note`, and support contacts' name, phone and note —
+third-party personal data about people who never signed up for anything. The
+AAD binds every value to `tenant/table/column/owner`, so a ciphertext cannot be
+transplanted between rows or columns. Keys are versioned for lazy rotation. The
+API refuses to start in production without one.
+
+**Regression test.** `app.test.ts` → "sensitive text is ciphertext at rest"
+writes each field through the API, then reads the raw columns with SQL and
+asserts the plaintext is absent — bypassing every application code path,
+because a decrypt-on-read that happens to work would satisfy any weaker check.
+A second test reads it all back through the API and asserts the person gets
+their own words, and a third asserts the data export contains plaintext rather
+than envelopes. A fourth fails the suite outright if it is run without keys,
+since the at-rest assertions would otherwise pass by finding nothing.
+`crypto/field.test.ts` covers the envelope: nonce uniqueness, tamper
+detection, transplant rejection, rotation, and refusal of a short key.
+
+**Verified.** Boot with `NODE_ENV=production` and no keys exits with
+`FIELD_ENCRYPTION_KEYS is required in production`.
 
 ### F1 — Account deletion needed no re-authentication · HIGH · FIXED
 
@@ -210,6 +244,13 @@ the policies too. Ownership is checked in the query, not by reading then
 comparing. Frontend permissions do not exist as a concept — there are no role
 flags in the client.
 
+### Encryption at rest — PASS (application layer), **NOT VERIFIED** (disk)
+
+Free text is AES-256-GCM before it reaches Postgres, with the value bound to
+its row. Disk-level encryption underneath is the storage layer's job and is
+not configured here. The keys must be backed up separately from the database —
+a backup you cannot decrypt is not a backup.
+
 ### Database — PASS
 
 Every query is parameterised; no string-concatenated SQL anywhere. RLS on all
@@ -319,7 +360,9 @@ Kubernetes API server. Pods have never actually run.
 |---|---|---|---|
 | R1 | No independent penetration test | HIGH | NOT VERIFIED |
 | R2 | Safety triage never clinically reviewed | HIGH | NOT VERIFIED |
-| R3 | No field-level encryption at rest | HIGH | ACCEPTED, needs architecture |
+| ~~R3~~ | ~~No field-level encryption at rest~~ | — | CLOSED (F6) |
+| R11 | Encryption keys must be backed up separately from the database | MEDIUM | Documented, operational |
+| R12 | `triggers.label`, `check_ins.note`, `life_domains.note` still cleartext | LOW | Boundary stated in SELF_HOSTING.md |
 | R4 | No DPIA, policy, terms, processor agreement | HIGH | NOT DONE |
 | R5 | `script-src 'unsafe-inline'` on the web app | MEDIUM | ACCEPTED, needs nonces |
 | R6 | No 2FA | MEDIUM | NOT DONE |
@@ -336,13 +379,12 @@ Kubernetes API server. Pods have never actually run.
 2. Clinical review of the safety triage and crisis copy.
 3. DPIA, privacy policy, terms, and a processor agreement covering the model
    provider, plus a documented position on EU MDR.
-4. Field-level encryption for coach transcripts and relapse notes, with a key
-   management and rotation story.
+4. ~~Field-level encryption~~ — done, see F6.
 5. One full deployment observed running, including a restore drill executed
    end to end and timed.
 
-Items 1–3 are not engineering work. Item 4 is, and it is the one thing on this
-list that should be built before launch rather than bought or booked.
+Items 1–3 are not engineering work and are what now stands between this and
+SECURITY READY.
 
 ---
 
@@ -361,5 +403,6 @@ curl -sD- -o /dev/null http://localhost:3000/ | grep -i 'content-security\|stric
 curl -sD- -o /dev/null http://localhost:8080/v1/public/meta | grep -i 'content-security'
 ```
 
-**367 tests green** across four packages at the time of writing: 257 core, 78
-API against real PostgreSQL, 19 i18n, 13 web.
+**378 tests green** across four packages at the time of writing: 257 core, 78
+API against real PostgreSQL (89, including the at-rest encryption checks), 19
+i18n, 13 web.

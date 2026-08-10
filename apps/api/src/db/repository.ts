@@ -8,6 +8,7 @@ import type {
   SupportContact,
 } from '@cleat/core';
 import type { Client } from './pool.js';
+import { decryptField, encryptField } from '../crypto/field.js';
 
 /**
  * Row → domain mapping.
@@ -100,7 +101,7 @@ interface ProfileRow {
 export async function getProfile(
   client: Client,
   userId: string,
-  user: Pick<UserRow, 'timezone' | 'country'>,
+  user: Pick<UserRow, 'timezone' | 'country' | 'tenant_id'>,
 ): Promise<RecoveryProfile> {
   const { rows } = await client.query<ProfileRow>(
     'SELECT why_statement, future_self, phase FROM profiles WHERE user_id = $1',
@@ -108,7 +109,12 @@ export async function getProfile(
   );
   const row = rows[0];
   return {
-    whyStatement: row?.why_statement ?? null,
+    whyStatement: decryptField(row?.why_statement ?? null, {
+      tenantId: user.tenant_id,
+      table: 'profiles',
+      column: 'why_statement',
+      ownerId: userId,
+    }),
     futureSelf: (row?.future_self as RecoveryProfile['futureSelf']) ?? null,
     phase: (row?.phase as RecoveryProfile['phase']) ?? 'insight',
     timezone: user.timezone,
@@ -133,7 +139,12 @@ export async function updateProfile(
     [
       userId,
       tenantId,
-      patch.whyStatement ?? null,
+      encryptField(patch.whyStatement ?? null, {
+        tenantId,
+        table: 'profiles',
+        column: 'why_statement',
+        ownerId: userId,
+      }),
       patch.futureSelf ? JSON.stringify(patch.futureSelf) : null,
       patch.phase ?? null,
     ],
@@ -219,7 +230,11 @@ export async function createQuit(
 
 // ----------------------------------------------------------------- relapses ---
 
-export async function listRelapses(client: Client, userId: string): Promise<RelapseEvent[]> {
+export async function listRelapses(
+  client: Client,
+  userId: string,
+  tenantId?: string,
+): Promise<RelapseEvent[]> {
   const { rows } = await client.query<{
     id: string;
     quit_id: string;
@@ -231,11 +246,15 @@ export async function listRelapses(client: Client, userId: string): Promise<Rela
      WHERE user_id = $1 ORDER BY occurred_at ASC`,
     [userId],
   );
+  const open = (value: string | null): string | null =>
+    tenantId
+      ? decryptField(value, { tenantId, table: 'relapses', column: 'note', ownerId: userId })
+      : value;
   return rows.map((r) => ({
     id: r.id,
     quitId: r.quit_id,
     occurredAt: r.occurred_at,
-    note: r.note,
+    note: open(r.note),
     autopsy: r.autopsy ?? null,
   }));
 }
@@ -261,7 +280,12 @@ export async function recordRelapse(
       input.userId,
       input.quitId,
       input.occurredAt,
-      input.note ?? null,
+      encryptField(input.note ?? null, {
+        tenantId: input.tenantId,
+        table: 'relapses',
+        column: 'note',
+        ownerId: input.userId,
+      }),
       input.autopsy ? JSON.stringify(input.autopsy) : null,
       input.protectionPlan ? JSON.stringify(input.protectionPlan) : null,
     ],
@@ -395,7 +419,7 @@ interface CravingRow {
   note: string | null;
 }
 
-function toCraving(row: CravingRow): CravingLog {
+function toCraving(row: CravingRow, ref?: { tenantId: string; ownerId: string }): CravingLog {
   return {
     id: row.id,
     occurredAt: row.occurred_at,
@@ -406,7 +430,14 @@ function toCraving(row: CravingRow): CravingLog {
     thought: row.thought,
     actionTaken: row.action_taken,
     outcome: row.outcome,
-    note: row.note,
+    note: ref
+      ? decryptField(row.note, {
+          tenantId: ref.tenantId,
+          table: 'cravings',
+          column: 'note',
+          ownerId: ref.ownerId,
+        })
+      : row.note,
   };
 }
 
@@ -417,6 +448,7 @@ export async function listCravings(
   client: Client,
   userId: string,
   sinceDays = 90,
+  tenantId?: string,
 ): Promise<CravingLog[]> {
   const { rows } = await client.query<CravingRow>(
     `SELECT ${CRAVING_COLUMNS} FROM cravings
@@ -424,7 +456,7 @@ export async function listCravings(
      ORDER BY occurred_at ASC`,
     [userId, String(sinceDays)],
   );
-  return rows.map(toCraving);
+  return rows.map((row) => toCraving(row, tenantId ? { tenantId, ownerId: userId } : undefined));
 }
 
 export async function createCraving(
@@ -457,10 +489,15 @@ export async function createCraving(
       input.thought ?? null,
       input.actionTaken ?? null,
       input.outcome ?? 'unknown',
-      input.note ?? null,
+      encryptField(input.note ?? null, {
+        tenantId: input.tenantId,
+        table: 'cravings',
+        column: 'note',
+        ownerId: input.userId,
+      }),
     ],
   );
-  return toCraving(rows[0]!);
+  return toCraving(rows[0]!, { tenantId: input.tenantId, ownerId: input.userId });
 }
 
 export async function updateCravingOutcome(
@@ -469,6 +506,7 @@ export async function updateCravingOutcome(
   cravingId: string,
   outcome: 'resisted' | 'used' | 'unknown',
   actionTaken?: string | null,
+  tenantId?: string,
 ): Promise<CravingLog | null> {
   const { rows } = await client.query<CravingRow>(
     `UPDATE cravings SET outcome = $3, action_taken = COALESCE($4, action_taken)
@@ -476,7 +514,9 @@ export async function updateCravingOutcome(
      RETURNING ${CRAVING_COLUMNS}`,
     [userId, cravingId, outcome, actionTaken ?? null],
   );
-  return rows[0] ? toCraving(rows[0]) : null;
+  return rows[0]
+    ? toCraving(rows[0], tenantId ? { tenantId, ownerId: userId } : undefined)
+    : null;
 }
 
 // --------------------------------------------------------- support network ---
@@ -484,6 +524,7 @@ export async function updateCravingOutcome(
 export async function listSupportContacts(
   client: Client,
   userId: string,
+  tenantId?: string,
 ): Promise<SupportContact[]> {
   const { rows } = await client.query<{
     id: string;
@@ -496,11 +537,18 @@ export async function listSupportContacts(
      WHERE user_id = $1 ORDER BY is_primary DESC, created_at ASC`,
     [userId],
   );
+  const open = (value: string | null, column: string): string | null =>
+    tenantId
+      ? decryptField(value, { tenantId, table: 'support_contacts', column, ownerId: userId })
+      : value;
   return rows.map((r) => ({
     id: r.id,
-    name: r.name,
+    // A support contact is somebody else's name and phone number — third-party
+    // personal data this person volunteered, and the thing a leaked backup
+    // would expose about people who never signed up for anything.
+    name: open(r.name, 'name') ?? '',
     relation: r.relation,
-    phone: r.phone,
+    phone: open(r.phone, 'phone'),
     isPrimary: r.is_primary,
   }));
 }
@@ -522,6 +570,13 @@ export async function createSupportContact(
       input.userId,
     ]);
   }
+  const seal = (value: string | null, column: string): string | null =>
+    encryptField(value, {
+      tenantId: input.tenantId,
+      table: 'support_contacts',
+      column,
+      ownerId: input.userId,
+    });
   const { rows } = await client.query<{
     id: string;
     name: string;
@@ -535,19 +590,22 @@ export async function createSupportContact(
     [
       input.tenantId,
       input.userId,
-      input.name,
+      seal(input.name, 'name'),
       input.relation,
-      input.phone ?? null,
-      input.note ?? null,
+      seal(input.phone ?? null, 'phone'),
+      seal(input.note ?? null, 'note'),
       input.isPrimary ?? false,
     ],
   );
   const row = rows[0]!;
+  // Returned from the caller's own input rather than by decrypting what came
+  // back: the values are already in hand, and a round trip through the
+  // ciphertext would only add a way to get it wrong.
   return {
     id: row.id,
-    name: row.name,
+    name: input.name,
     relation: row.relation,
-    phone: row.phone,
+    phone: input.phone ?? null,
     isPrimary: row.is_primary,
   };
 }
@@ -579,13 +637,32 @@ export async function listCoachMessages(
   client: Client,
   userId: string,
   limit = 20,
+  tenantId?: string,
 ): Promise<CoachMessageRow[]> {
   const { rows } = await client.query<CoachMessageRow>(
     `SELECT id, role, content, mode, safety_level, created_at FROM coach_messages
      WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2`,
     [userId, limit],
   );
-  return rows.reverse();
+  // Decrypted on the way out. The tenant is optional only because some
+  // internal callers already hold the row's tenant implicitly through the
+  // transaction; when it is absent the AAD cannot be rebuilt, so a ciphertext
+  // is returned as-is rather than silently mangled — and the caller that
+  // forgot it sees an envelope, not a plausible wrong answer.
+  return rows.reverse().map((row) =>
+    tenantId
+      ? {
+          ...row,
+          content:
+            decryptField(row.content, {
+              tenantId,
+              table: 'coach_messages',
+              column: 'content',
+              ownerId: userId,
+            }) ?? '',
+        }
+      : row,
+  );
 }
 
 export async function appendCoachMessage(
@@ -599,10 +676,16 @@ export async function appendCoachMessage(
     safetyLevel: string;
   },
 ): Promise<void> {
+  const content = encryptField(input.content, {
+    tenantId: input.tenantId,
+    table: 'coach_messages',
+    column: 'content',
+    ownerId: input.userId,
+  });
   await client.query(
     `INSERT INTO coach_messages (tenant_id, user_id, role, content, mode, safety_level)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [input.tenantId, input.userId, input.role, input.content, input.mode, input.safetyLevel],
+    [input.tenantId, input.userId, input.role, content, input.mode, input.safetyLevel],
   );
 }
 
@@ -727,10 +810,10 @@ export async function loadSnapshot(
   // about overlapping queries on the same client.
   const profile = await getProfile(client, user.id, user);
   const quit = await getActiveQuit(client, user.id);
-  const relapses = await listRelapses(client, user.id);
+  const relapses = await listRelapses(client, user.id, user.tenant_id);
   const checkIns = await listCheckIns(client, user.id, windowDays);
-  const cravings = await listCravings(client, user.id, windowDays);
-  const supportContacts = await listSupportContacts(client, user.id);
+  const cravings = await listCravings(client, user.id, windowDays, user.tenant_id);
+  const supportContacts = await listSupportContacts(client, user.id, user.tenant_id);
   return { profile, quit, relapses, checkIns, cravings, supportContacts };
 }
 

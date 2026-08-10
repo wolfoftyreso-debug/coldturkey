@@ -76,6 +76,11 @@ jobs:
           JWT_SECRET: ci-secret-that-is-long-enough-for-hs256-signing
           NODE_ENV: test
           LOG_LEVEL: error
+          # A throwaway key, so the at-rest encryption tests actually exercise
+          # encryption. Without it they would pass by finding nothing, which is
+          # the failure mode those tests exist to catch.
+          FIELD_ENCRYPTION_KEYS: 'ci:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+          FIELD_ENCRYPTION_ACTIVE_KEY: ci
 
       - name: Build API
         run: pnpm --filter @cleat/api build
