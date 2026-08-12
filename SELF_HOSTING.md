@@ -232,6 +232,34 @@ it as `REGISTRY_TOKEN` in the repository's Actions secrets.
 Set the image references in `deploy/k8s/overlays/prod` to
 `git.<your-domain>/cleat/api` and `.../web`.
 
+### Building behind a TLS-inspecting proxy
+
+A corporate middlebox or a locked-down runner presents its own certificate for
+outbound HTTPS, and the dependency install inside the image then dies on
+`SELF_SIGNED_CERT_IN_CHAIN`. Pass the CA as a build secret:
+
+```sh
+docker build -f apps/api/Dockerfile \
+  --secret id=ca,src=/etc/ssl/certs/your-proxy-ca.crt \
+  -t git.<your-domain>/cleat/api:$TAG .
+```
+
+It is a secret rather than a `COPY`, so it never lands in a layer of the image
+you push. Without it the build is unchanged.
+
+### The web image takes no API URL
+
+There is deliberately no `--build-arg NEXT_PUBLIC_API_URL` in the build above.
+The Ingress serves `/v1` from the API on the app's own hostname, so the browser
+calls the origin it loaded the page from — which means the same image works on
+any domain, and you never have to rebuild from source to point it at yours.
+
+If you do move the API to a separate hostname, the value has to be set as a
+build arg *and* as an environment variable on the web Deployment: the bundle
+inlines it at build time, while the `connect-src` in the Content-Security-Policy
+is built by the running server. Set one without the other and the browser
+refuses every API call while the pods stay healthy and nothing is logged.
+
 ---
 
 ## Coach

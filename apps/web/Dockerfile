@@ -1,10 +1,11 @@
 # Cleat web image, using Next.js standalone output so the runtime layer is
 # a few megabytes of server plus static assets rather than the whole workspace.
 #
-# Note the build argument: NEXT_PUBLIC_* values are inlined at build time, so the
-# API URL is baked into the image and cannot be changed by an environment
-# variable at deploy time. Build one image per environment, or serve the API from
-# a same-origin path.
+# NEXT_PUBLIC_* values are inlined at build time, so anything set here is baked
+# into the image and cannot be changed with an environment variable at deploy
+# time. That is why the API URL below defaults to empty: the API is served from
+# the app's own origin, so one image works on any hostname and a self-hoster
+# never has to rebuild from source to point it at their own domain.
 
 FROM node:22-alpine AS base
 ENV PNPM_HOME=/pnpm
@@ -17,7 +18,21 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY packages/core/package.json packages/core/
 COPY packages/i18n/package.json packages/i18n/
 COPY apps/web/package.json apps/web/
+
+# An optional CA for the dependency install.
+#
+# Self-hosting frequently means building behind a TLS-inspecting proxy — a
+# corporate middlebox, or a sandboxed CI runner — which presents a certificate
+# this image has no reason to trust, and the install dies on
+# SELF_SIGNED_CERT_IN_CHAIN. Pass one with:
+#
+#   docker build --secret id=ca,src=/path/to/ca-bundle.crt ...
+#
+# It is a build secret rather than a COPY so it never lands in a layer, and it
+# is entirely optional: without it the build is unchanged.
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    --mount=type=secret,id=ca,target=/tmp/extra-ca.crt \
+    if [ -s /tmp/extra-ca.crt ]; then export NODE_EXTRA_CA_CERTS=/tmp/extra-ca.crt; fi; \
     pnpm install --frozen-lockfile \
       --filter @cleat/web... \
       --filter @cleat/core \

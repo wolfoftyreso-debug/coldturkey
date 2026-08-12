@@ -30,6 +30,38 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F17 — The image could not be built behind a TLS-inspecting proxy · LOW · FIXED
+
+**Symptom.** `docker build` died on `SELF_SIGNED_CERT_IN_CHAIN` during the
+dependency install whenever outbound HTTPS passed through a middlebox
+presenting its own certificate.
+
+**Why it counts.** This product's whole premise is that an organisation can run
+it on their own hardware. Corporate networks that terminate TLS are exactly the
+environment that premise describes, and an image that cannot be built there is
+an image that will be pulled from somebody else's registry instead — which is
+the supply-chain outcome self-hosting exists to avoid.
+
+**Fix.** Both Dockerfiles accept an optional CA as a build secret
+(`--secret id=ca,src=…`). A secret rather than a `COPY`, so the certificate
+never lands in a pushed layer, and entirely optional — without it the build is
+byte-identical to before.
+
+**The first fix was incomplete, and the way it failed is the point.** The CA was
+mounted only on the dependency install. The API image also runs `pnpm deploy`,
+which re-resolves the production tree and therefore reaches the registry too —
+and that step did not fail. It *hung*, retrying a handshake it could not
+complete, with no output for minutes. A build that stops with an error tells you
+what is wrong; a build that hangs tells you nothing, and the natural conclusion
+is that the machine is slow. Found by watching the build rather than by
+believing the first green result.
+
+**Verified.** Both images built through this environment's own proxy, which
+reproduces the original failure exactly, and both were then run rather than only
+built. Web: serves on 3000 as uid 10001 with the expected `connect-src 'self'`.
+API: serves on 8090 as uid 10001, migrates on boot, reports `database: ok` at
+`/readyz`, and returns an `emergency` triage with `bypassCoach: true`.
+
 ### F16 — A bad encryption key booted cleanly and broke every write · MEDIUM · FIXED
 
 **Symptom.** The production configuration guard checks that
@@ -710,18 +742,37 @@ SECURITY READY.
 ## 6. How to reproduce
 
 ```sh
-# Unit and integration suite, including the attack regressions
-DATABASE_URL=postgres://…/cleat_test JWT_SECRET=… NODE_ENV=test pnpm -r test
+# Lint. Type-aware rules; this is what found the silent-save defect (F15).
+pnpm exec eslint .
+
+# Unit and integration suite, including the attack regressions, the migration
+# concurrency check, the resilience suite and the OpenAPI contract test.
+DATABASE_URL=postgres://…/cleat_test JWT_SECRET=… \
+  FIELD_ENCRYPTION_KEYS='k:<32 bytes base64>' pnpm -r test
+
+# The browser journeys, against a real API and database in the production
+# same-origin shape. This is the stage that catches defects living between two
+# layers that are each individually correct — F11, F12, F15.
+DATABASE_URL=postgres://…/cleat_test bash scripts/e2e.sh
 
 # Boot guards
 NODE_ENV=production CORS_ORIGINS='*'    node apps/api/dist/server.js   # must refuse
 NODE_ENV=production CORS_ORIGINS='https://…' node apps/api/dist/server.js  # must refuse: no SMTP
+FIELD_ENCRYPTION_KEYS='k:c2hvcnQ=' node apps/api/dist/server.js        # must refuse: bad key
 
 # Headers
 curl -sD- -o /dev/null http://localhost:3000/ | grep -i 'content-security\|strict-transport'
 curl -sD- -o /dev/null http://localhost:8080/v1/public/meta | grep -i 'content-security'
+
+# Manifests, against a real API server rather than a YAML parser
+kustomize build deploy/k8s/overlays/prod | kubectl apply --server-side --dry-run=server -f -
 ```
 
-**397 tests green** across four packages at the time of writing: 257 core, 78
-API against real PostgreSQL (108, including the at-rest encryption checks and
-the two-factor flow), 19 i18n, 13 web.
+**439 unit and integration tests plus 8 browser journeys green** at the time of
+writing: 260 core, 131 API against real PostgreSQL (including at-rest
+encryption, two-factor, migration concurrency, resilience with the database
+down, and the OpenAPI contract), 19 i18n, 29 web, and 8 end-to-end.
+
+Verified in this environment beyond the suites: both container images build and
+the web image runs as uid 10001 serving the expected policy; both Kubernetes
+overlays pass a server-side dry-run against a real API server.

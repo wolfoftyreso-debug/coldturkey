@@ -23,7 +23,21 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY packages/core/package.json packages/core/
 COPY packages/i18n/package.json packages/i18n/
 COPY apps/api/package.json apps/api/
+
+# An optional CA for the dependency install.
+#
+# Self-hosting frequently means building behind a TLS-inspecting proxy — a
+# corporate middlebox, or a sandboxed CI runner — which presents a certificate
+# this image has no reason to trust, and the install dies on
+# SELF_SIGNED_CERT_IN_CHAIN. Pass one with:
+#
+#   docker build --secret id=ca,src=/path/to/ca-bundle.crt ...
+#
+# It is a build secret rather than a COPY so it never lands in a layer, and it
+# is entirely optional: without it the build is unchanged.
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    --mount=type=secret,id=ca,target=/tmp/extra-ca.crt \
+    if [ -s /tmp/extra-ca.crt ]; then export NODE_EXTRA_CA_CERTS=/tmp/extra-ca.crt; fi; \
     pnpm install --frozen-lockfile \
       --filter @cleat/api... \
       --filter @cleat/core \
@@ -50,7 +64,16 @@ RUN pnpm --filter @cleat/core build \
 # `deploy` copies the whole package directory regardless of the `files` field, so
 # the build inputs are removed explicitly — the runtime image should contain what
 # runs and nothing else.
-RUN pnpm --filter @cleat/api --prod --legacy deploy /deploy \
+#
+# The CA is mounted here too, and that is not redundant: `deploy` re-resolves
+# the production dependency tree, so it reaches the registry exactly as the
+# install above does. Without it this step does not fail fast — it hangs,
+# retrying a TLS handshake it cannot complete, which is a considerably worse
+# thing to debug than an error.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    --mount=type=secret,id=ca,target=/tmp/extra-ca.crt \
+    if [ -s /tmp/extra-ca.crt ]; then export NODE_EXTRA_CA_CERTS=/tmp/extra-ca.crt; fi; \
+    pnpm --filter @cleat/api --prod --legacy deploy /deploy \
  && rm -rf /deploy/src /deploy/tsconfig.json /deploy/vitest.config.ts /deploy/Dockerfile
 
 # ---------------------------------------------------------------- runtime ---
