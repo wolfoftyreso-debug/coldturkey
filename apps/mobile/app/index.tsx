@@ -107,7 +107,7 @@ export default function SignInScreen() {
           />
           <TouchableOpacity
             style={[styles.button, styles.buttonPrimary]}
-            onPress={submitCode}
+            onPress={() => void submitCode()}
             disabled={busy}
           >
             <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
@@ -187,7 +187,7 @@ export default function SignInScreen() {
 
         <TouchableOpacity
           style={[styles.button, styles.buttonPrimary]}
-          onPress={submit}
+          onPress={() => void submit()}
           disabled={busy}
         >
           <Text style={[styles.buttonText, styles.buttonTextPrimary]}>

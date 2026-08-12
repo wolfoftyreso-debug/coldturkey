@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { api } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
+import { useAction } from '../../lib/action';
 
 type ChainKey = 'thought' | 'feeling' | 'impulse' | 'action' | 'consequence';
 
@@ -35,7 +36,7 @@ export default function TriggersPage() {
   const [view, setView] = useState<TriggerView | null>(null);
   const [label, setLabel] = useState('');
   const [chain, setChain] = useState<Partial<Record<ChainKey, string>>>({});
-  const [busy, setBusy] = useState(false);
+  const { busy, error, run } = useAction(t);
 
   const load = useCallback(async () => {
     try {
@@ -53,29 +54,22 @@ export default function TriggersPage() {
 
   async function add() {
     if (!label.trim()) return;
-    setBusy(true);
-    try {
-      await api.post('/v1/triggers', { label: label.trim(), chain });
-      setLabel('');
-      setChain({});
-      await load();
-    } finally {
-      setBusy(false);
-    }
+    await api.post('/v1/triggers', { label: label.trim(), chain });
+    // Cleared only once the write has landed, so a failed request does not
+    // take the text with it.
+    setLabel('');
+    setChain({});
+    await load();
   }
 
   async function remove(id: string) {
-    setBusy(true);
-    try {
-      await api.del(`/v1/triggers/${id}`);
-      await load();
-    } finally {
-      setBusy(false);
-    }
+    await api.del(`/v1/triggers/${id}`);
+    await load();
   }
 
   return (
     <Shell title={t('trigger.title')}>
+      {error ? <div className="error-banner">{error}</div> : null}
       <p className="lede">{view?.intro ?? t('trigger.intro')}</p>
 
       {view?.triggers.length ? (
@@ -83,7 +77,7 @@ export default function TriggersPage() {
           <div className="card" key={trigger.id}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
               <h3>{trigger.label}</h3>
-              <button className="pill" onClick={() => void remove(trigger.id)} disabled={busy}>
+              <button className="pill" onClick={run(() => remove(trigger.id))} disabled={busy}>
                 {t('action.delete')}
               </button>
             </div>
@@ -122,7 +116,7 @@ export default function TriggersPage() {
             />
           </div>
         ))}
-        <button className="btn primary wide" onClick={add} disabled={busy || !label.trim()}>
+        <button className="btn primary wide" onClick={run(add)} disabled={busy || !label.trim()}>
           {t('action.save')}
         </button>
       </div>

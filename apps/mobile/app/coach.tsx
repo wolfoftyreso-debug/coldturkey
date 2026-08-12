@@ -120,7 +120,7 @@ export default function CoachScreen() {
         />
         <TouchableOpacity
           style={[styles.button, styles.buttonPrimary]}
-          onPress={send}
+          onPress={() => void send()}
           disabled={busy || !draft.trim()}
         >
           <Text style={[styles.buttonText, styles.buttonTextPrimary]}>{t('coach.send')}</Text>

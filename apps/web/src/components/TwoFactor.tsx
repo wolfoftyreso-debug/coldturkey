@@ -155,7 +155,7 @@ export function TwoFactor() {
               autoComplete="current-password"
             />
           </div>
-          <button className="btn wide" onClick={disable} disabled={busy || !password}>
+          <button className="btn wide" onClick={() => void disable()} disabled={busy || !password}>
             {t('auth.totpDisable')}
           </button>
         </div>
@@ -180,7 +180,7 @@ export function TwoFactor() {
               onChange={(event) => setCode(event.target.value)}
             />
           </div>
-          <button className="btn primary wide" onClick={enable} disabled={busy || code.length < 6}>
+          <button className="btn primary wide" onClick={() => void enable()} disabled={busy || code.length < 6}>
             {t('auth.totpConfirm')}
           </button>
           <button className="btn wide" onClick={() => setSetup(null)} disabled={busy}>
@@ -191,7 +191,7 @@ export function TwoFactor() {
         <div className="card">
           <p>{t('auth.totpOffBody')}</p>
           {error ? <div className="error-banner">{error}</div> : null}
-          <button className="btn wide" onClick={begin} disabled={busy}>
+          <button className="btn wide" onClick={() => void begin()} disabled={busy}>
             {t('auth.totpEnable')}
           </button>
         </div>

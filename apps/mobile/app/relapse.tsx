@@ -116,7 +116,7 @@ export default function RelapseScreen() {
           ))}
           <TouchableOpacity
             style={[styles.button, styles.buttonPrimary]}
-            onPress={submit}
+            onPress={() => void submit()}
             disabled={busy}
           >
             <Text style={[styles.buttonText, styles.buttonTextPrimary]}>{t('action.save')}</Text>

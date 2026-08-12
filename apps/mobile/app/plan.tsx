@@ -74,7 +74,7 @@ export default function PlanScreen() {
         />
         <TouchableOpacity
           style={[styles.button, styles.buttonPrimary]}
-          onPress={save}
+          onPress={() => void save()}
           disabled={busy}
         >
           <Text style={[styles.buttonText, styles.buttonTextPrimary]}>

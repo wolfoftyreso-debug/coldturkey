@@ -157,7 +157,7 @@ export default function CheckInPage() {
         </div>
       )}
 
-      <button className="btn primary wide" onClick={save} disabled={busy}>
+      <button className="btn primary wide" onClick={() => void save()} disabled={busy}>
         {saved ? t('checkin.saved') : t('action.save')}
       </button>
     </Shell>

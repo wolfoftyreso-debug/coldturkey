@@ -5,7 +5,7 @@ import { Loading, Shell } from '../../components/Shell';
 import { api, type Dashboard, type Indicator } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
 
-function IndicatorRow({ indicator, t }: { indicator: Indicator; t: (key: string) => string }) {
+function IndicatorRow({ indicator }: { indicator: Indicator }) {
   const value = indicator.value ?? 0;
   const tone = indicator.key === 'risk' ? 'risk' : value >= 70 ? 'good' : 'default';
 
@@ -42,7 +42,7 @@ export default function PatternsPage() {
 
       <div className="card">
         {data?.indicators.map((indicator) => (
-          <IndicatorRow key={indicator.key} indicator={indicator} t={t} />
+          <IndicatorRow key={indicator.key} indicator={indicator} />
         ))}
       </div>
 

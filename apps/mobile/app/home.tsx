@@ -37,10 +37,11 @@ export default function HomeScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={async () => {
+          onRefresh={() => {
             setRefreshing(true);
-            await load();
-            setRefreshing(false);
+            // `finally`, so the spinner also stops when the reload fails. On a
+            // bad connection the alternative is a wheel that turns forever.
+            void load().finally(() => setRefreshing(false));
           }}
           tintColor="#6d7880"
         />

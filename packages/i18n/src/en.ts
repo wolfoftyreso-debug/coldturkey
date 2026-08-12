@@ -51,6 +51,14 @@ export const en: Catalog = {
   'action.continue': 'Continue',
   'common.loading': 'Loading…',
   'common.error': 'Something went wrong. Try again.',
+  // A failed save has to say so, and say something the person can act on. The
+  // distinction that matters is "this will work if you try again" versus "this
+  // will not", because the second one means going and finding a pen.
+  'common.errorOffline': "Couldn't reach the server. Check your connection — what you wrote is still here.",
+  'common.errorUnavailable': "We're briefly unavailable. Try again in a moment — what you wrote is still here.",
+  'common.errorRateLimited': 'Too many attempts at once. Wait a moment and try again.',
+  'common.errorValidation': "That didn't go through. Check what you entered.",
+  'common.errorSignedOut': 'You were signed out. Sign in again to save this.',
   'common.back': 'Back',
   'common.cancel': 'Cancel',
   'common.optional': 'Optional',

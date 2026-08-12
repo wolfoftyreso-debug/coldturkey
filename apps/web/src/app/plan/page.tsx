@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type Dashboard } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
+import { useAction } from '../../lib/action';
 
 const SUBSTANCES = [
   'alcohol',
@@ -30,7 +31,7 @@ export default function PlanPage() {
   const [unitsPerDay, setUnitsPerDay] = useState(6);
   const [unitCost, setUnitCost] = useState(30);
   const [detoxMessage, setDetoxMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, error, run } = useAction(t);
 
   async function reload() {
     const dashboard = await api.get<Dashboard>('/v1/dashboard');
@@ -47,55 +48,43 @@ export default function PlanPage() {
   if (loading || !user) return <Loading />;
 
   async function saveProfile() {
-    setBusy(true);
-    try {
-      await api.put('/v1/me/profile', { whyStatement: why, futureSelf: future });
-      await reload();
-    } finally {
-      setBusy(false);
-    }
+    await api.put('/v1/me/profile', { whyStatement: why, futureSelf: future });
+    await reload();
   }
 
   async function createPlan() {
-    setBusy(true);
-    try {
-      const response = await api.post<{
-        detoxWarning: { required: boolean; message?: string };
-      }>('/v1/quit', {
-        substance,
-        baselineUnitsPerDay: unitsPerDay,
-        // The API stores money in minor units so nothing ever rounds oddly.
-        unitCostMinor: Math.round(unitCost * 100),
-        currency: 'SEK',
-      });
-      setDetoxMessage(response.detoxWarning.required ? response.detoxWarning.message ?? null : null);
-      await reload();
-    } finally {
-      setBusy(false);
-    }
+    const response = await api.post<{
+      detoxWarning: { required: boolean; message?: string };
+    }>('/v1/quit', {
+      substance,
+      baselineUnitsPerDay: unitsPerDay,
+      // The API stores money in minor units so nothing ever rounds oddly.
+      unitCostMinor: Math.round(unitCost * 100),
+      currency: 'SEK',
+    });
+    setDetoxMessage(response.detoxWarning.required ? response.detoxWarning.message ?? null : null);
+    await reload();
   }
 
   async function addContact() {
     if (!contactName.trim()) return;
-    setBusy(true);
-    try {
-      await api.post('/v1/support', {
-        name: contactName,
-        relation: contactRelation,
-        phone: contactPhone || null,
-        isPrimary: (data?.supportContacts.length ?? 0) === 0,
-      });
-      setContactName('');
-      setContactRelation('');
-      setContactPhone('');
-      await reload();
-    } finally {
-      setBusy(false);
-    }
+    await api.post('/v1/support', {
+      name: contactName,
+      relation: contactRelation,
+      phone: contactPhone || null,
+      isPrimary: (data?.supportContacts.length ?? 0) === 0,
+    });
+    // Only cleared once the write has actually landed. Clearing first loses
+    // what they typed if the request then fails.
+    setContactName('');
+    setContactRelation('');
+    setContactPhone('');
+    await reload();
   }
 
   return (
     <Shell title={t('nav.plan')}>
+      {error ? <div className="error-banner">{error}</div> : null}
       {!data?.quit ? (
         <>
           <h2>{t('onboarding.pickSubstance')}</h2>
@@ -133,7 +122,7 @@ export default function PlanPage() {
                 onChange={(event) => setUnitCost(Number(event.target.value))}
               />
             </div>
-            <button className="btn primary wide" onClick={createPlan} disabled={busy}>
+            <button className="btn primary wide" onClick={run(createPlan)} disabled={busy}>
               {t('onboarding.done')}
             </button>
           </div>
@@ -158,7 +147,7 @@ export default function PlanPage() {
             placeholder={t('why.prompt')}
           />
         </div>
-        <button className="btn primary wide" onClick={saveProfile} disabled={busy}>
+        <button className="btn primary wide" onClick={run(saveProfile)} disabled={busy}>
           {t('action.save')}
         </button>
       </div>
@@ -184,7 +173,7 @@ export default function PlanPage() {
             />
           </div>
         ))}
-        <button className="btn primary wide" onClick={saveProfile} disabled={busy}>
+        <button className="btn primary wide" onClick={run(saveProfile)} disabled={busy}>
           {t('action.save')}
         </button>
       </div>
@@ -241,7 +230,7 @@ export default function PlanPage() {
             onChange={(event) => setContactPhone(event.target.value)}
           />
         </div>
-        <button className="btn wide" onClick={addContact} disabled={busy}>
+        <button className="btn wide" onClick={run(addContact)} disabled={busy}>
           {t('support.add')}
         </button>
       </div>

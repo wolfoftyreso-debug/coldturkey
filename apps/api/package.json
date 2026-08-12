@@ -5,7 +5,10 @@
   "description": "Cleat API — multi-tenant Fastify server backed by PostgreSQL row-level security.",
   "type": "module",
   "main": "./dist/server.js",
-  "files": ["dist", "migrations"],
+  "files": [
+    "dist",
+    "migrations"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -15,7 +18,8 @@
     "migrate:dist": "node dist/db/migrate.js",
     "seed": "tsx src/db/seed.ts",
     "test": "vitest run",
-    "smoke": "tsx src/smoke.ts"
+    "smoke": "tsx src/smoke.ts",
+    "lint": "eslint src"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

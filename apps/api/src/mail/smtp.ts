@@ -160,7 +160,7 @@ class SmtpMailer implements Mailer {
         socket = await new Promise<TLSSocket>((resolve, reject) => {
           const upgraded = tlsConnect(
             {
-              socket: socket as Socket,
+              socket,
               servername: host,
               rejectUnauthorized: this.options.rejectUnauthorized,
             },
@@ -220,7 +220,6 @@ class SmtpMailer implements Mailer {
  * subject this product sends is Swedish by default.
  */
 function encodeHeader(value: string): string {
-  // eslint-disable-next-line no-control-regex
   if (/^[\x20-\x7E]*$/.test(value)) return value;
   return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 }
@@ -239,10 +238,8 @@ function hostnameFor(from: string): string {
 class LogMailer implements Mailer {
   readonly kind = 'log';
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async send(mail: Mail): Promise<void> {
     const digest = createHash('sha256').update(mail.text).digest('hex').slice(0, 12);
-    // eslint-disable-next-line no-console
     console.log(`[mail] to=${mail.to} subject=${JSON.stringify(mail.subject)} body=sha256:${digest}`);
   }
 }

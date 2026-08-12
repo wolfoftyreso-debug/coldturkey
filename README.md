@@ -160,14 +160,23 @@ response tells the client which source answered.
 ## Tests
 
 ```bash
-pnpm -r test        # 186 tests
+pnpm exec eslint .   # type-aware rules; see eslint.config.mjs for what is on and why
 pnpm -r typecheck
+pnpm -r test         # 439 unit and integration tests
+DATABASE_URL=postgres://… bash scripts/e2e.sh   # 8 browser journeys
 ```
 
 The API suite runs against a **real** PostgreSQL, including a test that asserts
 one tenant cannot see another's data and that an `X-Tenant` header cannot move an
 authenticated session sideways into another organisation. A mocked repository
 would happily prove an isolation the database does not actually enforce.
+
+`scripts/e2e.sh` drives a real browser against a real API and database, in the
+shape production runs: one origin, `/v1` proxied to the API. It exists because
+the two worst defects this codebase has shipped — a Content-Security-Policy that
+blocked every API call in the deployed configuration, and a two-factor feature
+with no interface — were invisible to every other test. In both cases each layer
+was individually correct and the defect lived in the gap between them.
 
 ---
 
@@ -178,10 +187,19 @@ kubectl apply -k deploy/k8s/overlays/dev    # bundled Postgres, 1 replica
 kubectl apply -k deploy/k8s/overlays/prod   # managed database, 3 replicas
 ```
 
-The manifests include a pre-sync migration Job (so replicas do not race to
-migrate), readiness probes that actually touch the database, a default-deny
-NetworkPolicy, PodDisruptionBudgets, an HPA, and the restricted Pod Security
-Standard enforced at the namespace.
+The manifests include a migration Job, readiness probes that actually touch the
+database, a default-deny NetworkPolicy, PodDisruptionBudgets, an HPA, and the
+restricted Pod Security Standard enforced at the namespace.
+
+A note on that Job, because the obvious reading is wrong: it carries ArgoCD and
+Helm pre-sync hook annotations, so it runs before the Deployment **only under
+those tools**. With the plain `kubectl apply -k` above, the annotations are
+inert and the Job and the Deployment go out together — two API replicas then
+start migrating the same empty database at once. Measured, before it was fixed:
+of three concurrent runners, one succeeded and two died on a Postgres catalogue
+conflict, which in a cluster is one pod serving and one in CrashLoopBackOff on
+the first deploy. The migration runner now takes a Postgres advisory lock, so
+the ordering is safe whichever tool applies it.
 
 Create the secret out of band:
 

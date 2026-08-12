@@ -1,0 +1,26 @@
+{
+  // A project view for linting only, never for building.
+  //
+  // The per-package tsconfigs exclude test files on purpose — tests must not
+  // end up compiled into `dist`. But the type-aware lint rules are exactly the
+  // ones worth having on a test file, so linting needs a view that sees
+  // everything. Keeping that view here rather than loosening the build configs
+  // means the two concerns cannot drift into each other.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "apps/**/*.mjs",
+    "packages/**/*.ts",
+    "scripts/**/*.mjs",
+    "*.mjs"
+  ],
+  "exclude": ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/.expo/**"]
+}

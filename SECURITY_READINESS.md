@@ -30,6 +30,97 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F16 — A bad encryption key booted cleanly and broke every write · MEDIUM · FIXED
+
+**Symptom.** The production configuration guard checks that
+`FIELD_ENCRYPTION_KEYS` is *present*. Nothing checked that the keys *work*. The
+keyring is built lazily on first use, so a truncated or mistyped key — measured:
+29 bytes where 32 are required — let the process start, pass every probe, and
+return 500 on the first attempt to save a craving note, a why statement or a
+message to the coach. A healthy pod serving a product that cannot store
+anything.
+
+**Fix.** `assertKeyRingUsable()` in `server.ts`, before anything is served, so a
+bad key fails the rollout instead of every write.
+
+**Regression test.** Three cases in `crypto/field.test.ts`: a wrong-length key,
+an active key id naming nothing, and a well-formed ring.
+
+**Found by.** The end-to-end suite, on its first run against a fresh
+configuration.
+
+### F15 — Every failed save was silent · HIGH · FIXED
+
+**Symptom.** Every mutation handler in the web app was written as
+`try { … } finally { setBusy(false) }` with no `catch`. When the request failed
+the promise rejected with nobody listening, the spinner stopped, and the screen
+returned to exactly how it had looked. Nothing was saved and nothing said so.
+
+**Why it matters here more than elsewhere.** Somebody typing out why they want
+to stop, at two in the morning, does not get a second run at that paragraph.
+Being quietly ignored by the thing you reached for is its own small injury.
+
+**Root cause.** Not a typo — a pattern, repeated in every page, that looks
+careful. `finally` without `catch` restores the interface and discards the
+error.
+
+**Fix.** `lib/action.ts`: one place that runs a write, reports its own failures
+and distinguishes "try again in a moment" from "this will not work". Input is
+now cleared only after a write lands, so a failed save no longer takes the text
+with it.
+
+**Regression test.** An end-to-end test that aborts the request in the browser
+and asserts both that an error appears and that what was typed is still on
+screen.
+
+**Found by.** Adding ESLint. `@typescript-eslint/no-floating-promises` and
+`no-misused-promises` flagged twenty call sites; the pattern behind them was the
+defect.
+
+### F14 — Two replicas migrating at once crashed one of them · HIGH · FIXED
+
+**Symptom.** The API runs `migrate()` at boot and the Deployment runs
+`replicas: 2`. On a first rollout both pods start against an empty database,
+both read an empty `schema_migrations`, and both apply `001_init.sql`. Measured
+with three concurrent runners: one succeeded, two died on `duplicate key value
+violates unique constraint "pg_type_typname_nsp_index"` — Postgres's own
+catalogue refusing the second `CREATE TYPE`. In a cluster that is one pod
+serving and one in CrashLoopBackOff, on the first deploy of every new install.
+
+**Why the existing mitigation did not apply.** There *is* a migration Job, and
+the README described it as running first. It carries ArgoCD and Helm pre-sync
+hook annotations, which order it only under those tools. The documented deploy
+command is `kubectl apply -k`, where the annotations are inert.
+
+**Fix.** A Postgres session-level advisory lock around the whole run, so the
+ordering is safe whichever tool applies the manifests. The applied list is read
+after the lock is taken, not before.
+
+**Regression test.** `db/migrate.test.ts` — five cases against a throwaway
+database: fresh install, second run is a no-op, three concurrent runners, an
+upgrade from an earlier release with real rows that must survive, and every
+tenant-scoped table still carrying `FORCE ROW LEVEL SECURITY`.
+
+### F13 — The readiness probe named the host it could not reach · LOW · FIXED
+
+**Symptom.** `/readyz` returned the driver's error verbatim —
+`"connect ECONNREFUSED 127.0.0.1:5432"` — on an endpoint that takes no
+credentials.
+
+**Fix.** The reason goes to the log, where an operator has it; the response says
+only that we are not ready, which is all a probe needs.
+
+**Also fixed alongside it.** An unreachable database produced a 500. A 500 tells
+a client the request will never work; a 503 tells it to come back. On a phone
+with two bars that is the difference between an app that recovers by itself and
+one that has to be force-quit. Connection-level driver codes now produce 503
+with `Retry-After`; a constraint violation or a syntax error stays a 500, so a
+real defect is not reclassified as weather.
+
+**Regression test.** `resilience.test.ts`, six cases with every database call
+failing — including that the crisis resources and the triage still answer, which
+is the most important resilience property in the product and had no test at all.
+
 ### F11 — The hardening broke the product, and nothing in the suite could see it · HIGH · FIXED
 
 **Symptom.** In the shipped Kubernetes configuration the browser refused every

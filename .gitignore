@@ -27,3 +27,7 @@ pnpm-debug.log*
 .pnpm-store/
 .turbo/
 .vercel/
+
+# Playwright
+apps/web/test-results/
+apps/web/playwright-report/

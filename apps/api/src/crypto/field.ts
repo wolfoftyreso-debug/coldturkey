@@ -101,6 +101,27 @@ export function encryptionEnabled(): boolean {
   return keyring() !== null;
 }
 
+/**
+ * Build the keyring now, so an unusable key fails the boot rather than every
+ * write.
+ *
+ * Called from `server.ts` before anything is served. The ring is otherwise
+ * built lazily on the first encrypted field, which means a bad key — measured:
+ * 29 bytes where 32 are required — produces a process that starts cleanly,
+ * passes every probe, and returns 500 the first time somebody tries to save a
+ * craving note, a why statement or a message to the coach. A healthy pod
+ * serving a product that cannot store anything.
+ *
+ * Throwing here turns that into a failed rollout, which is where it belongs.
+ * Whether a deployment may run with no keys at all is a different question, and
+ * one the production configuration guard already answers.
+ */
+export function assertKeyRingUsable(): void {
+  // Throws when the value is present but malformed; returns null when there is
+  // simply nothing configured.
+  keyring();
+}
+
 function aad(ref: FieldRef): Buffer {
   return Buffer.from(`${ref.tenantId}/${ref.table}/${ref.column}/${ref.ownerId}`, 'utf8');
 }

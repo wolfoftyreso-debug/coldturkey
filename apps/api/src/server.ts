@@ -3,9 +3,23 @@ import { loadConfig } from './config.js';
 import { closePool } from './db/pool.js';
 import { migrate } from './db/migrate.js';
 import { ensureDefaultTenant } from './db/tenants.js';
+import { assertKeyRingUsable } from './crypto/field.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
+
+  // Load the encryption keys now, rather than on the first write.
+  //
+  // The configuration guard checks that FIELD_ENCRYPTION_KEYS is *present* in
+  // production; nothing checked that the keys *work*. The ring is built lazily
+  // on first use, so a truncated or mistyped key — measured: a 29-byte key
+  // where 32 are required — let the process boot cleanly, pass every probe, and
+  // then return 500 on every attempt to save a craving note, a why statement or
+  // a coach message. A healthy pod serving a product that cannot store
+  // anything.
+  //
+  // Failing here stops the rollout instead, which is what a rollout is for.
+  assertKeyRingUsable();
 
   // Migrating at boot keeps a single-container deployment honest: the schema and
   // the code that expects it ship together. For multi-replica rollouts the

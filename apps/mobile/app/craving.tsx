@@ -134,7 +134,7 @@ export default function CravingScreen() {
           <Text style={styles.lede}>{t('craving.step.safety')}</Text>
           <TouchableOpacity
             style={[styles.button, styles.actionDanger]}
-            onPress={declareDanger}
+            onPress={() => void declareDanger()}
             disabled={busy}
           >
             <Text style={[styles.buttonText, styles.actionTextDanger]}>
@@ -202,7 +202,7 @@ export default function CravingScreen() {
           </View>
           <TouchableOpacity
             style={[styles.button, styles.buttonPrimary]}
-            onPress={buildPlan}
+            onPress={() => void buildPlan()}
             disabled={busy}
           >
             <Text style={[styles.buttonText, styles.buttonTextPrimary]}>

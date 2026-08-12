@@ -35,7 +35,6 @@ async function json(response: { body: string }): Promise<Record<string, never>> 
 
 suite('Cleat API', () => {
   let accessToken: string;
-  let refreshToken: string;
 
   beforeAll(async () => {
     await migrate();
@@ -1016,7 +1015,6 @@ suite('Cleat API', () => {
       };
       expect(body.user.email).toBe(alice);
       accessToken = body.accessToken;
-      refreshToken = body.refreshToken;
     });
 
     it('refuses a duplicate email in the same tenant', async () => {

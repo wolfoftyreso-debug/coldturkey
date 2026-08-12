@@ -127,7 +127,7 @@ export default function CravingPage() {
         <>
           <p className="lede">{t('craving.step.safety')}</p>
           <div className="btn-row">
-            <button className="btn danger" onClick={declareDanger} disabled={busy}>
+            <button className="btn danger" onClick={() => void declareDanger()} disabled={busy}>
               {t('craving.step.safety.yes')}
             </button>
             <button className="btn primary" onClick={() => setStep('feeling')}>
@@ -194,7 +194,7 @@ export default function CravingPage() {
               <span className="slider-value">{intensity}</span>
             </div>
           </div>
-          <button className="btn primary wide" onClick={buildPlan} disabled={busy}>
+          <button className="btn primary wide" onClick={() => void buildPlan()} disabled={busy}>
             {t('craving.step.coach')}
           </button>
         </>

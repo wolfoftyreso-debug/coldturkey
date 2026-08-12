@@ -120,7 +120,7 @@ export async function getProfile(
       column: 'why_statement',
       ownerId: userId,
     }),
-    futureSelf: (row?.future_self as RecoveryProfile['futureSelf']) ?? null,
+    futureSelf: row?.future_self ?? null,
     phase: (row?.phase as RecoveryProfile['phase']) ?? 'insight',
     timezone: user.timezone,
     country: user.country,
@@ -315,9 +315,6 @@ interface CheckInRow {
   learned: string | null;
   note: string | null;
 }
-
-/** The narrative columns on a check-in. All five are somebody's own words. */
-const CHECK_IN_TEXT = ['biggest_risk', 'went_well', 'was_hard', 'learned', 'note'] as const;
 
 function toCheckIn(row: CheckInRow, ref?: { tenantId: string; ownerId: string }): CheckIn {
   const open = (value: string | null, column: string): string | null =>

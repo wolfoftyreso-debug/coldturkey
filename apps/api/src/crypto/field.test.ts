@@ -1,6 +1,13 @@
 import { describe, expect, it, beforeAll } from 'vitest';
 import { resetConfig } from '../config.js';
-import { decryptField, encryptField, isEncrypted, resetKeyRing } from './field.js';
+import {
+  assertKeyRingUsable,
+  decryptField,
+  encryptField,
+  encryptionEnabled,
+  isEncrypted,
+  resetKeyRing,
+} from './field.js';
 
 /** Config is read once and cached, which is right in production and needs a
  *  seam here: changing the environment alone would not reach the keyring. */
@@ -96,5 +103,34 @@ describe('field encryption', () => {
   it('passes null through', () => {
     expect(encryptField(null, REF)).toBeNull();
     expect(decryptField(null, REF)).toBeNull();
+  });
+});
+
+describe('a bad key stops the boot, not every write', () => {
+  // Measured before this guard existed: a 29-byte key let the API start
+  // cleanly, pass its probes, and return 500 on the first attempt to save
+  // anything a person had written.
+  it('refuses a key that is the wrong length', () => {
+    process.env.FIELD_ENCRYPTION_KEYS = 'short:ZTJlLWtleS1lMmUta2V5LWUyZS1rZXktZTJlLWs=';
+    resetConfig();
+    resetKeyRing();
+    expect(() => assertKeyRingUsable()).toThrow(/29 bytes, need 32/);
+  });
+
+  it('refuses an active key id that names nothing', () => {
+    process.env.FIELD_ENCRYPTION_KEYS = 'a:ZTJlLWtleS1mb3ItdGVzdHMtb25seS0zMi1ieXRlcyE=';
+    process.env.FIELD_ENCRYPTION_ACTIVE_KEY = 'b';
+    resetConfig();
+    resetKeyRing();
+    expect(() => assertKeyRingUsable()).toThrow(/does not name a key/);
+  });
+
+  it('accepts a well-formed keyring', () => {
+    process.env.FIELD_ENCRYPTION_KEYS = 'a:ZTJlLWtleS1mb3ItdGVzdHMtb25seS0zMi1ieXRlcyE=';
+    delete process.env.FIELD_ENCRYPTION_ACTIVE_KEY;
+    resetConfig();
+    resetKeyRing();
+    expect(() => assertKeyRingUsable()).not.toThrow();
+    expect(encryptionEnabled()).toBe(true);
   });
 });

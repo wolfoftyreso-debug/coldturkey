@@ -59,6 +59,14 @@ export const sv = {
   'action.continue': 'Fortsätt',
   'common.loading': 'Laddar…',
   'common.error': 'Något gick fel. Försök igen.',
+  // Ett misslyckat sparande måste säga ifrån, och säga något man kan göra
+  // något åt. Skillnaden som spelar roll är "det funkar om du försöker igen"
+  // mot "det gör det inte" — för det andra betyder att hämta papper och penna.
+  'common.errorOffline': 'Kunde inte nå servern. Kolla uppkopplingen — det du skrev finns kvar.',
+  'common.errorUnavailable': 'Vi är nere en kort stund. Försök igen om en liten stund — det du skrev finns kvar.',
+  'common.errorRateLimited': 'För många försök på en gång. Vänta en stund och försök igen.',
+  'common.errorValidation': 'Det gick inte igenom. Kolla vad du fyllt i.',
+  'common.errorSignedOut': 'Du blev utloggad. Logga in igen för att spara det här.',
   'common.back': 'Tillbaka',
   'common.cancel': 'Avbryt',
   'common.optional': 'Frivilligt',

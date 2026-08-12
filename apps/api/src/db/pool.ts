@@ -35,6 +35,18 @@ export async function closePool(): Promise<void> {
 }
 
 /**
+ * Forget the cached pool without closing it, so the next call reads the current
+ * `DATABASE_URL`.
+ *
+ * A test seam, and only that: the migration tests create a throwaway database
+ * and have to point at it. Production has exactly one database for the lifetime
+ * of the process and should never call this.
+ */
+export function resetPool(): void {
+  pool = null;
+}
+
+/**
  * Run work inside a transaction with the tenant context set.
  *
  * `set_config(..., true)` scopes the setting to this transaction, so a pooled

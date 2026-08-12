@@ -99,7 +99,7 @@ export default function CoachPage() {
         <div ref={endRef} />
       </div>
 
-      <form onSubmit={send}>
+      <form onSubmit={(e) => { e.preventDefault(); void send(e); }}>
         <div className="field">
           <textarea
             value={draft}

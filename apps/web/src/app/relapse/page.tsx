@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { api } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
+import { useAction } from '../../lib/action';
 
 interface Questions {
   opening: string;
@@ -36,7 +37,7 @@ export default function RelapsePage() {
   const [stage, setStage] = useState<'safety' | 'autopsy' | 'done'>('safety');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<RelapseResult | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, error, run } = useAction(t);
 
   useEffect(() => {
     if (!user) return;
@@ -46,17 +47,13 @@ export default function RelapsePage() {
   if (loading || !user || !questions) return <Loading />;
 
   async function submit() {
-    setBusy(true);
-    try {
-      setResult(await api.post<RelapseResult>('/v1/relapse', { autopsy: answers }));
-      setStage('done');
-    } finally {
-      setBusy(false);
-    }
+    setResult(await api.post<RelapseResult>('/v1/relapse', { autopsy: answers }));
+    setStage('done');
   }
 
   return (
     <Shell title={t('relapse.title')}>
+      {error ? <div className="error-banner">{error}</div> : null}
       <div className="card accent">
         <p className="lede">{questions.opening}</p>
         <p>{questions.continuity}</p>
@@ -98,7 +95,7 @@ export default function RelapsePage() {
               />
             </div>
           ))}
-          <button className="btn primary wide" onClick={submit} disabled={busy}>
+          <button className="btn primary wide" onClick={run(submit)} disabled={busy}>
             {t('action.save')}
           </button>
         </>

@@ -56,6 +56,12 @@ jobs:
           pnpm --filter @cleat/core build
           pnpm --filter @cleat/i18n build
 
+      # Lint before typecheck: it is faster, and the type-aware rules here find
+      # a class the typechecker cannot. `no-floating-promises` alone caught
+      # every mutation handler in the web app swallowing its own failures.
+      - name: Lint
+        run: pnpm exec eslint .
+
       - name: Typecheck
         run: pnpm -r typecheck
 
@@ -193,3 +199,72 @@ jobs:
             --entrypoint promtool prom/prometheus:v3.2.1 check config /prom.yml
           docker run --rm -v /tmp/rules.yaml:/rules.yaml:ro \
             --entrypoint promtool prom/prometheus:v3.2.1 check rules /rules.yaml
+
+  # The stage that exists because everything above it can pass while the app is
+  # completely unusable.
+  #
+  # Two of the worst defects this codebase has shipped were invisible to every
+  # other job here: a Content-Security-Policy that blocked every API call in the
+  # deployed configuration, and a two-factor feature with no interface that
+  # would have locked out anyone who enabled it. Both were found by driving a
+  # browser. Neither could have been found any other way, because in both cases
+  # each layer was individually correct and the defect lived in the gap between
+  # them.
+  #
+  # This runs the app in the shape production runs it: one origin, /v1 proxied
+  # to the API, the same image configuration, a real database.
+  e2e:
+    name: End-to-end (browser)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cleat
+          POSTGRES_PASSWORD: cleat
+          POSTGRES_DB: cleat
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U cleat"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @cleat/web exec playwright install --with-deps chromium
+
+      - name: Run the suite
+        run: bash scripts/e2e.sh
+        env:
+          DATABASE_URL: postgres://cleat:cleat@localhost:5432/cleat
+          JWT_SECRET: ci-secret-that-is-long-enough-for-hs256-signing
+          FIELD_ENCRYPTION_KEYS: 'ci:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+          FIELD_ENCRYPTION_ACTIVE_KEY: ci
+          LOG_LEVEL: error
+          CI: 'true'
+
+      # Traces and screenshots from a failed run. Without them a red E2E job is
+      # a mystery, and a mystery that takes an afternoon gets disabled.
+      - name: Upload failure artefacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failures
+          path: apps/web/test-results/
+          retention-days: 7

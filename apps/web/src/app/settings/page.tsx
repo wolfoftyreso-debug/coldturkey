@@ -5,11 +5,12 @@ import { Loading, Shell } from '../../components/Shell';
 import { TwoFactor } from '../../components/TwoFactor';
 import { api, tokens } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
+import { useAction } from '../../lib/action';
 
 export default function SettingsPage() {
   const { user, loading, t, signOut, refreshUser } = useRequireAuth();
   const [confirm, setConfirm] = useState('');
-  const [busy, setBusy] = useState(false);
+  const { busy, error, run } = useAction(t);
   const [message, setMessage] = useState<string | null>(null);
 
   if (loading || !user) return <Loading />;
@@ -25,33 +26,21 @@ export default function SettingsPage() {
   }
 
   async function exportData() {
-    setBusy(true);
-    try {
-      const data = await api.get<unknown>('/v1/privacy/export');
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'cleat-export.json';
-      link.click();
-      URL.revokeObjectURL(url);
-      setMessage(t('privacy.exportDone'));
-    } finally {
-      setBusy(false);
-    }
+    const data = await api.get<unknown>('/v1/privacy/export');
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'cleat-export.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage(t('privacy.exportDone'));
   }
 
   async function deleteAccount() {
-    setBusy(true);
-    try {
-      await api.del('/v1/privacy/account', { confirm });
-      tokens.clear();
-      window.location.href = '/login';
-    } catch {
-      setMessage(t('common.error'));
-    } finally {
-      setBusy(false);
-    }
+    await api.del('/v1/privacy/account', { confirm });
+    tokens.clear();
+    window.location.href = '/login';
   }
 
   const deleteWord = t('privacy.deleteWord');
@@ -59,20 +48,21 @@ export default function SettingsPage() {
   return (
     <Shell title={t('settings.title')}>
       {message ? <div className="error-banner">{message}</div> : null}
+      {error ? <div className="error-banner">{error}</div> : null}
 
       <h2>{t('settings.language')}</h2>
       <div className="chips">
         <button
           className="chip"
           data-selected={user.locale === 'sv'}
-          onClick={() => void setLocale('sv')}
+          onClick={run(() => setLocale('sv'))}
         >
           {t('settings.language.sv')}
         </button>
         <button
           className="chip"
           data-selected={user.locale === 'en'}
-          onClick={() => void setLocale('en')}
+          onClick={run(() => setLocale('en'))}
         >
           {t('settings.language.en')}
         </button>
@@ -85,7 +75,7 @@ export default function SettingsPage() {
             key={code}
             className="chip"
             data-selected={user.country === code}
-            onClick={() => void setCountry(code)}
+            onClick={run(() => setCountry(code))}
           >
             {code}
           </button>
@@ -97,7 +87,7 @@ export default function SettingsPage() {
       <h2>{t('privacy.title')}</h2>
       <div className="card">
         <p>{t('privacy.principles')}</p>
-        <button className="btn wide" onClick={exportData} disabled={busy}>
+        <button className="btn wide" onClick={run(exportData)} disabled={busy}>
           {t('privacy.export')}
         </button>
       </div>
@@ -116,7 +106,7 @@ export default function SettingsPage() {
         </div>
         <button
           className="btn wide"
-          onClick={deleteAccount}
+          onClick={run(deleteAccount)}
           disabled={busy || confirm !== deleteWord}
         >
           {t('action.delete')}
@@ -124,7 +114,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="spacer" />
-      <button className="btn wide" onClick={() => void signOut()}>
+      <button className="btn wide" onClick={run(signOut)}>
         {t('auth.signOut')}
       </button>
 

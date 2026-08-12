@@ -157,21 +157,47 @@ export async function buildApp(): Promise<FastifyInstance> {
       });
     }
 
-    // Unexpected: report it, log it with the request id, and tell the client
-    // nothing useful to an attacker. Reporting is not awaited — a reporting
-    // outage must not become an application outage, and the person waiting on
-    // this response is not interested in either.
+    // An unreachable database is not the same as a broken server, and the
+    // difference is what the client does next. A 500 says "this will never
+    // work, stop"; a 503 says "we are down right now, come back". On a phone
+    // with two bars, in the middle of a craving, that is the difference between
+    // an app that recovers on its own and one that has to be force-quit.
+    //
+    // Only connection-level codes count. A constraint violation or a syntax
+    // error is a real bug and has to stay a 500, or a genuine defect gets
+    // quietly reclassified as weather.
+    const driverCode = (error as { code?: string }).code;
+    const unreachable =
+      driverCode === 'ECONNREFUSED' ||
+      driverCode === 'ENOTFOUND' ||
+      driverCode === 'ETIMEDOUT' ||
+      driverCode === 'ECONNRESET' ||
+      driverCode === '57P03' || // cannot_connect_now — Postgres still starting
+      driverCode === '53300'; // too_many_connections
+    const status = unreachable ? 503 : 500;
+
+    // Report it, log it with the request id, and tell the client nothing useful
+    // to an attacker. Reporting is not awaited — a reporting outage must not
+    // become an application outage, and the person waiting on this response is
+    // not interested in either.
     void reportError(
       error,
       {
         route: request.routeOptions?.url,
         method: request.method,
-        statusCode: 500,
+        statusCode: status,
         userId: (request as { user?: { id?: string } }).user?.id,
         tenantId: (request as { tenantId?: string }).tenantId,
       },
       request.log,
     );
+    if (unreachable) {
+      // Retry-After is what makes the 503 actionable rather than decorative.
+      return reply
+        .code(503)
+        .header('retry-after', '5')
+        .send({ error: { code: 'unavailable', message: 'Temporarily unavailable' } });
+    }
     return reply
       .code(500)
       .send({ error: { code: 'internal_error', message: 'Something went wrong' } });

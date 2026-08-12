@@ -21,11 +21,18 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml,yml}\""
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^15.15.0",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.67.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp"],
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ],
     "_comment": [
       "The workspace legitimately runs two React majors: Next 15 on React 19, and",
       "Expo SDK 52 / React Native 0.76 on React 18. Neither framework's",
@@ -38,40 +45,94 @@
     ],
     "packageExtensions": {
       "next": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "expo-router": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "@react-navigation/core": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "@react-navigation/native": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "@react-navigation/native-stack": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "@react-navigation/bottom-tabs": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "@react-navigation/elements": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "@react-navigation/routers": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       },
       "react-native": {
-        "peerDependencies": { "@types/react": "*" },
-        "peerDependenciesMeta": { "@types/react": { "optional": true } }
+        "peerDependencies": {
+          "@types/react": "*"
+        },
+        "peerDependenciesMeta": {
+          "@types/react": {
+            "optional": true
+          }
+        }
       }
     }
   }
