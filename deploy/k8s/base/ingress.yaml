@@ -37,6 +37,29 @@ spec:
     - host: app.cleat.example
       http:
         paths:
+          # The API is served under the app's own origin, and this is load
+          # bearing rather than a convenience.
+          #
+          # The browser's Content-Security-Policy sets `connect-src 'self'`, so
+          # a cross-origin API would have to be named in that header — which the
+          # web server builds at *runtime* while the client bundle freezes its
+          # API URL at *build* time. When those two disagreed the browser
+          # refused every API call and the app was silently dead: pods healthy,
+          # probes green, nothing in any log. Same-origin removes the pairing
+          # entirely, and with it CORS and the preflight on every request.
+          #
+          # It also means one built image serves any hostname, so a self-hosted
+          # operator never has to rebuild from source to point it at their own
+          # domain. This path must be listed before `/` — nginx matches the
+          # longest prefix, but keeping the order explicit avoids depending on
+          # that across controllers.
+          - path: /v1
+            pathType: Prefix
+            backend:
+              service:
+                name: cleat-api
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:

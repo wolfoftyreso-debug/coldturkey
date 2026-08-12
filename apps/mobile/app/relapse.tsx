@@ -133,15 +133,15 @@ export default function RelapseScreen() {
           <View style={styles.statGrid}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{result.streak.currentDays}</Text>
-              <Text style={styles.statLabel}>{t('common.day').toUpperCase()}</Text>
+              <Text style={styles.statLabel}>{t('streak.current').toUpperCase()}</Text>
             </View>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{result.streak.longestDays}</Text>
-              <Text style={styles.statLabel}>{t('home.personalRecord').toUpperCase()}</Text>
+              <Text style={styles.statLabel}>{t('streak.longest').toUpperCase()}</Text>
             </View>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{result.streak.totalDaysInRecovery}</Text>
-              <Text style={styles.statLabel}>{t('common.days').toUpperCase()}</Text>
+              <Text style={styles.statLabel}>{t('streak.total').toUpperCase()}</Text>
             </View>
           </View>
 

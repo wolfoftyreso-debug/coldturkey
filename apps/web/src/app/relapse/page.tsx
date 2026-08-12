@@ -113,15 +113,15 @@ export default function RelapsePage() {
           <div className="stat-grid">
             <div className="stat">
               <div className="value">{result.streak.currentDays}</div>
-              <div className="label">{t('common.day')}</div>
+              <div className="label">{t('streak.current')}</div>
             </div>
             <div className="stat">
               <div className="value">{result.streak.longestDays}</div>
-              <div className="label">{t('home.personalRecord')}</div>
+              <div className="label">{t('streak.longest')}</div>
             </div>
             <div className="stat">
               <div className="value">{result.streak.totalDaysInRecovery}</div>
-              <div className="label">{t('common.days')}</div>
+              <div className="label">{t('streak.total')}</div>
             </div>
           </div>
 

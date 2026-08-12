@@ -28,7 +28,27 @@ describe('computeStreak', () => {
     expect(s.currentDays).toBe(10);
     expect(s.longestDays).toBe(10);
     expect(s.restarts).toBe(0);
-    expect(s.isPersonalRecord).toBe(true);
+  });
+
+  it('claims no record for somebody who has never relapsed', () => {
+    // They hold the record by default. Saying so is empty praise, and the home
+    // screen would carry the badge permanently from the first second onwards.
+    const s = computeStreak(plan(10), [], NOW);
+    expect(s.previousBestDays).toBe(0);
+    expect(s.isPersonalRecord).toBe(false);
+  });
+
+  it('does not congratulate a brand new plan on day zero', () => {
+    // Measured on the real home screen: a fresh account showed "DAY 0" under a
+    // "your longest yet" badge.
+    const s = computeStreak(plan(0), [], NOW);
+    expect(s.currentDays).toBe(0);
+    expect(s.isPersonalRecord).toBe(false);
+  });
+
+  it('does not congratulate the first hours after a relapse', () => {
+    const s = computeStreak(plan(30), [relapse(0.01)], NOW);
+    expect(s.isPersonalRecord).toBe(false);
   });
 
   it('restarts the current streak at the last relapse but keeps the longest', () => {

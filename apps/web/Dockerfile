@@ -24,7 +24,17 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
       --filter @cleat/i18n
 
 FROM deps AS build
-ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+# Empty means same-origin, and that is the default on purpose: this value is
+# inlined into the client bundle at build time, so an absolute URL here is
+# burned into the image and every self-hoster would have to rebuild from source
+# to point it at their own domain. The Ingress serves /v1 from the API on the
+# app's own host, so the shipped image needs no URL at all.
+#
+# If you do override it, the *runtime* environment of this container must carry
+# the same value — the Content-Security-Policy is built by the running server,
+# and a mismatch makes the browser refuse every API call with no server-side
+# symptom. See apps/web/csp.mjs.
+ARG NEXT_PUBLIC_API_URL=
 ARG NEXT_PUBLIC_DEFAULT_TENANT=public
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_DEFAULT_TENANT=$NEXT_PUBLIC_DEFAULT_TENANT

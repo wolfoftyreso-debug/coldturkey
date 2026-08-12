@@ -1,4 +1,6 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+import { API_BASE } from './apiBase';
+
+const BASE = API_BASE;
 const TENANT = process.env.NEXT_PUBLIC_DEFAULT_TENANT ?? 'public';
 
 const ACCESS_KEY = 'cleat.access';
@@ -172,6 +174,7 @@ export interface Dashboard {
     currentDays: number;
     currentHours: number;
     longestDays: number;
+    previousBestDays: number;
     totalDaysInRecovery: number;
     restarts: number;
     isPersonalRecord: boolean;

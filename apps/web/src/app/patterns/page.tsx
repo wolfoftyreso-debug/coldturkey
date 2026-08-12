@@ -74,19 +74,19 @@ export default function PatternsPage() {
 
       {data?.streak ? (
         <>
-          <h2>{t('home.personalRecord')}</h2>
+          <h2>{t('streak.title')}</h2>
           <div className="stat-grid">
             <div className="stat">
               <div className="value">{data.streak.currentDays}</div>
-              <div className="label">{t('common.day')}</div>
+              <div className="label">{t('streak.current')}</div>
             </div>
             <div className="stat">
               <div className="value">{data.streak.longestDays}</div>
-              <div className="label">{t('home.personalRecord')}</div>
+              <div className="label">{t('streak.longest')}</div>
             </div>
             <div className="stat">
               <div className="value">{data.streak.totalDaysInRecovery}</div>
-              <div className="label">{t('common.days')}</div>
+              <div className="label">{t('streak.total')}</div>
             </div>
           </div>
         </>

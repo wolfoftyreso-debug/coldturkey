@@ -121,6 +121,7 @@ export interface Dashboard {
   streak: {
     currentDays: number;
     longestDays: number;
+    previousBestDays: number;
     totalDaysInRecovery: number;
     isPersonalRecord: boolean;
   } | null;

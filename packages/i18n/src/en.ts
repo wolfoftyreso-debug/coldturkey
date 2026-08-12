@@ -66,8 +66,15 @@ export const en: Catalog = {
   'home.sinceLastUse': 'since last use',
   'home.today': 'Today',
   'home.quickActions': 'Quick actions',
-  'home.personalRecord': 'Your longest yet',
+  // Shown only once the current streak has passed every earlier one, so it can
+  // say something that has actually happened. It is not a label for the
+  // longest-streak figure — that is streak.longest.
+  'home.personalRecord': 'Longer than you have ever managed',
   'home.totalInRecovery': '{days} days in recovery in total',
+  'streak.title': 'Your days',
+  'streak.current': 'Since last use',
+  'streak.longest': 'Longest so far',
+  'streak.total': 'In recovery in total',
   'home.nextMilestone': 'Next: {milestone}',
   'milestone.nextTitle': 'Next milestone',
   'milestone.reachedTitle': 'Milestones passed',

@@ -30,6 +30,60 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F11 — The hardening broke the product, and nothing in the suite could see it · HIGH · FIXED
+
+**Symptom.** In the shipped Kubernetes configuration the browser refused every
+single API call. Nobody could register, log in, or reach anything behind a
+login — including the craving and crisis flows, which is the one failure this
+product must not have.
+
+**Root cause.** The Content-Security-Policy added during this hardening pass
+built its `connect-src` from `process.env.NEXT_PUBLIC_API_URL` in
+`next.config.mjs`. That file is evaluated by the **running server**, while the
+client bundle inlines the same variable at **build time**.
+`deploy/k8s/base/web.yaml` set no such variable on the container, so the header
+collapsed to `connect-src 'self'` while the bundle called an absolute
+cross-origin URL. The comment above the policy asserted it was "limited to this
+origin and the API". It was not.
+
+**Why nothing caught it.** There is no server-side symptom whatsoever. The pod
+is healthy, the readiness probe on `/login` returns 200, no request reaches the
+API, and nothing is logged anywhere — the refusal happens inside the browser.
+The unit suite passed, the API integration suite passed, the manifests were
+valid, and a rollout would have reported success. It was found by driving a
+real browser through a real signup, and only after killing a stale `next start`
+process that had been serving an older build and masking it. Reading the diff
+would not have found it either: both halves are individually correct, and the
+defect lives only in the relationship between them.
+
+**Fix.** The coupling was removed rather than the value corrected. The API is
+now served from `/v1` on the app's own origin via the Ingress, so `connect-src
+'self'` is simply *true* instead of a value somebody has to keep in step. The
+client's API base defaults to the empty string, meaning same origin, so one
+built image serves any hostname — which self-hosting needed regardless, since
+the previous default baked an absolute URL into every image. The policy moved
+to `apps/web/csp.mjs`, shared by `next.config.mjs` and by the tests, and it now
+throws on an unparseable `NEXT_PUBLIC_API_URL` instead of silently narrowing to
+`'self'`.
+
+**Regression test.** `apps/web/src/lib/csp.test.ts` — thirteen assertions
+pinning the header to the code that has to live under it, including
+*"refuses a cross-origin API that was not configured — the shipped bug"*, which
+holds the exact broken combination in place so the pairing cannot be quietly
+loosened again.
+
+**Verified.** Both shapes driven end to end in Chromium against a live API and
+Postgres: cross-origin (`connect-src 'self' http://localhost:8080`) and the
+production same-origin shape behind a proxy standing in for the Ingress
+(`connect-src 'self'`). Registration, plan creation and the dashboard all
+succeed with zero console errors.
+
+**What this says about the rest of this report.** Every "verified" row here was
+verified against the layer it names. This defect sat *between* two layers that
+were each correct on their own, and it was the most severe one in the codebase.
+Findings of that shape are the argument for blocker B1: an independent test by
+someone who did not build it.
+
 ### F10 — No second factor · MEDIUM · FIXED
 
 **Attack.** Account takeover with a password alone. An account here is not a

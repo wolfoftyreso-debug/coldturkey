@@ -23,15 +23,24 @@ export TAG=$(git rev-parse --short HEAD)
 docker build -f apps/api/Dockerfile -t $REGISTRY/cleat-api:$TAG .
 docker push $REGISTRY/cleat-api:$TAG
 
-# NEXT_PUBLIC_* values are inlined at build time — the API URL is baked into
-# the image and cannot be changed later with an environment variable. Build one
-# image per environment.
+# No API URL is passed here, and that is deliberate. The Ingress serves /v1
+# from the API on the app's own hostname, so the browser calls the same origin
+# it loaded the page from. One image therefore works on any domain, and there
+# is no build-time value that has to be kept in step with a runtime one.
 docker build -f apps/web/Dockerfile \
-  --build-arg NEXT_PUBLIC_API_URL=https://api.cleat.example \
   --build-arg NEXT_PUBLIC_DEFAULT_TENANT=public \
   -t $REGISTRY/cleat-web:$TAG .
 docker push $REGISTRY/cleat-web:$TAG
 ```
+
+> **If you do put the API on a separate hostname**, set `NEXT_PUBLIC_API_URL`
+> as a build arg *and* as an environment variable on the web Deployment. The
+> build arg is inlined into the client bundle; the environment variable is read
+> by the running server to build the `connect-src` in the
+> Content-Security-Policy. Set only one and the browser silently refuses every
+> API call — the pods stay healthy, the probes stay green, nothing is logged,
+> and signing in simply does nothing. `apps/web/src/lib/csp.test.ts` pins the
+> two together.
 
 Pin the tags in the overlay rather than deploying `latest`:
 
