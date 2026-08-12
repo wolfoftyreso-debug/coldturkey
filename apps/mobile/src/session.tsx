@@ -16,7 +16,10 @@ interface SessionValue {
   loading: boolean;
   locale: Locale;
   t: (key: string, params?: Record<string, string | number>) => string;
-  signIn: (email: string, password: string) => Promise<void>;
+  /** Resolves to a challenge when a second factor is still owed. */
+  signIn: (email: string, password: string) => Promise<SignInOutcome>;
+  /** Answer a challenge with a TOTP or recovery code. */
+  completeMfa: (challenge: string, code: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
   reload: () => Promise<void>;
@@ -29,6 +32,17 @@ interface AuthResponse {
   refreshToken: string;
   user: User;
 }
+
+/**
+ * What login returns when the password was right but a second factor is on.
+ * No tokens are issued; the challenge is short-lived and single use.
+ */
+interface MfaChallenge {
+  mfaRequired: true;
+  challenge: string;
+}
+
+export type SignInOutcome = { status: 'signed-in' } | { status: 'mfa-required'; challenge: string };
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -57,14 +71,39 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     void reload();
   }, [reload]);
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      const response = await api.post<AuthResponse>('/v1/auth/login', { email, password });
+  const establish = useCallback(
+    async (response: AuthResponse) => {
       await tokenStore.set(response.accessToken, response.refreshToken);
       setUser(response.user);
       router.replace('/home');
     },
     [router],
+  );
+
+  const signIn = useCallback(
+    async (email: string, password: string): Promise<SignInOutcome> => {
+      const response = await api.post<AuthResponse | MfaChallenge>('/v1/auth/login', {
+        email,
+        password,
+      });
+      // A correct password is not a session when a second factor is on.
+      // Assuming tokens are present here stores `undefined` and leaves the
+      // person on a screen that looks signed in and is not.
+      if ('mfaRequired' in response) {
+        return { status: 'mfa-required', challenge: response.challenge };
+      }
+      await establish(response);
+      return { status: 'signed-in' };
+    },
+    [establish],
+  );
+
+  const completeMfa = useCallback(
+    async (challenge: string, code: string) => {
+      const response = await api.post<AuthResponse>('/v1/auth/totp/verify', { challenge, code });
+      await establish(response);
+    },
+    [establish],
   );
 
   const signUp = useCallback(
@@ -101,11 +140,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       locale,
       t: (key, params) => translate(locale, key, params),
       signIn,
+      completeMfa,
       signUp,
       signOut,
       reload,
     }),
-    [user, loading, locale, signIn, signUp, signOut, reload],
+    [user, loading, locale, signIn, completeMfa, signUp, signOut, reload],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

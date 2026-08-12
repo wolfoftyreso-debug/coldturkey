@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import { translate, type Locale } from '@cleat/i18n';
-import { api, ApiError, tokens, type AuthResponse, type User } from './api';
+import { api, ApiError, tokens, type AuthResponse, type MfaChallenge, type User } from './api';
 
 /**
  * The last known profile, kept so a session survives losing signal. It holds no
@@ -25,11 +25,22 @@ interface SessionValue {
   loading: boolean;
   locale: Locale;
   t: (key: string, params?: Record<string, string | number>) => string;
-  signIn: (email: string, password: string) => Promise<void>;
+  /**
+   * Resolves to `'signed-in'`, or to a challenge that has to be answered with a
+   * second factor before there is a session at all.
+   *
+   * It returns rather than throws because a challenge is not an error — it is
+   * the login working correctly for somebody who switched 2FA on.
+   */
+  signIn: (email: string, password: string) => Promise<SignInOutcome>;
+  /** Answer a challenge from {@link signIn} with a TOTP or recovery code. */
+  completeMfa: (challenge: string, code: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
+
+export type SignInOutcome = { status: 'signed-in' } | { status: 'mfa-required'; challenge: string };
 
 const SessionContext = createContext<SessionValue | null>(null);
 
@@ -71,17 +82,50 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     void loadUser();
   }, [loadUser]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const response = await api.post<AuthResponse>('/v1/auth/login', { email, password });
-    tokens.set(response.accessToken, response.refreshToken);
-    setUser(response.user);
-    // Cache here too, not only in `loadUser`. The provider mounts once at the
-    // root and does not re-run on client-side navigation, so a session that
-    // began with a sign-in would otherwise never write the cache — and losing
-    // signal before the next cold start would sign the person out.
-    localStorage.setItem(CACHED_USER, JSON.stringify(response.user));
-    router.push('/home');
-  }, [router]);
+  /**
+   * Store the tokens and finish arriving.
+   *
+   * The cache is written here and not only in `loadUser`: the provider mounts
+   * once at the root and does not re-run on client-side navigation, so a
+   * session that began with a sign-in would otherwise never write it — and
+   * losing signal before the next cold start would sign the person out.
+   */
+  const establish = useCallback(
+    (response: AuthResponse) => {
+      tokens.set(response.accessToken, response.refreshToken);
+      setUser(response.user);
+      localStorage.setItem(CACHED_USER, JSON.stringify(response.user));
+      router.push('/home');
+    },
+    [router],
+  );
+
+  const signIn = useCallback(
+    async (email: string, password: string): Promise<SignInOutcome> => {
+      const response = await api.post<AuthResponse | MfaChallenge>('/v1/auth/login', {
+        email,
+        password,
+      });
+      // A correct password is not a session when a second factor is on. The
+      // server sends a challenge and no tokens, so anything that assumes tokens
+      // are present here writes `undefined` into storage and strands the person
+      // on a screen that looks signed in and is not.
+      if ('mfaRequired' in response) {
+        return { status: 'mfa-required', challenge: response.challenge };
+      }
+      establish(response);
+      return { status: 'signed-in' };
+    },
+    [establish],
+  );
+
+  const completeMfa = useCallback(
+    async (challenge: string, code: string) => {
+      const response = await api.post<AuthResponse>('/v1/auth/totp/verify', { challenge, code });
+      establish(response);
+    },
+    [establish],
+  );
 
   const signUp = useCallback(
     async (email: string, password: string, displayName: string) => {
@@ -94,12 +138,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         locale: navigator.language.startsWith('en') ? 'en' : 'sv',
         country: navigator.language.startsWith('en') ? 'GB' : 'SE',
       });
-      tokens.set(response.accessToken, response.refreshToken);
-      setUser(response.user);
-      localStorage.setItem(CACHED_USER, JSON.stringify(response.user));
-      router.push('/home');
+      establish(response);
     },
-    [router],
+    [establish],
   );
 
   const signOut = useCallback(async () => {
@@ -123,11 +164,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       locale,
       t: (key, params) => translate(locale, key, params),
       signIn,
+      completeMfa,
       signUp,
       signOut,
       refreshUser: loadUser,
     }),
-    [user, loading, locale, signIn, signUp, signOut, loadUser],
+    [user, loading, locale, signIn, completeMfa, signUp, signOut, loadUser],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

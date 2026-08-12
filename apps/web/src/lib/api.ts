@@ -135,6 +135,34 @@ export interface AuthResponse {
   user: User;
 }
 
+/**
+ * What `/v1/auth/login` returns when the password was right but a second factor
+ * is switched on. No tokens are issued: the challenge is short-lived, single
+ * use, and worth nothing on its own.
+ */
+export interface MfaChallenge {
+  mfaRequired: true;
+  challenge: string;
+}
+
+export interface TotpStatus {
+  enabled: boolean;
+  enabledAt: string | null;
+  recoveryCodesRemaining: number;
+}
+
+/** Returned once, at the start of enrolment, and never again. */
+export interface TotpSetup {
+  secret: string;
+  uri: string;
+}
+
+/** Returned once, when enrolment completes. Losing these loses the account. */
+export interface TotpEnabled {
+  enabled: boolean;
+  recoveryCodes: string[];
+}
+
 export interface Indicator {
   key: string;
   value: number | null;

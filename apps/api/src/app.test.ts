@@ -394,14 +394,27 @@ suite('Cleat API', () => {
         )) as never as { challenge: string }
       ).challenge;
 
-      for (let i = 0; i < 5; i += 1) {
+      // The first four say "wrong code", so a client can leave the person on
+      // the code field with the tries they have left. The fifth spends the
+      // challenge and says so, so the client sends them back to start over
+      // instead of typing into something that can no longer succeed.
+      for (let i = 0; i < 4; i += 1) {
         const wrong = await app.inject({
           method: 'POST',
           url: '/v1/auth/totp/verify',
           payload: { challenge, code: '000000' },
         });
         expect(wrong.statusCode).toBe(401);
+        expect(await json(wrong)).toMatchObject({ error: { code: 'totp_invalid_code' } });
       }
+
+      const last = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge, code: '000000' },
+      });
+      expect(last.statusCode).toBe(401);
+      expect(await json(last)).toMatchObject({ error: { code: 'totp_challenge_expired' } });
 
       // Now even the right code is refused: the challenge is spent.
       const correct = await app.inject({
@@ -410,6 +423,46 @@ suite('Cleat API', () => {
         payload: { challenge, code: currentCode(secret) },
       });
       expect(correct.statusCode).toBe(401);
+      expect(await json(correct)).toMatchObject({ error: { code: 'totp_challenge_expired' } });
+    });
+
+    it('keeps a challenge alive after a wrong code', async () => {
+      // Every failure used to be the same opaque 401, so a client could not
+      // tell "try again" from "start over" and had to assume the worst —
+      // throwing somebody back to re-enter their password over one mistyped
+      // digit, which makes the five attempts the server grants unreachable.
+      const challenge = (
+        (await json(
+          await app.inject({
+            method: 'POST',
+            url: '/v1/auth/login',
+            payload: { email, password: pw },
+          }),
+        )) as never as { challenge: string }
+      ).challenge;
+
+      const wrong = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge, code: '000000' },
+      });
+      expect(await json(wrong)).toMatchObject({ error: { code: 'totp_invalid_code' } });
+
+      // A challenge that never existed is dead, not merely wrong.
+      const nonsense = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge: 'a-challenge-that-was-never-issued', code: '000000' },
+      });
+      expect(await json(nonsense)).toMatchObject({ error: { code: 'totp_challenge_expired' } });
+
+      // The point of the distinction: the challenge still works.
+      const good = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/totp/verify',
+        payload: { challenge, code: currentCode(secret) },
+      });
+      expect(good.statusCode).toBe(200);
     });
 
     it('accepts a recovery code exactly once', async () => {

@@ -59,6 +59,8 @@ export const sv = {
   'action.continue': 'Fortsätt',
   'common.loading': 'Laddar…',
   'common.error': 'Något gick fel. Försök igen.',
+  'common.back': 'Tillbaka',
+  'common.cancel': 'Avbryt',
   'common.optional': 'Frivilligt',
   'common.today': 'Idag',
   'common.day': 'Dag',
@@ -661,6 +663,34 @@ export const sv = {
   'auth.invalid': 'Fel e-post eller lösenord.',
   'auth.weakPassword': 'Lösenordet måste vara minst 12 tecken.',
   'auth.emailTaken': 'Det finns redan ett konto med den e-posten.',
+
+  // Tvåstegsinloggning. Tonen spelar roll: det här är ett lås på det mest
+  // privata de flesta någonsin skriver ner, och skälet att slå på det är
+  // konkret — inte "god praxis", utan den bestämda person som annars kan läsa.
+  'auth.totpTitle': 'Tvåstegsinloggning',
+  'auth.totpOn': 'På',
+  'auth.totpOffBody':
+    'Ett lösenord kan gissas, återanvändas eller redan vara känt av någon du bor med. Med det här på krävs också en kod från din telefon.',
+  'auth.totpEnable': 'Slå på tvåstegsinloggning',
+  'auth.totpSetupBody':
+    'Lägg in nyckeln i en autentiseringsapp och skriv sedan den sexsiffriga koden den ger dig. Ingenting ändras förrän koden godtas, så en felskriven nyckel kan inte låsa ute dig.',
+  'auth.totpSecretLabel': 'Din nyckel',
+  'auth.totpCode': 'Kod',
+  'auth.totpConfirm': 'Bekräfta och slå på',
+  'auth.totpWrongCode': 'Koden stämde inte. Kolla klockan i telefonen och testa nästa.',
+  'auth.totpNotStarted': 'Börja om — den uppsättningen är inte öppen längre.',
+  'auth.totpAlreadyOn': 'Tvåstegsinloggning är redan på.',
+  'auth.totpDisable': 'Stäng av tvåstegsinloggning',
+  'auth.totpDisablePassword': 'Ditt lösenord',
+  'auth.totpCodesLeft': '{count} återställningskoder kvar',
+  'auth.totpRecoveryTitle': 'Spara de här återställningskoderna',
+  'auth.totpRecoveryBody':
+    'Varje kod loggar in dig en gång om du blir av med telefonen. Det här är enda gången de visas. Utan dem betyder en förlorad telefon ett förlorat konto — och allt du skrivit i det.',
+  'auth.totpRecoveryDownload': 'Ladda ner som fil',
+  'auth.totpRecoverySaved': 'Jag har sparat dem',
+  'auth.totpPrompt': 'Skriv koden från din autentiseringsapp.',
+  'auth.totpRecoveryHint': 'Borta telefon? Använd en av dina återställningskoder i stället.',
+  'auth.totpChallengeExpired': 'Det tog för lång tid, eller för många fel koder. Logga in igen.',
   'onboarding.welcome': 'Välkommen till Cleat',
   'onboarding.intro':
     'Det här är inte ett program du ska klara av. Det är ett verktyg för att ta nästa bra beslut.',

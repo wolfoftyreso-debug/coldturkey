@@ -51,6 +51,8 @@ export const en: Catalog = {
   'action.continue': 'Continue',
   'common.loading': 'Loading…',
   'common.error': 'Something went wrong. Try again.',
+  'common.back': 'Back',
+  'common.cancel': 'Cancel',
   'common.optional': 'Optional',
   'common.today': 'Today',
   'common.day': 'Day',
@@ -655,6 +657,34 @@ export const en: Catalog = {
   'auth.invalid': 'Wrong email or password.',
   'auth.weakPassword': 'Password must be at least 12 characters.',
   'auth.emailTaken': 'There is already an account with that email.',
+
+  // Two-factor. The tone matters here: this is a lock on the most private
+  // record most people will ever keep, and the reason to use it is concrete —
+  // not "best practice", but the specific person who might read it.
+  'auth.totpTitle': 'Two-step sign-in',
+  'auth.totpOn': 'On',
+  'auth.totpOffBody':
+    'A password on its own can be guessed, reused or already known to somebody who lives with you. With this on, signing in also needs a code from your phone.',
+  'auth.totpEnable': 'Turn on two-step sign-in',
+  'auth.totpSetupBody':
+    'Add this key to an authenticator app, then type the six-digit code it gives you. Nothing changes until that code is accepted, so a mistyped key cannot lock you out.',
+  'auth.totpSecretLabel': 'Your key',
+  'auth.totpCode': 'Code',
+  'auth.totpConfirm': 'Confirm and turn on',
+  'auth.totpWrongCode': 'That code did not match. Check the clock on your phone and try the next one.',
+  'auth.totpNotStarted': 'Start again — that setup is no longer open.',
+  'auth.totpAlreadyOn': 'Two-step sign-in is already on.',
+  'auth.totpDisable': 'Turn off two-step sign-in',
+  'auth.totpDisablePassword': 'Your password',
+  'auth.totpCodesLeft': '{count} recovery codes left',
+  'auth.totpRecoveryTitle': 'Save these recovery codes',
+  'auth.totpRecoveryBody':
+    'Each one signs you in once if you lose your phone. This is the only time they are shown. Without them, a lost phone means a lost account — and everything you have recorded in it.',
+  'auth.totpRecoveryDownload': 'Download as a file',
+  'auth.totpRecoverySaved': "I've saved them",
+  'auth.totpPrompt': 'Enter the code from your authenticator app.',
+  'auth.totpRecoveryHint': 'Lost your phone? Use one of your recovery codes instead.',
+  'auth.totpChallengeExpired': 'That took too long, or too many codes were wrong. Sign in again.',
   'onboarding.welcome': 'Welcome to Cleat',
   'onboarding.intro':
     "This isn't a programme to complete. It's a tool for making the next good decision.",

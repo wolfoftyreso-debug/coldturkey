@@ -277,6 +277,23 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         : await findTenantBySlug(slug);
     if (!tenant) throw unauthorized('Invalid challenge');
 
+    /**
+     * Why the two failure outcomes are distinguished.
+     *
+     * Every failure used to be the same 401, which left the client unable to
+     * tell "that code was wrong, you have four more tries" from "this challenge
+     * is finished, start over". The only safe thing it could do was send the
+     * person back to re-enter their password — so a single mistyped digit cost
+     * a full re-login, and the five attempts the server grants were unreachable
+     * in practice. On a screen somebody may be using at their worst, that turns
+     * a protective control into a reason to switch it off.
+     *
+     * Saying which of the two happened leaks nothing. Whoever is asking already
+     * holds the challenge, and could learn the same thing by simply trying
+     * again. The attempt ceiling, the five-minute expiry and the single-use
+     * consumption are what bound the guessing, and none of them are weakened by
+     * naming the outcome.
+     */
     const result = await withTenant(tenant.id, async (client) => {
       const { rows } = await client.query<{ id: string; user_id: string; attempts: number }>(
         `SELECT id, user_id, attempts FROM login_challenges
@@ -284,17 +301,19 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         [sha256(body.challenge)],
       );
       const challenge = rows[0];
-      if (!challenge) return null;
+      if (!challenge) return 'dead' as const;
 
       if (challenge.attempts >= 5) {
         await client.query('UPDATE login_challenges SET consumed_at = now() WHERE id = $1', [
           challenge.id,
         ]);
-        return null;
+        return 'dead' as const;
       }
 
+      // The account went away between the password check and the code. Nothing
+      // is left to retry against.
       const user = await findUserById(client, challenge.user_id);
-      if (!user) return null;
+      if (!user) return 'dead' as const;
 
       const secret = decryptField(user.totp_secret ?? null, {
         tenantId: tenant.id,
@@ -324,10 +343,21 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       }
 
       if (!ok) {
-        await client.query('UPDATE login_challenges SET attempts = attempts + 1 WHERE id = $1', [
+        const attempts = challenge.attempts + 1;
+        await client.query('UPDATE login_challenges SET attempts = $2 WHERE id = $1', [
           challenge.id,
+          attempts,
         ]);
-        return null;
+        // Spending the last attempt kills the challenge now rather than on the
+        // next request, so the person is told to start over instead of typing
+        // one more code into something that can no longer succeed.
+        if (attempts >= 5) {
+          await client.query('UPDATE login_challenges SET consumed_at = now() WHERE id = $1', [
+            challenge.id,
+          ]);
+          return 'dead' as const;
+        }
+        return 'wrong-code' as const;
       }
 
       await client.query('UPDATE login_challenges SET consumed_at = now() WHERE id = $1', [
@@ -344,7 +374,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return { user, refreshToken: refresh.token };
     });
 
-    if (!result) throw unauthorized('Invalid challenge');
+    if (result === 'wrong-code') {
+      throw unauthorized('That code did not match', 'totp_invalid_code');
+    }
+    if (result === 'dead') {
+      throw unauthorized('Start signing in again', 'totp_challenge_expired');
+    }
 
     const accessToken = await signAccessToken({
       sub: result.user.id,

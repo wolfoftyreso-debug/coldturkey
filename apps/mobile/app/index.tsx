@@ -6,7 +6,7 @@ import { useSession } from '../src/session';
 import { colors, styles } from '../src/theme';
 
 export default function SignInScreen() {
-  const { t, signIn, signUp, user, loading } = useSession();
+  const { t, signIn, completeMfa, signUp, user, loading } = useSession();
   const router = useRouter();
   const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
   const [email, setEmail] = useState('');
@@ -14,29 +14,125 @@ export default function SignInScreen() {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Set once the password was accepted and a second factor is still owed. */
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [code, setCode] = useState('');
 
   useEffect(() => {
     if (!loading && user) router.replace('/home');
   }, [loading, user, router]);
 
+  function describe(caught: unknown): string {
+    const map: Record<string, string> = {
+      weak_password: 'auth.weakPassword',
+      email_taken: 'auth.emailTaken',
+      unauthorized: 'auth.invalid',
+    };
+    return caught instanceof ApiError ? t(map[caught.code] ?? 'common.error') : t('common.error');
+  }
+
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      if (mode === 'signIn') await signIn(email.trim(), password);
-      else await signUp(email.trim(), password, displayName.trim());
+      if (mode === 'signUp') {
+        await signUp(email.trim(), password, displayName.trim());
+      } else {
+        const outcome = await signIn(email.trim(), password);
+        if (outcome.status === 'mfa-required') {
+          setChallenge(outcome.challenge);
+          setPassword('');
+        }
+      }
     } catch (caught) {
-      const map: Record<string, string> = {
-        weak_password: 'auth.weakPassword',
-        email_taken: 'auth.emailTaken',
-        unauthorized: 'auth.invalid',
-      };
-      setError(
-        caught instanceof ApiError ? t(map[caught.code] ?? 'common.error') : t('common.error'),
-      );
+      setError(describe(caught));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function submitCode() {
+    if (!challenge) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await completeMfa(challenge, code.trim());
+    } catch (caught) {
+      // A wrong code is not the end of the attempt — the server allows five.
+      // Only a challenge that can no longer succeed sends them back to the
+      // password.
+      const dead = caught instanceof ApiError && caught.code === 'totp_challenge_expired';
+      if (dead) {
+        setError(t('auth.totpChallengeExpired'));
+        setChallenge(null);
+        setCode('');
+      } else if (caught instanceof ApiError && caught.code === 'totp_invalid_code') {
+        setError(t('auth.totpWrongCode'));
+        setCode('');
+      } else {
+        setError(describe(caught));
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (challenge) {
+    return (
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.content, { paddingTop: 70 }]}
+      >
+        <Text style={styles.wordmark}>{t('app.name').toUpperCase()}</Text>
+        <Text style={styles.h1}>{t('auth.totpTitle')}</Text>
+        <Text style={styles.lede}>{t('auth.totpPrompt')}</Text>
+
+        <View style={[styles.card, { marginTop: 24 }]}>
+          {error ? (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+          <Text style={styles.label}>{t('auth.totpCode')}</Text>
+          <TextInput
+            style={styles.input}
+            value={code}
+            onChangeText={setCode}
+            autoCapitalize="characters"
+            // Not a numeric keyboard: recovery codes contain letters, and the
+            // number pad would make them impossible to enter.
+            textContentType="oneTimeCode"
+            autoFocus
+            placeholderTextColor={colors.textFaint}
+          />
+          <TouchableOpacity
+            style={[styles.button, styles.buttonPrimary]}
+            onPress={submitCode}
+            disabled={busy}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
+              {busy ? t('common.loading') : t('auth.signIn')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.muted, { marginTop: 12, textAlign: 'center' }]}>
+          {t('auth.totpRecoveryHint')}
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => {
+            setChallenge(null);
+            setCode('');
+            setError(null);
+          }}
+        >
+          <Text style={[styles.muted, { textAlign: 'center', marginTop: 16 }]}>
+            {t('common.back')}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
+import { TwoFactor } from '../../components/TwoFactor';
 import { api, tokens } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
 
@@ -90,6 +91,8 @@ export default function SettingsPage() {
           </button>
         ))}
       </div>
+
+      <TwoFactor />
 
       <h2>{t('privacy.title')}</h2>
       <div className="card">

@@ -676,3 +676,35 @@ input[type='range'] {
   text-align: center;
   letter-spacing: 0.01em;
 }
+
+/* The TOTP key and the recovery codes.
+
+   Monospace and generous letter-spacing because these get copied by hand off a
+   screen, often at speed and often on a phone. Ambiguous glyph pairs — 0/O,
+   1/l — are what make that go wrong, and a proportional face makes them worse.
+   `user-select: all` lets one tap take the whole value rather than half of it. */
+.totp-secret,
+.recovery-codes code {
+  font-family: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  user-select: all;
+  word-break: break-all;
+}
+
+.recovery-codes {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.recovery-codes li {
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
