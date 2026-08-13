@@ -220,4 +220,77 @@ describe('computeIndicators', () => {
       }
     }
   });
+
+  describe('a brand new account is not assessed', () => {
+    // Measured on the real screen: a plan created seconds earlier showed
+    // "Self-trust 60" and "Risk 10" while the other five indicators correctly
+    // showed nothing — on a page headed "this is what your own data says".
+    // Neither number came from any data.
+    const freshPlan: QuitPlan = { ...quit, startedAt: new Date(NOW.getTime() - 1000) };
+    const fresh = () =>
+      computeIndicators(
+        { ...snapshot({ checkIns: [], cravings: [] }), quit: freshPlan, relapses: [] },
+        NOW,
+      );
+
+    it('invents no self-trust score', () => {
+      expect(indicator(fresh(), 'self_trust')?.value).toBeNull();
+    });
+
+    it('invents no risk score from an absence of check-ins', () => {
+      // "Going quiet" is a real signal from somebody who was speaking. From an
+      // account a second old it means they have arrived.
+      expect(indicator(fresh(), 'risk')?.value).toBeNull();
+    });
+
+    it('shows nothing at all, on every indicator', () => {
+      for (const i of fresh().indicators) {
+        expect(i.value, `${i.key} invented a value`).toBeNull();
+        expect(i.confidence).toBe('none');
+        expect(i.trend).toBe('unknown');
+      }
+    });
+
+    it('never reports a value without evidence behind it', () => {
+      // The structural invariant, checked across a spread of states rather than
+      // one: no sample, no number. Two indicators broke this independently.
+      const states = [
+        snapshot({ checkIns: [], cravings: [] }),
+        { ...snapshot({ checkIns: [], cravings: [] }), quit: freshPlan, relapses: [] },
+        snapshot({ checkIns: [checkIn(1, 'morning')], cravings: [] }),
+        snapshot({ checkIns: [], cravings: [craving(1, 5, 'resisted')] }),
+      ];
+      for (const state of states) {
+        for (const i of computeIndicators(state, NOW).indicators) {
+          if (i.sample === 0) expect(i.value, `${i.key} has no sample but a value`).toBeNull();
+          if (i.value != null) expect(i.sample, `${i.key} has a value but no sample`).toBeGreaterThan(0);
+        }
+      }
+    });
+  });
+
+  it('starts scoring self-trust once there is something to measure', () => {
+    // The counterpart: the fix must not silence the indicator forever.
+    const set = computeIndicators(
+      snapshot({ checkIns: [checkIn(1, 'morning'), checkIn(2, 'morning')], cravings: [] }),
+      NOW,
+    );
+    const selfTrust = indicator(set, 'self_trust');
+    expect(selfTrust?.value).not.toBeNull();
+    expect(selfTrust?.sample).toBeGreaterThan(0);
+  });
+
+  it('does not credit self-trust for a streak nobody has beaten yet', () => {
+    // `longestMs` includes the current streak, so comparing against it returned
+    // a flat 1 for anyone who had never relapsed — 50 free points dressed up as
+    // a measurement.
+    const neverRelapsed = computeIndicators(
+      snapshot({ checkIns: [checkIn(1, 'morning')], cravings: [] }),
+      NOW,
+    );
+    const value = indicator(neverRelapsed, 'self_trust')?.value ?? 0;
+    // One check-in in a fortnight is poor follow-through, and with no earlier
+    // streak to beat there is nothing else contributing. It must not land high.
+    expect(value).toBeLessThan(50);
+  });
 });

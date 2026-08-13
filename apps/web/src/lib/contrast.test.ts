@@ -59,6 +59,10 @@ const PAIRS: [string, string, number, string][] = [
   ['danger', 'bg', 4.5, 'danger text'],
   ['amber', 'surface', 4.5, 'warning text on a card'],
   ['teal', 'surface', 4.5, 'positive text on a card'],
+  // Disabled controls are exempt from 1.4.3, and the exemption is declined:
+  // somebody has to be able to read what a button says to work out what would
+  // enable it. `--text-faint` was tried here and measured 4.43:1.
+  ['text-disabled', 'surface-raised', 4.5, 'a disabled button label'],
   // Non-text: WCAG 1.4.11 wants 3:1 for the boundary of a control.
   ['border-input', 'bg', 3, 'input border'],
   ['border-input', 'surface', 3, 'input border on a card'],

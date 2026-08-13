@@ -176,21 +176,51 @@ function selfTrust(
 ): { value: number | null; sample: number } {
   if (!snapshot.quit) return { value: null, sample: 0 };
   const streak = computeStreak(snapshot.quit, snapshot.relapses, now);
+  const decided = w.cravings.filter((c) => c.outcome !== 'unknown');
+
+  // Nothing to measure yet.
+  //
+  // Self-trust here means keeping your own decisions, and on a plan made five
+  // minutes ago there are no decisions to have kept. The previous version
+  // returned exactly 60 for that state: `vsBest` came out at 1 because the
+  // longest streak was a few milliseconds and the current streak was the same
+  // few milliseconds, and `kept` fell back to a neutral 0.5. A brand new
+  // account was told its self-trust was 60 out of 100, on a screen headed
+  // "this is what your own data says". It wasn't.
+  //
+  // A streak on its own is not self-trust either — that is already shown as a
+  // streak. This needs at least one check-in, or one craving somebody actually
+  // resolved.
+  if (w.checkIns.length === 0 && decided.length === 0) return { value: null, sample: 0 };
 
   // Keeping your own decisions, measured three ways: how the current streak
   // compares to your own best, whether you show up for check-ins, and whether
   // you did what you said you would when a craving hit.
-  const vsBest =
-    streak.longestMs > 0 ? Math.min(1, streak.currentMs / streak.longestMs) : 1;
+  //
+  // `previousBestMs`, not `longestMs`: the longest streak *includes* the current
+  // one, so comparing against it returns 1 for everyone who has never relapsed —
+  // a flattering constant rather than a measurement. The best *completed*
+  // streak is the comparison worth making, and where there is no earlier streak
+  // this part simply does not contribute.
+  const hasEarlierStreak = streak.previousBestMs > 0;
+  const vsBest = hasEarlierStreak ? Math.min(1, streak.currentMs / streak.previousBestMs) : null;
   const followThrough = Math.min(1, w.checkIns.length / (days * 2));
-  const decided = w.cravings.filter((c) => c.outcome !== 'unknown');
   const kept =
     decided.length > 0
       ? decided.filter((c) => c.outcome === 'resisted').length / decided.length
-      : 0.5;
+      : null;
 
-  const value = vsBest * 50 + followThrough * 30 + kept * 20;
-  return { value: clamp(value), sample: w.checkIns.length + decided.length + 1 };
+  // Weight only the parts there is evidence for, then rescale. A missing
+  // component should lower confidence, not quietly score zero.
+  const parts = [
+    ...(vsBest === null ? [] : [{ value: vsBest, weight: 50 }]),
+    { value: followThrough, weight: 30 },
+    ...(kept === null ? [] : [{ value: kept, weight: 20 }]),
+  ];
+  const totalWeight = parts.reduce((sum, p) => sum + p.weight, 0);
+  const value = parts.reduce((sum, p) => sum + p.value * p.weight, 0) / totalWeight;
+
+  return { value: clamp(value * 100), sample: w.checkIns.length + decided.length };
 }
 
 function risk(
@@ -226,9 +256,24 @@ function risk(
   );
   if (recentRelapse) score += 20;
 
-  // Going quiet is itself a risk signal, not a neutral absence of data.
+  // Going quiet is itself a risk signal, not a neutral absence of data — but
+  // only for somebody who was previously speaking.
+  //
+  // This fired on brand new accounts, which is where it was measured: a plan
+  // created seconds earlier has no check-ins, so "fewer check-ins than
+  // expected" was trivially true and risk came back as 10 with a single
+  // manufactured data point. Silence from someone who has been here a fortnight
+  // means something; silence from someone who arrived a minute ago means they
+  // have arrived.
+  //
+  // The window has to have been open long enough for check-ins to plausibly
+  // exist before their absence says anything.
+  const QUIET_GRACE_DAYS = 3;
+  const planAgeDays = snapshot.quit
+    ? (now.getTime() - snapshot.quit.startedAt.getTime()) / MS_PER_DAY
+    : 0;
   const expected = days * 2;
-  if (w.checkIns.length < expected * 0.25) {
+  if (planAgeDays >= QUIET_GRACE_DAYS && w.checkIns.length < expected * 0.25) {
     score += 10;
     sample += 1;
   }
@@ -327,14 +372,26 @@ export function computeIndicators(
   return {
     windowDays,
     computedAt: now,
-    indicators: definitions.map((d) => ({
-      key: d.key,
-      value: d.now.value,
-      sample: d.now.sample,
-      higherIsBetter: d.higherIsBetter,
-      confidence: confidenceFor(d.now.sample),
-      trend: trendOf(d.now.value, d.before.value, d.higherIsBetter),
-    })),
+    indicators: definitions.map((d) => {
+      // No data, no number. This is enforced here rather than trusted to each
+      // indicator because two of them got it wrong — one by adding a constant
+      // to its own sample count, the other by reading an absence of check-ins
+      // as withdrawal on an account minutes old. Both then showed a confident
+      // figure to somebody the product had never observed, under a heading that
+      // says "this is what your own data says".
+      //
+      // An invented assessment is worse than a blank. A blank is honest, and
+      // this screen tells people what to act on.
+      const hasEvidence = d.now.sample > 0;
+      return {
+        key: d.key,
+        value: hasEvidence ? d.now.value : null,
+        sample: d.now.sample,
+        higherIsBetter: d.higherIsBetter,
+        confidence: confidenceFor(d.now.sample),
+        trend: hasEvidence ? trendOf(d.now.value, d.before.value, d.higherIsBetter) : 'unknown',
+      };
+    }),
   };
 }
 

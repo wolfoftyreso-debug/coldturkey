@@ -126,11 +126,21 @@ export default function CravingPage() {
       {step === 'safety' ? (
         <>
           <p className="lede">{t('craving.step.safety')}</p>
-          <div className="btn-row">
-            <button className="btn danger" onClick={() => void declareDanger()} disabled={busy}>
+          {/* Full width and stacked, not two small chips side by side.
+              This is the screen somebody opens at their worst, possibly with
+              unsteady hands, and these two buttons are the only things on it —
+              so they should be the largest targets in the product rather than
+              the smallest. "Yes" stays first: it is the answer that matters
+              most, and it must never be the harder one to hit. */}
+          <div className="choice-stack">
+            <button
+              className="btn danger wide tall"
+              onClick={() => void declareDanger()}
+              disabled={busy}
+            >
               {t('craving.step.safety.yes')}
             </button>
-            <button className="btn primary" onClick={() => setStep('feeling')}>
+            <button className="btn primary wide tall" onClick={() => setStep('feeling')}>
               {t('craving.step.safety.no')}
             </button>
           </div>

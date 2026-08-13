@@ -708,3 +708,42 @@ input[type='range'] {
   border-radius: 8px;
   text-align: center;
 }
+
+/* Two answers, stacked and full width.
+
+   For the acute screens where the buttons *are* the page. Side-by-side chips
+   put the two most important targets in the product at roughly a thumb's width
+   each, on the one screen where somebody's hands may not be steady. */
+.choice-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn.tall {
+  min-height: 68px;
+  font-size: 17px;
+}
+
+/* The disabled state was a flat 0.5 opacity over the accent, which turned the
+   primary button a muddy brown that reads as broken rather than as not-yet.
+   Desaturating to the surface colours says "nothing to press here" without
+   looking like a rendering fault.
+
+   `--text-disabled` rather than `--text-faint`, which measured 4.43:1 here and
+   so missed AA. Disabled controls are exempt from the contrast requirement, but
+   the exemption is not a reason to take it: somebody has to be able to read
+   what the button says in order to work out what would enable it. */
+:root {
+  --text-disabled: #848c9c;
+}
+
+.btn:disabled,
+.btn.primary:disabled,
+.btn.danger:disabled {
+  opacity: 1;
+  background: var(--surface-raised);
+  border-color: var(--border);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}

@@ -30,6 +30,52 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F18 — The product invented an assessment of people it had never observed · HIGH · FIXED
+
+**Symptom.** On a brand new account, minutes old, with no check-ins and no
+craving logs, the indicators screen reported **Self-trust 60** and **Risk 10**.
+The other five indicators correctly showed nothing. The page is headed *"There
+is no total score here… these are seven separate trends you can act on"* and
+*"This is what your own data says."* Neither number came from any data.
+
+**Root cause.** Two independent bugs producing the same class of lie.
+
+*Self-trust* combined three parts. `vsBest` compared the current streak to
+`longestMs` — but the longest streak *includes* the current one, so for anyone
+who had never relapsed the ratio was a flat 1, contributing 50 points as a
+constant dressed up as a measurement. `kept` fell back to a neutral 0.5 when no
+craving had been resolved, adding 10 more. And the returned sample count was
+`checkIns + decided + 1`, where the `+ 1` manufactured a data point that did not
+exist, so the confidence never came out as `none` and the interface never
+treated it as blank. 50 + 0 + 10 = the 60 on screen.
+
+*Risk* scored 10 for "going quiet" — fewer check-ins than expected. That is a
+real signal from somebody who was previously speaking. From an account created
+seconds earlier it is not silence, it is arrival.
+
+**Why this is filed here rather than as a UI defect.** This is the failure mode
+the product exists to avoid. Somebody in early recovery is already carrying a
+running self-assessment that is usually wrong and usually harsh. An app that
+hands them a fabricated number — in either direction — is not neutral: 60/100
+for self-trust is either hollow flattery or, to somebody who feels they have
+none, an accusation that they are misjudging themselves. The honest output was
+a blank, and a blank was available.
+
+**Fix.** Three layers. Self-trust returns null until there is at least one
+check-in or one resolved craving, and now compares against `previousBestMs` —
+the best *completed* streak — so it credits nothing for a record nobody has
+beaten. Risk's quiet signal waits three days before an absence of check-ins
+means anything. And the assembly step enforces the invariant directly: no
+sample, no value, no trend — checked once for every indicator rather than
+trusted to each, because two of them broke it independently.
+
+**Regression test.** Six cases in `score.test.ts`, including the exact day-zero
+state measured on screen, and a structural check across four snapshots that no
+indicator ever reports a value without a sample behind it.
+
+**Found by.** Looking at the running product, screen by screen. Every test in
+the suite passed throughout.
+
 ### F17 — The image could not be built behind a TLS-inspecting proxy · LOW · FIXED
 
 **Symptom.** `docker build` died on `SELF_SIGNED_CERT_IN_CHAIN` during the
@@ -768,10 +814,10 @@ curl -sD- -o /dev/null http://localhost:8080/v1/public/meta | grep -i 'content-s
 kustomize build deploy/k8s/overlays/prod | kubectl apply --server-side --dry-run=server -f -
 ```
 
-**439 unit and integration tests plus 8 browser journeys green** at the time of
-writing: 260 core, 131 API against real PostgreSQL (including at-rest
+**446 unit and integration tests plus 8 browser journeys green** at the time of
+writing: 266 core, 131 API against real PostgreSQL (including at-rest
 encryption, two-factor, migration concurrency, resilience with the database
-down, and the OpenAPI contract), 19 i18n, 29 web, and 8 end-to-end.
+down, and the OpenAPI contract), 19 i18n, 30 web, and 8 end-to-end.
 
 Verified in this environment beyond the suites: both container images build and
 the web image runs as uid 10001 serving the expected policy; both Kubernetes
