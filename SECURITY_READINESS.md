@@ -810,7 +810,14 @@ FIELD_ENCRYPTION_KEYS='k:c2hvcnQ=' node apps/api/dist/server.js        # must re
 curl -sD- -o /dev/null http://localhost:3000/ | grep -i 'content-security\|strict-transport'
 curl -sD- -o /dev/null http://localhost:8080/v1/public/meta | grep -i 'content-security'
 
-# Manifests, against a real API server rather than a YAML parser
+# Manifests, against a real API server rather than a YAML parser.
+#
+# The namespace has to exist for real first. A dry-run never creates anything,
+# so without this every namespaced resource fails with `namespaces "cleat" not
+# found` — fourteen errors that look alarming and mean nothing. A genuine
+# `kubectl apply -k` does not have the problem, because kubectl orders the
+# Namespace ahead of the objects inside it.
+kubectl create namespace cleat --dry-run=client -o yaml | kubectl apply -f -
 kustomize build deploy/k8s/overlays/prod | kubectl apply --server-side --dry-run=server -f -
 ```
 
