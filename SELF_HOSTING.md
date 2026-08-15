@@ -156,6 +156,11 @@ that is genuinely elsewhere.
 Run this on a schedule — quarterly at minimum — into a throwaway namespace.
 A restore procedure that has never been executed is a hypothesis.
 
+> **The compose stack's equivalent has been executed**, against a real running
+> deployment, and is written up below under *Drill: compose*. The CloudNativePG
+> path here has **not** — it needs a cluster, and remains a hypothesis until
+> somebody runs it and writes down the time it took.
+
 ```sh
 cat <<'EOF' | kubectl apply -f -
 apiVersion: postgresql.cnpg.io/v1
@@ -197,6 +202,42 @@ Write down how long the whole thing took. That number is your real recovery
 time objective, and it is usually several times what people assume.
 
 ---
+
+## Drill: compose
+
+Executed end to end against the running compose stack, with an account and a
+quit plan created through the browser first.
+
+```sh
+# 1. Back up. 55 KB, 192 ms.
+docker exec deploy-postgres-1 pg_dump -U cleat -d cleat -Fc -f /tmp/cleat.dump
+docker cp deploy-postgres-1:/tmp/cleat.dump ./cleat.dump
+
+# 2. Lose everything, including the volume.
+docker compose -f deploy/docker-compose.yml down -v
+
+# 3. Bring it back and restore.
+docker compose -f deploy/docker-compose.yml up -d
+docker cp ./cleat.dump deploy-postgres-1:/tmp/cleat.dump
+docker exec deploy-postgres-1 pg_restore -U cleat -d cleat --clean --if-exists /tmp/cleat.dump
+```
+
+**Six seconds**, from destroyed volume to restored database, on a small
+dataset. What was checked afterwards, because a restore that returns rows
+nobody can use is not a restore:
+
+* row counts match — users, quits, profiles
+* `/readyz` reports `database: ok`
+* every table carrying `tenant_id` still has **forced** row level security;
+  a dump that silently dropped the policies would look like a perfect restore
+  and quietly make every tenant readable by every other
+* the restored account signs in with its original password, and its plan is
+  on screen — so the password hashes and the encrypted columns both survived,
+  which is the part that fails if the keyring and the data get separated
+
+Scale honestly: six seconds is a drill, not a capacity measurement. Re-run it
+against a database the size of your real one before quoting a recovery time to
+anybody.
 
 ## CI on Gitea
 

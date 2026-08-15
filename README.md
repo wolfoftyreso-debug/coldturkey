@@ -147,6 +147,17 @@ Or the whole stack in containers:
 docker compose -f deploy/docker-compose.yml up --build
 ```
 
+That stack is for evaluating and developing against, not for serving real
+people: it runs with `NODE_ENV=development` because the API refuses to boot in
+production without a mail server, and mail therefore goes to the log instead of
+to an inbox — so a password reset would go nowhere. Encryption at rest is on,
+with a committed key that is worth nothing as a secret and exists so the local
+stack behaves like the real one. `DEPLOYMENT.md` and `deploy/k8s` are the real
+thing.
+
+Behind a TLS-inspecting proxy, point `CLEAT_BUILD_CA` at your CA so the
+dependency install inside the images trusts it.
+
 ### Without an API key
 
 `ANTHROPIC_API_KEY` is optional. Without it the API serves a **deterministic

@@ -1,8 +1,18 @@
-# Local stack: Postgres, the API and the web client.
+# A local evaluation stack: Postgres, the API and the web client.
 #
 #   docker compose -f deploy/docker-compose.yml up --build
 #
+# This is for trying Cleat out and for developing against it. It is **not** a
+# deployment for real people — see DEPLOYMENT.md and the Kubernetes manifests in
+# deploy/k8s for that, and read the note on NODE_ENV below before considering
+# otherwise.
+#
 # The API migrates on boot, so the first start also creates the schema.
+#
+# Building behind a TLS-inspecting proxy: point CLEAT_BUILD_CA at your CA and
+# the dependency install will trust it.
+#
+#   CLEAT_BUILD_CA=/etc/ssl/certs/your-ca.crt docker compose -f deploy/docker-compose.yml build
 services:
   postgres:
     image: postgres:16-alpine
@@ -11,7 +21,13 @@ services:
       POSTGRES_PASSWORD: cleat
       POSTGRES_DB: cleat
     ports:
-      - '5432:5432'
+      # Published only so you can reach the database with psql from the host.
+      # Overridable because 5432 is very often already taken by a Postgres the
+      # developer is already running, and the resulting compose error names a
+      # port rather than the reason:
+      #
+      #   CLEAT_DB_PORT=5433 docker compose -f deploy/docker-compose.yml up
+      - '${CLEAT_DB_PORT:-5432}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -24,11 +40,36 @@ services:
     build:
       context: ..
       dockerfile: apps/api/Dockerfile
+      secrets:
+        - ca
     environment:
+      # The image sets NODE_ENV=production, and this overrides it deliberately.
+      #
+      # In production the API refuses to boot without SMTP_HOST, because without
+      # it password reset and email verification fail silently — which is the
+      # correct guard, and this stack has no mail server to give it. In
+      # development the same mail is written to the log instead, so you can see
+      # a verification link and carry on.
+      #
+      # The consequence is the reason this file says "evaluation" at the top:
+      # nothing here should serve real people, because their password resets
+      # would go to a log file nobody reads.
+      NODE_ENV: development
       DATABASE_URL: postgres://cleat:cleat@postgres:5432/cleat
       JWT_SECRET: local-development-secret-change-me-please-32
       CORS_ORIGINS: http://localhost:3000
       LOG_LEVEL: info
+      # Encryption at rest, on, even locally.
+      #
+      # It would boot without this, since the guard only fires in production —
+      # and then every craving note, why statement and coach transcript in the
+      # local database would sit in cleartext. People try things out with real
+      # thoughts about their own drinking. This key is committed and therefore
+      # worth nothing as a secret; it is here so the local stack behaves like
+      # the real one, not to protect anything. Generate your own for anything
+      # that outlives an afternoon.
+      FIELD_ENCRYPTION_KEYS: 'local:TyFab0mOjTGEle2irqOqCaxy54l00lpUhwX1g8FbXwk='
+      FIELD_ENCRYPTION_ACTIVE_KEY: local
       # Leave unset to run the deterministic local coach — the app is fully
       # usable without an API key.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -42,6 +83,8 @@ services:
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
+      secrets:
+        - ca
       args:
         # Compose publishes the two services on different host ports, so here
         # the API genuinely is cross-origin and the URL has to be set.
@@ -57,6 +100,12 @@ services:
       - '3000:3000'
     depends_on:
       - api
+
+# Optional, and absent by default: /dev/null is an empty file, and both
+# Dockerfiles skip the CA when the mounted secret is empty.
+secrets:
+  ca:
+    file: ${CLEAT_BUILD_CA:-/dev/null}
 
 volumes:
   pgdata:

@@ -30,6 +30,42 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F19 — The documented one-command stack could not start · MEDIUM · FIXED
+
+**Symptom.** `docker compose -f deploy/docker-compose.yml up --build` — the
+first thing the README tells anybody to run, and the front door to the whole
+project — refused to boot:
+
+```
+[server] failed to start Error: Invalid configuration:
+  FIELD_ENCRYPTION_KEYS is required in production — without it recovery notes
+  and coach transcripts are stored in cleartext.
+```
+
+**Root cause.** The API image sets `ENV NODE_ENV=production`, correctly. The
+compose file supplied neither `FIELD_ENCRYPTION_KEYS` nor `SMTP_HOST`, so the
+production boot guards — themselves working exactly as intended — stopped it.
+Two pieces of good engineering that had never been run against each other.
+
+**A second failure behind the first.** Had the guard not fired, the stack would
+have come up with **encryption at rest switched off**, because the guard is the
+only thing that requires it. Every craving note, why statement and coach
+transcript in a local database would have been cleartext. People evaluate this
+software by typing real thoughts about their own drinking into it.
+
+**Fix.** The compose file now sets a committed local key — worth nothing as a
+secret, and there so the local stack behaves like the real one — and declares
+`NODE_ENV: development` with the reason spelled out: production refuses to boot
+without SMTP, this stack has no mail server, and mail therefore goes to the log
+instead. The header now says "local evaluation stack" and points at
+`DEPLOYMENT.md` for anything serving real people, because a password reset
+written to a log file nobody reads is not a password reset.
+
+Both build stages also take the optional CA from F17, so the documented command
+works behind a TLS-inspecting proxy as well.
+
+**Found by.** Trying to run it. It had never been run.
+
 ### F18 — The product invented an assessment of people it had never observed · HIGH · FIXED
 
 **Symptom.** On a brand new account, minutes old, with no check-ins and no
@@ -778,7 +814,15 @@ Kubernetes API server. Pods have never actually run.
    provider, plus a documented position on EU MDR.
 4. ~~Field-level encryption~~ — done, see F6.
 5. One full deployment observed running, including a restore drill executed
-   end to end and timed.
+   end to end and timed. **Partly done.** The docker compose stack has now been
+   built, started, driven through signup, plan creation and the crisis surface,
+   then destroyed volume-and-all and restored from a dump in six seconds —
+   with row counts, forced row level security, sign-in and the encrypted
+   columns all checked afterwards. See *Drill: compose* in SELF_HOSTING.md.
+   What is still missing is the same on Kubernetes: pods cannot run in this
+   environment (two levels of container nesting and cgroup v1 only — runc dies
+   with `can't get final child's PID from pipe`), so the manifests are verified
+   only as far as admission accepts them.
 
 Items 1–3 are not engineering work and are what now stands between this and
 SECURITY READY.
