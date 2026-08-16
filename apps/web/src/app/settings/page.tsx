@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { TwoFactor } from '../../components/TwoFactor';
-import { api, ApiError, tokens } from '../../lib/api';
+import { api, ApiError, tokens, type PrivacySummary } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
 import { useAction } from '../../lib/action';
 
@@ -14,6 +14,17 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const { busy, error, run } = useAction(t);
   const [message, setMessage] = useState<string | null>(null);
+  const [summary, setSummary] = useState<PrivacySummary | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    void api
+      .get<PrivacySummary>('/v1/privacy/summary')
+      .then(setSummary)
+      // A transparency panel that cannot load must not take the delete button
+      // down with it; the rest of this screen matters more.
+      .catch(() => setSummary(null));
+  }, [user]);
 
   if (loading || !user) return <Loading />;
 
@@ -118,6 +129,41 @@ export default function SettingsPage() {
           {t('privacy.export')}
         </button>
       </div>
+
+      {/* Counted from the database rather than described in prose. "We minimise
+          collection" is a claim; a list saying 14 check-ins and 3 cravings is
+          something a person can check. The endpoint computing it has existed
+          since the privacy routes were written and nothing had ever shown it.
+
+          The sharing answers come from the server too, deliberately. A client
+          that hard-codes "we never sell your data" keeps saying so even in a
+          deployment that does — which would make this app the thing telling the
+          reassuring lie. */}
+      {summary ? (
+        <>
+          <h3>{t('privacy.storedTitle')}</h3>
+          <div className="card">
+            {summary.whatWeStore.map((row) => (
+              <div className="resource" key={row.category}>
+                <span>{t(`privacy.category.${row.category}`)}</span>
+                <span className="muted">{row.count}</span>
+              </div>
+            ))}
+          </div>
+
+          <h3>{t('privacy.sharingTitle')}</h3>
+          <div className="card">
+            {(Object.keys(summary.sharing) as (keyof PrivacySummary['sharing'])[]).map((key) => (
+              <div className="resource" key={key}>
+                <span>{t(`privacy.sharing.${key}`)}</span>
+                <span className={summary.sharing[key] ? '' : 'muted'}>
+                  {t(summary.sharing[key] ? 'privacy.sharing.yes' : 'privacy.sharing.no')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
 
       {/* Deletion is a first-class control, not a support ticket. Recovery data
           in the wrong hands costs people jobs and custody. */}

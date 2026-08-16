@@ -145,6 +145,23 @@ export interface MfaChallenge {
   challenge: string;
 }
 
+/**
+ * What the server holds about this account, counted rather than described.
+ *
+ * The sharing flags come from the server on purpose: a client that hard-codes
+ * "we never sell your data" goes on saying so in a deployment that does.
+ */
+export interface PrivacySummary {
+  principles: string;
+  whatWeStore: { category: string; count: number }[];
+  sharing: {
+    soldToThirdParties: boolean;
+    usedForAdvertising: boolean;
+    sharedWithInsurers: boolean;
+    sharedWithEmployers: boolean;
+  };
+}
+
 export interface TotpStatus {
   enabled: boolean;
   enabledAt: string | null;

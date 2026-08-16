@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Share, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ApiError, api, tokenStore } from '../src/api';
+import { ApiError, api, tokenStore, type PrivacySummary } from '../src/api';
 import { TwoFactor } from '../src/TwoFactor';
 import { useSession } from '../src/session';
 import { colors, styles } from '../src/theme';
@@ -26,6 +26,17 @@ export default function SettingsScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [summary, setSummary] = useState<PrivacySummary | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    void api
+      .get<PrivacySummary>('/v1/privacy/summary')
+      .then(setSummary)
+      // A transparency panel that cannot load must not take the delete button
+      // down with it; the rest of this screen matters more.
+      .catch(() => setSummary(null));
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/');
@@ -169,6 +180,43 @@ export default function SettingsScreen() {
           <Text style={styles.buttonText}>{t('privacy.export')}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Counted from the database rather than described in prose, and the
+          sharing answers come from the server: a client that hard-codes "we
+          never sell your data" keeps saying so in a deployment that does. */}
+      {summary ? (
+        <>
+          <Text style={styles.h2}>{t('privacy.storedTitle').toUpperCase()}</Text>
+          <View style={styles.card}>
+            {summary.whatWeStore.map((row) => (
+              <View
+                key={row.category}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}
+              >
+                <Text style={[styles.body, { flexShrink: 1 }]}>
+                  {t(`privacy.category.${row.category}`)}
+                </Text>
+                <Text style={styles.muted}>{row.count}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.h2}>{t('privacy.sharingTitle').toUpperCase()}</Text>
+          <View style={styles.card}>
+            {(Object.keys(summary.sharing) as (keyof PrivacySummary['sharing'])[]).map((key) => (
+              <View
+                key={key}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}
+              >
+                <Text style={[styles.body, { flexShrink: 1 }]}>{t(`privacy.sharing.${key}`)}</Text>
+                <Text style={summary.sharing[key] ? styles.body : styles.muted}>
+                  {t(summary.sharing[key] ? 'privacy.sharing.yes' : 'privacy.sharing.no')}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
 
       {/* Deletion is a first-class control, not a support ticket. Recovery data
           in the wrong hands costs people jobs and custody. */}

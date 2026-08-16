@@ -160,6 +160,14 @@ test.describe('data rights', () => {
     await page.getByRole('button', { name: /exportera allt|export everything/i }).click();
     await expect(page.getByText(/export klar|export complete/i)).toBeVisible();
 
+    // The transparency panel builds its labels by appending the server's
+    // category names to a key prefix, so a category the catalogue does not know
+    // shows up as the raw key on screen. Nothing here may be a key.
+    await expect(page.getByText(/lagrat om dig|stored about you/i)).toBeVisible();
+    const settingsText = (await page.textContent('body')) ?? '';
+    expect(settingsText).not.toContain('privacy.category.');
+    expect(settingsText).not.toContain('privacy.sharing.');
+
     const deleteWord = page.locator('#delete-confirm');
     const deleteButton = page.getByRole('button', { name: /^(radera|delete)$/i });
 
