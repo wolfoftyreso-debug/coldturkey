@@ -102,6 +102,8 @@ export const api = {
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   put: <T,>(path: string, body: unknown) =>
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
+  del: <T,>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'DELETE', body: body ? JSON.stringify(body) : undefined }),
 };
 
 export interface User {
@@ -139,6 +141,24 @@ export interface Dashboard {
   mantra: string;
   supportContacts: { id: string; name: string; phone: string | null; isPrimary: boolean }[];
   detoxWarning: { required: boolean; messageKey: string } | null;
+}
+
+export interface TotpStatus {
+  enabled: boolean;
+  enabledAt: string | null;
+  recoveryCodesRemaining: number;
+}
+
+/** Returned once, at the start of enrolment, and never again. */
+export interface TotpSetup {
+  secret: string;
+  uri: string;
+}
+
+/** Returned once, when enrolment completes. Losing these loses the account. */
+export interface TotpEnabled {
+  enabled: boolean;
+  recoveryCodes: string[];
 }
 
 export interface CravingPlan {

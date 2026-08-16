@@ -3,13 +3,15 @@
 import { useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { TwoFactor } from '../../components/TwoFactor';
-import { api, tokens } from '../../lib/api';
+import { api, ApiError, tokens } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
 import { useAction } from '../../lib/action';
 
 export default function SettingsPage() {
   const { user, loading, t, signOut, refreshUser } = useRequireAuth();
   const [confirm, setConfirm] = useState('');
+  const [password, setPassword] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const { busy, error, run } = useAction(t);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -37,10 +39,35 @@ export default function SettingsPage() {
     setMessage(t('privacy.exportDone'));
   }
 
+  /**
+   * Erasure, with the password the server actually asks for.
+   *
+   * This screen used to send the confirmation word alone. The endpoint has
+   * always required the password as well — it re-authenticates, because an
+   * access token lifted from an unlocked phone should not be able to destroy
+   * somebody's entire record — so the only button in the product that exercises
+   * the right to erasure returned 400 every single time it was pressed. The API
+   * tests passed throughout: they called the endpoint correctly, which the app
+   * did not.
+   *
+   * It also handles its own errors rather than going through `useAction`: a
+   * wrong password comes back as `unauthorized`, and the generic handler reads
+   * that as "you have been signed out", which is both untrue and alarming on
+   * this particular screen.
+   */
   async function deleteAccount() {
-    await api.del('/v1/privacy/account', { confirm });
-    tokens.clear();
-    window.location.href = '/login';
+    setDeleteError(null);
+    try {
+      await api.del('/v1/privacy/account', { confirm, password });
+      tokens.clear();
+      window.location.href = '/login';
+    } catch (caught) {
+      setDeleteError(
+        caught instanceof ApiError && caught.status === 401
+          ? t('privacy.deleteWrongPassword')
+          : t('common.error'),
+      );
+    }
   }
 
   const deleteWord = t('privacy.deleteWord');
@@ -97,17 +124,31 @@ export default function SettingsPage() {
       <div className="card warning">
         <h3>{t('privacy.delete')}</h3>
         <p>{t('privacy.deleteConfirm')}</p>
+        {deleteError ? <div className="error-banner">{deleteError}</div> : null}
         <div className="field">
+          <label htmlFor="delete-confirm">{deleteWord}</label>
           <input
+            id="delete-confirm"
             value={confirm}
             onChange={(event) => setConfirm(event.target.value)}
             placeholder={deleteWord}
           />
         </div>
+        <div className="field">
+          <label htmlFor="delete-password">{t('privacy.deletePassword')}</label>
+          <input
+            id="delete-password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+          />
+        </div>
+        <p className="muted">{t('privacy.deletePasswordWhy')}</p>
         <button
           className="btn wide"
           onClick={run(deleteAccount)}
-          disabled={busy || confirm !== deleteWord}
+          disabled={busy || confirm !== deleteWord || password.length === 0}
         >
           {t('action.delete')}
         </button>

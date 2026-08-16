@@ -252,6 +252,45 @@ export const sv = {
   'resource.generic.emergency': 'Nödnummer',
   'resource.generic.local': 'Din lokala vårdcentral eller akutmottagning',
 
+  // When to ring which number. One line each, in the words somebody would use
+  // about themselves — a list of names and digits does not help a person decide
+  // who to call while they are shaking.
+  'resource.se.emergency.when':
+    'Livsfara, överdos, någon som inte går att väcka, krampanfall. Dygnet runt.',
+  'resource.se.health.when':
+    'Abstinens, kroppsliga symtom, råd om vart du ska vända dig. Dygnet runt.',
+  'resource.se.mind.when': 'Tankar på att inte finnas kvar, med eller utan plan. Dygnet runt.',
+  'resource.se.alcohol.when':
+    'Din egen eller någon annans alkoholkonsumtion. Anonymt. Vardagar.',
+  'resource.se.gambling.when':
+    'Spel om pengar, för dig som spelar eller står nära någon som gör det. Vardagar.',
+  'resource.us.emergency.when':
+    'Livsfara, överdos, någon som inte går att väcka, krampanfall. Dygnet runt.',
+  'resource.us.crisis.when': 'Tankar på att inte finnas kvar, med eller utan plan. Dygnet runt.',
+  'resource.us.samhsa.when': 'Behandling och stöd vid beroende. Dygnet runt, kostnadsfritt.',
+  'resource.gb.emergency.when':
+    'Livsfara, överdos, någon som inte går att väcka, krampanfall. Dygnet runt.',
+  'resource.gb.health.when': 'Abstinens, kroppsliga symtom, råd om vart du ska vända dig.',
+  'resource.gb.samaritans.when': 'Vad som helst som är för tungt att bära själv. Dygnet runt.',
+  'resource.generic.emergency.when': 'Livsfara, överdos, någon som inte går att väcka.',
+  'resource.generic.local.when':
+    'Slå upp numret där du är — en jourlinje som inte svarar där du står kostar samtalet.',
+
+  // ---- The crisis page: no account, no network dependency, no trace ----
+  'crisis.title': 'Nummer att ringa nu',
+  'crisis.lede':
+    'Du behöver inget konto och du behöver inte den här appen. Är det akut — ring nödnumret.',
+  'crisis.noWordsTitle': 'Om du inte vet vad du ska säga',
+  'crisis.noWordsBody':
+    'Du behöver inte formulera det bra. "Jag mår inte bra och jag vet inte vem jag ska ringa" räcker för att komma vidare. Du behöver inte ha bestämt dig för någonting, och du behöver inte vara säker på att det är tillräckligt allvarligt.',
+  'crisis.someoneElse':
+    'Är du orolig för någon annan just nu: lämna dem inte ensamma, lägg dem i stabilt sidoläge om de är medvetslösa men andas, och ring nödnumret.',
+  'crisis.detoxTitle': 'Sluta inte tvärt med allt',
+  'crisis.detoxBody':
+    'Att abrupt sluta med alkohol, bensodiazepiner eller andra lugnande läkemedel kan ge krampanfall och delirium, och kan vara livsfarligt. Det är den ena situationen där det du tänkte göra är farligare än att fortsätta ett dygn till medan du får tag på vård. Ring sjukvårdsrådgivningen och fråga.',
+  'crisis.privacyNote':
+    'Den här sidan laddar ingenting utifrån, sparar ingenting om ditt besök och fungerar utan konto.',
+
   // ---- Relapse / "I messed up" ----
   'relapse.title': 'Jag trampade fel',
   'relapse.opening': 'Okej. Ingen skam. Vi börjar här.',
@@ -729,7 +768,14 @@ export const sv = {
   'privacy.deleteConfirm':
     'Det här raderar allt permanent och går inte att ångra. Skriv RADERA för att bekräfta.',
   'privacy.deleteWord': 'RADERA',
+  'privacy.deletePassword': 'Ditt lösenord',
+  'privacy.deletePasswordWhy':
+    'Vi frågar efter lösenordet också. Ett bekräftelseord stoppar en olyckshändelse — bara lösenordet stoppar någon annan som fått tag i din olåsta telefon.',
+  'privacy.deleteWrongPassword': 'Fel lösenord. Ingenting har raderats.',
   'privacy.deleted': 'Allt är raderat. Ta hand om dig.',
+  'privacy.exportShare': 'Dela eller spara exporten',
+  'privacy.exportLarge':
+    'Exporten är stor ({kilobytes} kB). Vissa appar kortar av lång text — öppna webbversionen om du vill ha den som fil.',
 
   // ---- Goal of the product ----
   'about.objective':

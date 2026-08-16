@@ -208,6 +208,16 @@ export default function SignInScreen() {
         </Text>
       </TouchableOpacity>
 
+      {/* Help before an account. Somebody who needs a number right now should
+          not have to register first, and should not have to believe that this
+          app is the thing that helps them. */}
+      <TouchableOpacity
+        style={[styles.button, { marginTop: 24 }]}
+        onPress={() => router.push('/kris')}
+      >
+        <Text style={styles.buttonText}>{t('crisis.title')}</Text>
+      </TouchableOpacity>
+
       <Text style={[styles.muted, { marginTop: 30, textAlign: 'center' }]}>
         {t('safety.disclaimer')}
       </Text>

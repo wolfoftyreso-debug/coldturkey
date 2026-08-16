@@ -30,6 +30,58 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F21 — The phone had no way to reach its own security and privacy controls · MEDIUM · FIXED
+
+**Symptom.** The mobile client had no settings screen at all. Somebody who used
+Cleat only on their phone — which is most people — could not turn two-step
+sign-in on or off, could not obtain a copy of their own data, and could not
+delete their account. The phone could *answer* a two-step challenge, so an
+account with 2FA enabled on the web worked there; there was simply no way to
+get it enabled from the device.
+
+**Root cause.** The same shape as F12, one layer further out. Each control was
+built, tested and then declared done on the client where it was first needed.
+"The product supports export and erasure" was true of the web client and was
+being read as true of the product.
+
+**Fix.** A settings screen on mobile with language, country, a React Native
+`TwoFactor` component (enrol, confirm with a code, recovery codes shown once
+via the share sheet, disable with the password), export through the share
+sheet, deletion behind the confirmation word *and* the password, and sign-out.
+A crisis screen reachable while signed out, built from the same
+`emergencyResources` table and the same catalogue the coach uses, so the
+numbers cannot drift apart between surfaces.
+
+**Regression test.** The key scan below, the workspace typecheck, and a Metro
+bundle of the app. **NOT VERIFIED:** the screens themselves have not been driven
+on a device or emulator — neither exists in this environment. What is proven is
+that the code compiles, bundles, and asks only for translation keys that exist.
+The interaction is unverified, and should be exercised by hand before release.
+
+### F20 — The only button that exercises the right to erasure had never worked · HIGH · FIXED
+
+**Symptom.** Pressing "delete my account and all data" in the web app did
+nothing but flash an error. Every press, since F1 was fixed.
+
+**Root cause.** F1 added the password requirement to
+`DELETE /v1/privacy/account` and the client was never taught about it: the
+settings page sent `{ confirm }` alone, so the request failed validation before
+it reached any of the deletion logic. The regression test written for F1 called
+the endpoint correctly and passed throughout — it proved the server refuses a
+request without a password, which was exactly the request the app was making.
+A control that cannot be exercised is not a control, and this one is a GDPR
+Article 17 obligation as well as a promise on the settings screen.
+
+**Fix.** The page asks for the password, sends it, and reports a wrong one as a
+wrong password rather than through the generic handler, which would have said
+"you have been signed out" — untrue, and alarming on that screen in particular.
+
+**Regression test.** A browser journey — sign up, export, arm the delete button,
+be refused with a wrong password, delete with the right one, and then fail to
+sign in with credentials that worked a moment earlier. **Demonstrated open
+before the fix:** reverting the client to `{ confirm }` alone makes it fail on
+the redirect that never comes.
+
 ### F19 — The documented one-command stack could not start · MEDIUM · FIXED
 
 **Symptom.** `docker compose -f deploy/docker-compose.yml up --build` — the
@@ -330,7 +382,8 @@ above was true of the server and none of it reached a user. There was no
 interface to switch two-factor on, in either the web app or the mobile app, so
 no account could have it; and the login screens read the response as if tokens
 were always present, so an account that *did* have it — enabled by calling the
-API directly — could not sign in afterwards. The client stored `undefined` as
+API directly — could not sign in afterwards. F12 fixed the web app and the
+login screens; the phone did not get a way to switch it on until F21. The client stored `undefined` as
 its access token and left the person on a screen that looked signed in and was
 not. A control nobody can turn on is not a control, and one that locks people
 out is worse than none. See F12.
@@ -489,6 +542,11 @@ verifies it against the stored hash before anything is deleted.
 **Regression test.** `app.test.ts` → "account deletion requires the password,
 not just a confirmation word": wrong password → 401, missing password → 400,
 and the account is asserted alive after both.
+
+**Correction — this fix broke the feature for every user and nobody noticed.**
+The client was not updated to send the password, so from this change onward the
+delete button returned 400 on every press while the test above went on passing.
+See F20.
 
 ### F2 — Arbitrary origin accepted with credentials · HIGH · FIXED
 

@@ -30,6 +30,7 @@ services:
       - '${CLEAT_DB_PORT:-5432}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U cleat']
       interval: 5s
@@ -75,6 +76,12 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - '8080:8080'
+    # Without this the stack survives exactly one database hiccup. The API exits
+    # when Postgres goes away — which is the correct behaviour for a process
+    # under an orchestrator that will start it again — and compose, told
+    # nothing, leaves it dead. The web client then serves perfectly and every
+    # request fails, which is the failure mode this project keeps finding.
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,6 +105,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8080
     ports:
       - '3000:3000'
+    restart: unless-stopped
     depends_on:
       - api
 

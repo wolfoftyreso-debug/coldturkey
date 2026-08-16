@@ -47,7 +47,15 @@ export default function HomeScreen() {
         />
       }
     >
-      <Text style={styles.wordmark}>{t('app.name').toUpperCase()}</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Text style={styles.wordmark}>{t('app.name').toUpperCase()}</Text>
+        {/* Settings is where the second factor, the export and the delete
+            button live. Unreachable from the phone, they may as well not
+            exist for somebody who never opens the browser. */}
+        <TouchableOpacity onPress={() => router.push('/settings')}>
+          <Text style={styles.wordmark}>{t('settings.title').toUpperCase()}</Text>
+        </TouchableOpacity>
+      </View>
 
       {data?.streak ? (
         <View>

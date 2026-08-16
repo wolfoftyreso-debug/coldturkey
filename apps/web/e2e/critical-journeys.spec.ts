@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { expectNoConsoleErrors, failOnConsoleErrors, newEmail, signUp } from './helpers';
+import {
+  expectNoConsoleErrors,
+  failOnConsoleErrors,
+  newEmail,
+  PASSWORD,
+  signIn,
+  signUp,
+} from './helpers';
 
 /**
  * The journeys this product cannot get wrong, from the browser inwards.
@@ -101,6 +108,60 @@ test.describe('a failed save says so', () => {
       /Failed to load resource/,
       /net::ERR_FAILED/,
       /ERR_FAILED/,
+    ]);
+  });
+});
+
+test.describe('data rights', () => {
+  /**
+   * Export and erasure, through the buttons rather than through the endpoints.
+   *
+   * The delete button sent the confirmation word and nothing else, while the
+   * endpoint has always required the password too — so the one control in the
+   * product that exercises the right to erasure failed on every press. The API
+   * tests never saw it, because they called the endpoint the way it was
+   * documented instead of the way the app called it. Only a browser can tell
+   * those two apart.
+   */
+  test('a person can export their data and then really delete the account', async ({ page }) => {
+    const errors = failOnConsoleErrors(page);
+    const email = newEmail('erasure');
+    await signUp(page, email);
+
+    await page.goto('/settings');
+    await page.getByRole('button', { name: /exportera allt|export everything/i }).click();
+    await expect(page.getByText(/export klar|export complete/i)).toBeVisible();
+
+    const deleteWord = page.locator('#delete-confirm');
+    const deleteButton = page.getByRole('button', { name: /^(radera|delete)$/i });
+
+    // The word alone must not be enough to arm the button — that was the shape
+    // of the request that could never succeed. Taken from the placeholder
+    // rather than hard-coded, so the test does not depend on the locale a new
+    // account happens to start in.
+    await deleteWord.fill((await deleteWord.getAttribute('placeholder')) ?? 'DELETE');
+    await expect(deleteButton).toBeDisabled();
+
+    // A wrong password must say so, and must delete nothing.
+    await page.locator('#delete-password').fill('not-the-right-password');
+    await deleteButton.click();
+    await expect(page.locator('.error-banner')).toBeVisible();
+    await expect(page).toHaveURL(/\/settings/);
+
+    await page.locator('#delete-password').fill(PASSWORD);
+    await deleteButton.click();
+    await page.waitForURL('**/login', { timeout: 20_000 });
+
+    // Gone means gone: the credentials that worked a moment ago no longer do.
+    await signIn(page, email);
+    await expect(page.locator('.error-banner')).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+
+    expectNoConsoleErrors(errors, [
+      // The two deliberate failures above are 401s, and the browser logs every
+      // one of them as a console error.
+      /Failed to load resource/,
+      /401/,
     ]);
   });
 });

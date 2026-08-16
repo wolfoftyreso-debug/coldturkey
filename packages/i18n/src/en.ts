@@ -248,6 +248,46 @@ export const en: Catalog = {
   'resource.generic.emergency': 'Emergency number',
   'resource.generic.local': 'Your local clinic or emergency department',
 
+  // When to ring which number. One line each, in the words somebody would use
+  // about themselves — a list of names and digits does not help a person decide
+  // who to call while they are shaking.
+  'resource.se.emergency.when':
+    'Danger to life, overdose, somebody who will not wake up, a seizure. Around the clock.',
+  'resource.se.health.when':
+    'Withdrawal, physical symptoms, advice on where to go. Around the clock.',
+  'resource.se.mind.when': 'Thoughts of not being here any more, with or without a plan. Around the clock.',
+  'resource.se.alcohol.when': "Your own drinking or somebody else's. Anonymous. Weekdays.",
+  'resource.se.gambling.when':
+    'Gambling, whether you gamble or are close to somebody who does. Weekdays.',
+  'resource.us.emergency.when':
+    'Danger to life, overdose, somebody who will not wake up, a seizure. Around the clock.',
+  'resource.us.crisis.when':
+    'Thoughts of not being here any more, with or without a plan. Around the clock.',
+  'resource.us.samhsa.when': 'Treatment and support for addiction. Around the clock, free.',
+  'resource.gb.emergency.when':
+    'Danger to life, overdose, somebody who will not wake up, a seizure. Around the clock.',
+  'resource.gb.health.when': 'Withdrawal, physical symptoms, advice on where to go.',
+  'resource.gb.samaritans.when': 'Anything that is too heavy to carry alone. Around the clock.',
+  'resource.generic.emergency.when':
+    'Danger to life, overdose, somebody who will not wake up.',
+  'resource.generic.local.when':
+    'Look up the number where you are — a helpline that does not answer where you stand costs you the call.',
+
+  // ---- The crisis page: no account, no network dependency, no trace ----
+  'crisis.title': 'Numbers to call now',
+  'crisis.lede':
+    'You do not need an account and you do not need this app. If it is an emergency, call the emergency number.',
+  'crisis.noWordsTitle': 'If you do not know what to say',
+  'crisis.noWordsBody':
+    '"I am not doing well and I do not know who to call" is enough to get somewhere. You do not have to put it well, you do not have to have decided anything, and you do not have to be sure it is serious enough.',
+  'crisis.someoneElse':
+    'If you are worried about somebody else right now: do not leave them alone, put them in the recovery position if they are unconscious but breathing, and call the emergency number.',
+  'crisis.detoxTitle': 'Do not stop everything at once',
+  'crisis.detoxBody':
+    'Stopping alcohol, benzodiazepines or other sedatives abruptly can cause seizures and delirium, and can be fatal. It is the one situation where what you were about to do is more dangerous than carrying on for another day while you get hold of care. Call the health advice line and ask.',
+  'crisis.privacyNote':
+    'This page loads nothing from anywhere else, stores nothing about your visit, and works without an account.',
+
   // ---- Relapse / "I messed up" ----
   'relapse.title': 'I messed up',
   'relapse.opening': 'Okay. No shame. We start here.',
@@ -723,7 +763,14 @@ export const en: Catalog = {
   'privacy.deleteConfirm':
     'This permanently deletes everything and cannot be undone. Type DELETE to confirm.',
   'privacy.deleteWord': 'DELETE',
+  'privacy.deletePassword': 'Your password',
+  'privacy.deletePasswordWhy':
+    'We ask for your password too. A confirmation word stops an accident — only the password stops somebody else who picked up your unlocked phone.',
+  'privacy.deleteWrongPassword': 'Wrong password. Nothing has been deleted.',
   'privacy.deleted': "Everything is deleted. Take care of yourself.",
+  'privacy.exportShare': 'Share or save the export',
+  'privacy.exportLarge':
+    'The export is large ({kilobytes} kB). Some apps truncate long text — open the web version if you want it as a file.',
 
   // ---- Goal of the product ----
   'about.objective':
