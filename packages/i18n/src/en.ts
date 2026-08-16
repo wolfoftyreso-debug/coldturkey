@@ -706,6 +706,31 @@ export const en: Catalog = {
   'auth.invalid': 'Wrong email or password.',
   'auth.weakPassword': 'Password must be at least 12 characters.',
   'auth.emailTaken': 'There is already an account with that email.',
+  'auth.forgotPassword': 'Forgotten your password?',
+  'auth.forgotTitle': 'Reset your password',
+  'auth.forgotBody':
+    'Enter the address you used. We will send a link there that lasts two hours and works once.',
+  'auth.forgotSend': 'Send the link',
+  // Deliberately the same answer whether or not the account exists. Who has an
+  // account here is itself sensitive.
+  'auth.forgotSent':
+    'If there is an account with that address, an email is on its way. Check the spam folder too.',
+  'auth.backToSignIn': 'Back to sign in',
+  'auth.resetTitle': 'Choose a new password',
+  'auth.resetBody':
+    'Saving signs out every device, including this one. That is deliberate: if somebody else has been in the account, they should not still be.',
+  'auth.resetNewPassword': 'New password',
+  'auth.resetSave': 'Save and sign in',
+  'auth.resetDone': 'Done. Sign in with the new password.',
+  'auth.resetInvalid': 'That link has been used or has expired. Ask for a new one.',
+  'auth.resetNoToken': 'That link is missing its key. Open it straight from the email.',
+  'auth.verifyTitle': 'Confirm your email address',
+  'auth.verifyWorking': 'One moment.',
+  'auth.verifyDone':
+    'Thank you — the address is confirmed. You can now get the account back if you forget your password.',
+  'auth.verifyInvalid': 'That link has been used or has expired.',
+  'auth.forgotMobileHint':
+    'The link opens in your browser. Come back here and sign in once you have chosen a new password.',
 
   // Two-factor. The tone matters here: this is a lock on the most private
   // record most people will ever keep, and the reason to use it is concrete —

@@ -53,7 +53,8 @@ positioning and visual identity.
 | **Money and time reclaimed** | Framed as reclamation, not savings. |
 | **Daily check-ins** | Morning and evening, feeding the indicators and the pattern engine. |
 | **AI coach** | Claude with the Cleat system prompt, motivational-interviewing language, and coach memory. Falls back to a fully functional local coach when the model is unavailable. |
-| **Privacy** | Export everything, delete everything. First-class controls, not a support ticket. |
+| **Privacy** | Export everything, delete everything. First-class controls, not a support ticket, and present in both clients. |
+| **Account recovery** | Forgotten password, reset link, email confirmation, and an optional second factor with recovery codes. Losing an account here means losing the record of the hardest thing somebody has done, so the way back in is treated as a feature rather than a support address. |
 
 Both Swedish and English are shipped from day one; the Swedish catalog is the
 source of truth and the English one is type-checked against it.
@@ -186,7 +187,7 @@ export FIELD_ENCRYPTION_ACTIVE_KEY=dev
 pnpm -r test         # 456 unit and integration tests
 
 pnpm --filter @cleat/web exec playwright install --with-deps chromium
-bash scripts/e2e.sh  # 10 browser journeys, same environment
+bash scripts/e2e.sh  # 14 browser journeys, same environment
 ```
 
 The database role must **not** be a superuser: superusers bypass row-level

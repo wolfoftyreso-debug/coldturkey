@@ -1,5 +1,35 @@
 import { createHmac } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
+
+/**
+ * Read the most recent mail sent to an address out of the suite's SMTP sink.
+ *
+ * Polled rather than awaited on an event: the API sends the mail inside the
+ * request it is already answering, so it lands within milliseconds — and
+ * "within milliseconds" is not "before the assertion".
+ */
+export async function lastMailTo(address: string, timeoutMs = 10_000): Promise<string> {
+  const file = process.env.E2E_MAIL_FILE ?? '/tmp/cleat-e2e-mail.jsonl';
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const lines = existsSync(file) ? readFileSync(file, 'utf8').split('\n').filter(Boolean) : [];
+    const mails = lines
+      .map((line) => JSON.parse(line) as { to: string; body: string })
+      .filter((mail) => mail.to === address.toLowerCase());
+    const last = mails[mails.length - 1];
+    if (last) return last.body;
+    if (Date.now() > deadline) throw new Error(`no mail arrived for ${address}`);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
+/** Pull the first link out of a mail body. */
+export function linkIn(body: string): string {
+  const match = /https?:\/\/\S+/.exec(body);
+  if (!match) throw new Error(`no link in mail:\n${body}`);
+  return match[0];
+}
 
 /** A fresh address per test, so no test depends on another's account. */
 export function newEmail(prefix: string): string {

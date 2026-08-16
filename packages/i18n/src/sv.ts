@@ -711,6 +711,30 @@ export const sv = {
   'auth.invalid': 'Fel e-post eller lösenord.',
   'auth.weakPassword': 'Lösenordet måste vara minst 12 tecken.',
   'auth.emailTaken': 'Det finns redan ett konto med den e-posten.',
+  'auth.forgotPassword': 'Glömt lösenordet?',
+  'auth.forgotTitle': 'Återställ lösenordet',
+  'auth.forgotBody':
+    'Skriv adressen du använde. Vi skickar en länk dit som gäller i två timmar och bara går att använda en gång.',
+  'auth.forgotSend': 'Skicka länken',
+  // Deliberately the same answer whether or not kontot finns. Vem som har ett
+  // konto här är i sig känsligt.
+  'auth.forgotSent':
+    'Finns det ett konto med den adressen är ett mejl på väg. Titta i skräpposten också.',
+  'auth.backToSignIn': 'Tillbaka till inloggningen',
+  'auth.resetTitle': 'Välj ett nytt lösenord',
+  'auth.resetBody':
+    'När du sparar loggas alla enheter ut, även den du sitter vid. Det är meningen: om någon annan varit inne i kontot ska de inte vara kvar.',
+  'auth.resetNewPassword': 'Nytt lösenord',
+  'auth.resetSave': 'Spara och logga in',
+  'auth.resetDone': 'Klart. Logga in med det nya lösenordet.',
+  'auth.resetInvalid': 'Länken är förbrukad eller för gammal. Begär en ny.',
+  'auth.resetNoToken': 'Länken saknar sin nyckel. Öppna den direkt från mejlet.',
+  'auth.verifyTitle': 'Bekräfta din e-postadress',
+  'auth.verifyWorking': 'Ett ögonblick.',
+  'auth.verifyDone': 'Tack — adressen är bekräftad. Nu kan du få tillbaka kontot om du glömmer lösenordet.',
+  'auth.verifyInvalid': 'Länken är förbrukad eller för gammal.',
+  'auth.forgotMobileHint':
+    'Länken öppnas i webbläsaren. Kom tillbaka hit och logga in när du valt ett nytt lösenord.',
 
   // Tvåstegsinloggning. Tonen spelar roll: det här är ett lås på det mest
   // privata de flesta någonsin skriver ner, och skälet att slå på det är

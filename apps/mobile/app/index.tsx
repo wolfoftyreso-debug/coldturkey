@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ApiError } from '../src/api';
+import { ApiError, api } from '../src/api';
 import { useSession } from '../src/session';
 import { colors, styles } from '../src/theme';
 
@@ -17,6 +17,8 @@ export default function SignInScreen() {
   /** Set once the password was accepted and a second factor is still owed. */
   const [challenge, setChallenge] = useState<string | null>(null);
   const [code, setCode] = useState('');
+  /** True once a reset link has been asked for, whatever the outcome. */
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) router.replace('/home');
@@ -47,6 +49,26 @@ export default function SignInScreen() {
     } catch (caught) {
       setError(describe(caught));
     } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Ask for a reset link, using the address already typed above rather than
+   * asking for it twice. The answer is the same whether or not that address has
+   * an account — who is in recovery is not something this form may confirm — so
+   * there is no error branch here on purpose.
+   */
+  async function requestReset() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.post('/v1/auth/forgot-password', { email: email.trim().toLowerCase() });
+    } catch {
+      // Silent by design: a rate limit, an unknown address and a mail outage
+      // must be indistinguishable from this screen.
+    } finally {
+      setResetSent(true);
       setBusy(false);
     }
   }
@@ -195,6 +217,25 @@ export default function SignInScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* The way back into an account. Without it, forgetting a password on a
+          phone-only account meant losing the streak, the autopsies and the
+          whole pattern history — while the endpoint that recovers it sat there
+          unused. */}
+      {mode === 'signIn' ? (
+        <TouchableOpacity onPress={() => void requestReset()} disabled={busy || !email.trim()}>
+          <Text style={[styles.muted, { textAlign: 'center', marginTop: 16 }]}>
+            {t('auth.forgotPassword')}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+
+      {resetSent ? (
+        <View style={[styles.card, styles.cardAccent, { marginTop: 12 }]}>
+          <Text style={styles.body}>{t('auth.forgotSent')}</Text>
+          <Text style={styles.muted}>{t('auth.forgotMobileHint')}</Text>
+        </View>
+      ) : null}
 
       <TouchableOpacity
         onPress={() => {

@@ -30,6 +30,39 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F23 — Every password reset this product could send arrived at a 404 · HIGH · FIXED
+
+**Symptom.** No client had a "forgotten your password" link, and the two pages
+the recovery mails point at — `/reset?token=…` and `/verify?token=…` on
+`PUBLIC_WEB_URL` — did not exist. So forgetting a password meant permanently
+losing the account, and with it the streak, the relapse autopsies, the pattern
+history and the coach transcript. On an account with two-factor enabled and the
+recovery codes lost, it was the only way back in at all.
+
+**Root cause.** The same shape as F12 and F20, and the third instance of it.
+Account recovery was built server-side — token issue, hashing at rest, a
+two-hour expiry, single use, session revocation on completion, the mail, the
+rate limits, the neutral 202 that refuses to say whether an address has an
+account — verified server-side, and never given a screen. Every one of those
+tests passed the whole time.
+
+**Fix.** `/forgot`, `/reset` and `/verify` in the web client, a "forgotten your
+password" link on both sign-in screens, and the request on mobile too (the link
+itself opens in the browser, which is where the reset page lives). The forgot
+form answers identically whether or not the address has an account, including
+when it is rate-limited or the mail relay is down — anything else turns it into
+a way to ask who is in recovery.
+
+**Regression test.** Four browser journeys against a **real mailbox**: a
+throwaway SMTP sink (`scripts/e2e-smtp.mjs`) that the suite starts, because the
+token is deliberately unreachable any other way — it is stored hashed, and the
+development mailer logs a digest rather than the link, precisely so that a
+working key to somebody's account never lands in a log file. The journeys cover
+the whole chain end to end (forget → mail → link → new password → the old
+password refused and the new one working), a used link refusing to work twice,
+the verification link confirming an address and then refusing a replay, and
+both pages opened with no token at all saying so instead of failing.
+
 ### F22 — "Somebody is in immediate danger" was a network call and nothing else · HIGH · FIXED
 
 **Symptom.** The safety question at the top of the craving flow — the first

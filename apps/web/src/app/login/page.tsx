@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
@@ -193,6 +194,19 @@ export default function LoginPage() {
           {busy ? t('common.loading') : t(mode === 'signIn' ? 'auth.signIn' : 'auth.signUp')}
         </button>
       </form>
+
+      {/* The way back into an account. Without it, forgetting a password means
+          losing the record of the hardest thing somebody has done — and the
+          endpoint that recovers it has existed all along with nothing pointing
+          at it. Sign-in side only: offered while creating an account it would
+          read as a warning that you have already failed. */}
+      {mode === 'signIn' ? (
+        <p className="center">
+          <Link className="pill" href="/forgot">
+            {t('auth.forgotPassword')}
+          </Link>
+        </p>
+      ) : null}
 
       <p className="center muted">
         {t(mode === 'signIn' ? 'auth.noAccount' : 'auth.haveAccount')}{' '}

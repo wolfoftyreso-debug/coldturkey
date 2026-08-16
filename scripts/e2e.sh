@@ -23,6 +23,18 @@ export JWT_SECRET="${JWT_SECRET:-e2e-secret-at-least-32-characters-long!!}"
 export FIELD_ENCRYPTION_KEYS="${FIELD_ENCRYPTION_KEYS:-e2e:ZTJlLWtleS1mb3ItdGVzdHMtb25seS0zMi1ieXRlcyE=}"
 export E2E_BASE_URL="http://127.0.0.1:${ORIGIN_PORT}"
 
+# A mailbox for the suite. Without one, account recovery cannot be exercised at
+# all: the reset token is hashed in the database and the development mailer logs
+# a digest instead of the link, both deliberately. See scripts/e2e-smtp.mjs.
+export E2E_SMTP_PORT="${E2E_SMTP_PORT:-2525}"
+export E2E_MAIL_FILE="${E2E_MAIL_FILE:-/tmp/cleat-e2e-mail.jsonl}"
+export SMTP_HOST=127.0.0.1
+export SMTP_PORT="$E2E_SMTP_PORT"
+export MAIL_FROM="${MAIL_FROM:-cleat@cleat.test}"
+# The links in those mails have to point at the origin the browser is on, or the
+# reset page opens on a host that is not running.
+export PUBLIC_WEB_URL="$E2E_BASE_URL"
+
 pids=()
 cleanup() {
   local status=$?
@@ -59,6 +71,10 @@ pnpm --filter @cleat/api build
 # The API runs with NODE_ENV=development on purpose: production mode refuses to
 # boot without SMTP and a non-wildcard CORS origin, which are deployment
 # concerns rather than anything this suite exercises.
+echo "e2e: starting smtp sink on ${E2E_SMTP_PORT}"
+node scripts/e2e-smtp.mjs &
+pids+=($!)
+
 echo "e2e: starting api on ${API_PORT}"
 NODE_ENV=development PORT="$API_PORT" node apps/api/dist/server.js &
 pids+=($!)
