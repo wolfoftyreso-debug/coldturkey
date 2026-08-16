@@ -44,7 +44,7 @@ positioning and visual identity.
 | Area | What is built |
 |---|---|
 | **Craving engine** | The "I'm craving" button: safety question → feeling → place → intensity → a concrete plan. Ten-minute protocol, urge surfing, who to call first, and the person's own *why* on screen. |
-| **Safety triage** | Deterministic, runs before anything else. An emergency never reaches the language model — the app answers with fixed wording and local emergency numbers instead. |
+| **Safety triage** | Deterministic, runs before anything else. An emergency never reaches the language model — the app answers with fixed wording and local emergency numbers instead, and does so with no network at all: the numbers are compiled into both clients, and the crisis page works signed out, offline and with JavaScript disabled. |
 | **Substance-aware risk** | Alcohol, benzodiazepines and other sedatives can have life-threatening withdrawal. For those, the app leads with "talk to a clinician before you stop", not with encouragement. |
 | **Negotiation detector** | Names the argument — *"bara en gång"*, *"jag har varit duktig"*, *"jag börjar på måndag"* — then asks whether you want to examine it or act on it. Never mocks. |
 | **Relapse ("I messed up")** | Safety questions first, then a ten-step autopsy that produces a new protection plan. No lost-progress language anywhere. |
@@ -65,7 +65,7 @@ source of truth and the English one is type-checked against it.
 ```
 packages/core      Pure domain engine. No I/O, no clock reads it did not receive.
                    Safety triage, phases, craving plans, streaks, indicators,
-                   insights, rebuild domains, reclaimed money and time. 119 tests.
+                   insights, rebuild domains, reclaimed money and time. 266 tests.
 packages/i18n      Swedish + English catalogs, type-checked for completeness.
 
 apps/api           Fastify + PostgreSQL. Multi-tenant via row-level security.
@@ -173,9 +173,25 @@ response tells the client which source answered.
 ```bash
 pnpm exec eslint .   # type-aware rules; see eslint.config.mjs for what is on and why
 pnpm -r typecheck
-pnpm -r test         # 439 unit and integration tests
-DATABASE_URL=postgres://… bash scripts/e2e.sh   # 8 browser journeys
+
+# The API suite talks to a real database and, deliberately, to real encryption:
+# without the key the at-rest tests pass by finding nothing to look at, which is
+# the exact failure they exist to catch. So the command that runs them is the
+# command with the key in it. The value below is a throwaway for local use.
+export DATABASE_URL=postgres://cleat:cleat@localhost:5432/cleat
+export JWT_SECRET=a-local-secret-that-is-long-enough-for-hs256
+export FIELD_ENCRYPTION_KEYS='dev:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+export FIELD_ENCRYPTION_ACTIVE_KEY=dev
+
+pnpm -r test         # 456 unit and integration tests
+
+pnpm --filter @cleat/web exec playwright install --with-deps chromium
+bash scripts/e2e.sh  # 10 browser journeys, same environment
 ```
+
+The database role must **not** be a superuser: superusers bypass row-level
+security, so the isolation tests would pass against a database that enforces
+nothing.
 
 The API suite runs against a **real** PostgreSQL, including a test that asserts
 one tenant cannot see another's data and that an `X-Tenant` header cannot move an
