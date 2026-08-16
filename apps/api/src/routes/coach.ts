@@ -35,12 +35,25 @@ export async function coachRoutes(app: FastifyInstance): Promise<void> {
     const body = messageBody.parse(request.body);
     const now = new Date();
 
+    // Cleat Nära is stored nowhere and reads nothing. A relative's "I can't
+    // cope any more" is not a turn in the account holder's recovery transcript,
+    // and the two must never mix: persisting it would surface the supporter
+    // conversation the next time they open /coach and fold it into the privacy
+    // export, and loading recovery history as context would feed the account
+    // holder's own addiction back into a conversation that is not about them —
+    // across the identity boundary the two system prompts exist to keep apart.
+    // The screen already treats the conversation as ephemeral; the server has
+    // to agree, or "starts blank every time" is a promise only the client keeps.
+    const isSupporter = body.mode === 'supporter';
+
     const result = await withTenant(user.tenant_id, async (client) => {
       const snapshot = await loadSnapshot(client, user);
-      const history = (await listCoachMessages(client, user.id, 16, user.tenant_id)).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const history = isSupporter
+        ? []
+        : (await listCoachMessages(client, user.id, 16, user.tenant_id)).map((m) => ({
+            role: m.role,
+            content: m.content,
+          }));
 
       const response = await coach({
         snapshot,
@@ -53,24 +66,26 @@ export async function coachRoutes(app: FastifyInstance): Promise<void> {
         now,
       });
 
-      // The user's own words are stored before the reply, so a crash between the
-      // two does not lose what they said.
-      await appendCoachMessage(client, {
-        tenantId: user.tenant_id,
-        userId: user.id,
-        role: 'user',
-        content: body.message,
-        mode: response.mode,
-        safetyLevel: response.safetyLevel,
-      });
-      await appendCoachMessage(client, {
-        tenantId: user.tenant_id,
-        userId: user.id,
-        role: 'assistant',
-        content: response.text,
-        mode: response.mode,
-        safetyLevel: response.safetyLevel,
-      });
+      if (!isSupporter) {
+        // The user's own words are stored before the reply, so a crash between
+        // the two does not lose what they said.
+        await appendCoachMessage(client, {
+          tenantId: user.tenant_id,
+          userId: user.id,
+          role: 'user',
+          content: body.message,
+          mode: response.mode,
+          safetyLevel: response.safetyLevel,
+        });
+        await appendCoachMessage(client, {
+          tenantId: user.tenant_id,
+          userId: user.id,
+          role: 'assistant',
+          content: response.text,
+          mode: response.mode,
+          safetyLevel: response.safetyLevel,
+        });
+      }
 
       return response;
     });

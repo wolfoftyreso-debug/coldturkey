@@ -1546,6 +1546,44 @@ suite('Cleat API', () => {
       const messages = ((await json(response)) as never as { messages: unknown[] }).messages;
       expect(messages.length).toBeGreaterThanOrEqual(4);
     });
+
+    it('does not fold a Cleat Nära conversation into the recovery transcript', async () => {
+      // The supporter surface is stored nowhere and reads nothing. A relative's
+      // "I can't cope" is not a turn in the account holder's recovery record —
+      // it must not surface the next time they open /coach, and it must not be
+      // fed back as context across the two system prompts. The screen keeps the
+      // conversation ephemeral; the regression was that the server did not, and
+      // wrote the supporter turns into the shared coach memory.
+      const before = await app.inject({
+        method: 'GET',
+        url: '/v1/coach/history',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+      const countBefore = ((await json(before)) as never as { messages: unknown[] }).messages
+        .length;
+
+      const supporter = await app.inject({
+        method: 'POST',
+        url: '/v1/coach/message',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: {
+          message: 'jag är anhörig och jag orkar inte längre med hans drickande',
+          mode: 'supporter',
+        },
+      });
+      expect(supporter.statusCode).toBe(200);
+
+      const after = await app.inject({
+        method: 'GET',
+        url: '/v1/coach/history',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+      const messagesAfter = ((await json(after)) as never as {
+        messages: { content: string }[];
+      }).messages;
+      expect(messagesAfter.length).toBe(countBefore);
+      expect(messagesAfter.some((m) => m.content.includes('anhörig'))).toBe(false);
+    });
   });
 
   describe('rebuild my life', () => {
