@@ -76,11 +76,13 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - '8080:8080'
-    # Without this the stack survives exactly one database hiccup. The API exits
-    # when Postgres goes away — which is the correct behaviour for a process
-    # under an orchestrator that will start it again — and compose, told
-    # nothing, leaves it dead. The web client then serves perfectly and every
-    # request fails, which is the failure mode this project keeps finding.
+    # Not because the API falls over when the database does — it does not.
+    # Drilled: stopping Postgres leaves the API up, /readyz answering 503 and
+    # requests answering 503 with Retry-After, and it recovers on its own the
+    # moment the database comes back. This is for the other ways a container
+    # dies — an OOM kill, a crash, a rebooted host — after which compose would
+    # otherwise leave it stopped, and the web client would go on serving
+    # perfectly while every request failed.
     restart: unless-stopped
     depends_on:
       postgres:

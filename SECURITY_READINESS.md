@@ -152,6 +152,15 @@ works behind a TLS-inspecting proxy as well.
 
 **Found by.** Trying to run it. It had never been run.
 
+**Follow-up — no restart policy.** Every service declared none, so compose's
+default applied: a container that dies stays dead. All three now say
+`restart: unless-stopped`. Drilled on the running stack: stopping Postgres does
+*not* take the API down — it stays up, `/readyz` answers 503, requests answer
+503 with `Retry-After: 5`, and it recovers by itself when the database returns —
+and killing the API process from outside the container has it back and healthy
+on its own, `RestartCount` 1. The policy is there for the crash, the OOM kill
+and the rebooted host, not for the database.
+
 ### F18 — The product invented an assessment of people it had never observed · HIGH · FIXED
 
 **Symptom.** On a brand new account, minutes old, with no check-ins and no
