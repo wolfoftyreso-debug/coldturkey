@@ -4,7 +4,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type CoachResponse, type CravingPlan } from '../../lib/api';
-import { loadOfflineKit, offlineCravingPlan, queueCraving } from '../../lib/offline';
+import {
+  loadOfflineKit,
+  offlineCravingPlan,
+  offlineEmergency,
+  queueCraving,
+} from '../../lib/offline';
 import { useRequireAuth } from '../../lib/session';
 
 const FEELINGS = [
@@ -54,14 +59,22 @@ export default function CravingPage() {
   async function declareDanger() {
     setBusy(true);
     try {
-      const response = await api.post<CoachResponse>('/v1/coach/message', {
-        message: t('craving.step.safety'),
-        mode: 'acute',
-        immediateDanger: true,
-      });
-      setEmergency(response);
-      setStep('emergency');
+      setEmergency(
+        await api.post<CoachResponse>('/v1/coach/message', {
+          message: t('craving.step.safety'),
+          mode: 'acute',
+          immediateDanger: true,
+        }),
+      );
+    } catch {
+      // The one press in this product that must never depend on a network.
+      // Before this, a failed request left the person on the safety question
+      // with nothing having happened — having just told the app that somebody
+      // is in immediate danger. The numbers are bundled; there is nothing to
+      // wait for.
+      setEmergency(offlineEmergency(locale, user?.country, loadOfflineKit()) as CoachResponse);
     } finally {
+      setStep('emergency');
       setBusy(false);
     }
   }

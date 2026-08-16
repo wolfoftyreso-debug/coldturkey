@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { api, type CoachResponse, type CravingPlan } from '../src/api';
+import { offlineCravingPlan, offlineEmergency } from '../src/offline';
 import { useSession } from '../src/session';
 import { styles } from '../src/theme';
 
@@ -32,15 +33,28 @@ type Step = 'safety' | 'feeling' | 'location' | 'intensity' | 'plan' | 'emergenc
  * branch leaves this flow entirely.
  */
 export default function CravingScreen() {
-  const { t } = useSession();
+  const { t, locale, user } = useSession();
   const router = useRouter();
   const [step, setStep] = useState<Step>('safety');
   const [feeling, setFeeling] = useState<string>('craving');
   const [location, setLocation] = useState<string>('home');
   const [intensity, setIntensity] = useState(8);
-  const [plan, setPlan] = useState<CravingPlan | null>(null);
+  const [plan, setPlan] = useState<(CravingPlan & { offline?: boolean }) | null>(null);
   const [emergency, setEmergency] = useState<CoachResponse | null>(null);
   const [busy, setBusy] = useState(false);
+  const [logNote, setLogNote] = useState<string | null>(null);
+
+  async function logOutcome(outcome: 'resisted' | 'used') {
+    setLogNote(null);
+    try {
+      await api.post('/v1/cravings', { intensity, feeling, location, outcome });
+    } catch {
+      // The web client queues this; there is nowhere on the phone to keep it
+      // that is both durable and appropriate for recovery data, so the honest
+      // thing is to say the log did not save rather than to imply it did.
+      setLogNote(t('offline.notLogged'));
+    }
+  }
 
   async function declareDanger() {
     setBusy(true);
@@ -52,6 +66,12 @@ export default function CravingScreen() {
           immediateDanger: true,
         }),
       );
+    } catch {
+      // The screen used to move on to the emergency step regardless and show
+      // "help you can call now" above an empty box, because the numbers only
+      // ever arrived with the response. They are compiled into this app; there
+      // is nothing here that needs a server.
+      setEmergency(offlineEmergency(locale, user?.country));
     } finally {
       setStep('emergency');
       setBusy(false);
@@ -62,8 +82,13 @@ export default function CravingScreen() {
     setBusy(true);
     try {
       setPlan(await api.post<CravingPlan>('/v1/craving/plan', { feeling, location, intensity }));
-      setStep('plan');
+    } catch {
+      // No signal. Without this the button did nothing at all: the request
+      // rejected with nobody listening and the person was left on the intensity
+      // question at the peak of a craving.
+      setPlan(offlineCravingPlan(locale, intensity));
     } finally {
+      setStep('plan');
       setBusy(false);
     }
   }
@@ -224,6 +249,8 @@ export default function CravingScreen() {
             <Text style={styles.lede}>{t('craving.delay', { minutes: plan.delayMinutes })}</Text>
           </View>
 
+          {plan.offline ? <Text style={styles.muted}>{t('offline.planSource')}</Text> : null}
+
           {plan.callFirst ? (
             <View style={styles.card}>
               <Text style={styles.h3}>{t('craving.callFirst', { name: plan.callFirst.name })}</Text>
@@ -283,14 +310,7 @@ export default function CravingScreen() {
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity
               style={[styles.button, styles.buttonPrimary, { flex: 1 }]}
-              onPress={() =>
-                void api.post('/v1/cravings', {
-                  intensity,
-                  feeling,
-                  location,
-                  outcome: 'resisted',
-                })
-              }
+              onPress={() => void logOutcome('resisted')}
             >
               <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
                 {t('craving.outcome.resisted')}
@@ -298,13 +318,15 @@ export default function CravingScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, { flex: 1 }]}
-              onPress={() =>
-                void api.post('/v1/cravings', { intensity, feeling, location, outcome: 'used' })
-              }
+              onPress={() => void logOutcome('used')}
             >
               <Text style={styles.buttonText}>{t('craving.outcome.used')}</Text>
             </TouchableOpacity>
           </View>
+          {/* Never a scolding, and never silence either. Both buttons are a
+              report about the hardest part of somebody's day; the app owes them
+              an answer about whether it landed. */}
+          {logNote ? <Text style={styles.muted}>{logNote}</Text> : null}
 
           <Text style={[styles.lede, { marginTop: 18 }]}>{plan.followUp}</Text>
           <TouchableOpacity style={styles.button} onPress={() => router.push('/coach')}>

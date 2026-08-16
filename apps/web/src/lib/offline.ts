@@ -1,4 +1,9 @@
-import { TEN_MINUTE_PROTOCOL, URGE_SURFING_SCRIPT, TOOLBOX } from '@cleat/core';
+import {
+  emergencyResources,
+  TEN_MINUTE_PROTOCOL,
+  URGE_SURFING_SCRIPT,
+  TOOLBOX,
+} from '@cleat/core';
 import { translate, type Locale } from '@cleat/i18n';
 
 /**
@@ -91,6 +96,57 @@ export function offlineCravingPlan(
     whyStatement: kit?.whyStatement ?? null,
     followUp: translate(locale, 'craving.followup.what_happened_before'),
     offline: true,
+  };
+}
+
+/**
+ * The emergency answer, composed on the device.
+ *
+ * "Yes, somebody is in immediate danger" used to be a network call and nothing
+ * else. If it failed — a basement, a dead cell, an API restart — the screen
+ * stayed exactly as it was, or showed "help you can call now" above an empty
+ * box. That is the one interaction in this product that is not allowed to
+ * depend on anything: the numbers are a constant, they are already bundled, and
+ * there is no reason for a person in that situation to be waiting on a server.
+ *
+ * The wording is the same three sentences the coach composes server-side, in
+ * the same order, so the offline answer is not a lesser one.
+ */
+export function offlineEmergency(
+  locale: Locale,
+  country: string | undefined,
+  kit: OfflineKit | null,
+): {
+  reply: string;
+  safety: {
+    level: 'emergency';
+    bypassedCoach: true;
+    resources: { key: string; contact: string; label: string }[];
+  };
+  negotiation: { detected: false; types: string[] };
+  source: 'local';
+} {
+  // The cached list first: it was built from the country the server knows for
+  // this account. The bundled table is the fallback, and covers a cold start on
+  // a device that has never had a successful load.
+  const cached = kit?.resources ?? [];
+  const resources = cached.length
+    ? cached
+    : emergencyResources(country, 'emergency').map((resource) => ({
+        key: resource.key,
+        contact: resource.contact,
+        label: translate(locale, resource.key),
+      }));
+
+  return {
+    reply: [
+      translate(locale, 'safety.emergency'),
+      translate(locale, 'safety.notAlone'),
+      translate(locale, 'safety.stayHere'),
+    ].join('\n\n'),
+    safety: { level: 'emergency', bypassedCoach: true, resources },
+    negotiation: { detected: false, types: [] },
+    source: 'local',
   };
 }
 

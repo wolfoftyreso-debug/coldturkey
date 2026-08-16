@@ -605,6 +605,7 @@ export const sv = {
   'offline.banner': 'Ingen uppkoppling — men det du behöver finns här ändå.',
   'offline.planSource': 'Planen kommer från din telefon, inte från servern.',
   'offline.queued': 'Loggat lokalt. Skickas när du är online igen.',
+  'offline.notLogged': 'Kunde inte spara det just nu. Stunden räknas ändå.',
   'offline.noKit':
     'Vi har inte hunnit spara dina uppgifter offline än. Protokollet nedan fungerar ändå.',
   'offline.title': 'Du är offline',

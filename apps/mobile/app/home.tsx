@@ -101,7 +101,11 @@ export default function HomeScreen() {
         <Text style={styles.actionSubPrimary}>{t('mode.reset.sub')}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.action} onPress={() => router.push('/coach')}>
+      {/* Cleat Now, not the chat. The phone used to send this button to the
+          coach, so the second of the five modes was a different product here
+          than in the browser — and the one it replaced is the one that catches
+          the drift an hour before the craving. */}
+      <TouchableOpacity style={styles.action} onPress={() => router.push('/struggling')}>
         <Text style={styles.actionText}>{t('mode.now')}</Text>
         <Text style={styles.actionSub}>{t('mode.now.sub')}</Text>
       </TouchableOpacity>
@@ -134,6 +138,27 @@ export default function HomeScreen() {
           onPress={() => router.push('/checkin')}
         >
           <Text style={styles.buttonText}>{t('quick.checkIn')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { flex: 1 }]}
+          onPress={() => router.push('/coach')}
+        >
+          <Text style={styles.buttonText}>{t('quick.talk')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <TouchableOpacity
+          style={[styles.button, { flex: 1 }]}
+          onPress={() => router.push('/toolbox')}
+        >
+          <Text style={styles.buttonText}>{t('toolbox.title')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { flex: 1 }]}
+          onPress={() => router.push('/triggers')}
+        >
+          <Text style={styles.buttonText}>{t('trigger.title')}</Text>
         </TouchableOpacity>
       </View>
 

@@ -81,6 +81,34 @@ test.describe('first run', () => {
     expect(body).toMatch(/omedelbar fara|immediate danger/i);
     expectNoConsoleErrors(errors);
   });
+
+  /**
+   * The one press in this product that is not allowed to need a server.
+   *
+   * Answering "yes, somebody is in immediate danger" used to be a request and
+   * nothing else. When it failed the person stayed on the safety question with
+   * nothing having happened — having just told the app that somebody might die.
+   */
+  test('declaring immediate danger gives numbers even with the API unreachable', async ({
+    page,
+  }) => {
+    const errors = failOnConsoleErrors(page);
+    await signUp(page, newEmail('danger'));
+    await page.goto('/craving');
+    await expect(page.getByRole('button', { name: /ja|yes/i }).first()).toBeVisible();
+
+    await page.route('**/v1/coach/message', (route) => route.abort('failed'));
+    await page.getByRole('button', { name: /ja|yes/i }).first().click();
+
+    // Real, dialable numbers on screen — not a heading over an empty box. Which
+    // numbers depends on the account's country, so the assertion is that there
+    // are several and that they can be tapped, not which country answered.
+    await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
+    expect(await page.locator('a[href^="tel:"]').count()).toBeGreaterThanOrEqual(3);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    expectNoConsoleErrors(errors, [/Failed to load resource/, /net::ERR_FAILED/, /ERR_FAILED/]);
+  });
 });
 
 test.describe('a failed save says so', () => {

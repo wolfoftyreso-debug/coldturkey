@@ -602,6 +602,7 @@ export const en: Catalog = {
   'offline.banner': "No connection — but what you need is here anyway.",
   'offline.planSource': 'This plan came from your phone, not the server.',
   'offline.queued': "Logged on your device. It'll sync when you're back online.",
+  'offline.notLogged': "Couldn't save that right now. The moment counts anyway.",
   'offline.noKit':
     "We haven't saved your details for offline use yet. The protocol below still works.",
   'offline.title': "You're offline",

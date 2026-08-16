@@ -27,6 +27,9 @@ export default function RootLayout() {
           <Stack.Screen name="rebuild" options={{ title: 'Cleat' }} />
           <Stack.Screen name="patterns" options={{ title: 'Cleat' }} />
           <Stack.Screen name="plan" options={{ title: 'Cleat' }} />
+          <Stack.Screen name="struggling" options={{ title: 'Cleat' }} />
+          <Stack.Screen name="toolbox" options={{ title: 'Cleat' }} />
+          <Stack.Screen name="triggers" options={{ title: 'Cleat' }} />
           <Stack.Screen name="settings" options={{ title: 'Cleat' }} />
           {/* Registered outside any auth gate on purpose: the moment somebody
               needs this screen, being asked to sign in first is a wall. */}

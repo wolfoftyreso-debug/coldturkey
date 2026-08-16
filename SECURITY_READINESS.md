@@ -30,6 +30,37 @@ holding this report should not be talked out of.
 Ordered by severity. Every "fixed" row was demonstrated open before the fix
 and demonstrated closed after, against a running server.
 
+### F22 — "Somebody is in immediate danger" was a network call and nothing else · HIGH · FIXED
+
+**Symptom.** The safety question at the top of the craving flow — the first
+thing that screen asks, and the branch that leaves the product entirely —
+posted to the coach and used the response to render the emergency screen. When
+that request failed, the web client left the person on the safety question with
+nothing having happened at all, and the mobile client moved on to a heading
+reading "help you can call now" above an empty box. In both cases the person
+had just told the app that they or somebody near them might die.
+
+**Root cause.** The emergency numbers are a constant, compiled into both
+clients — `emergencyResources()` in `@cleat/core` — and both clients were
+asking a server for them anyway. The offline kit built for the craving plan
+covered the plan and stopped short of the branch that matters more. A phone
+with one bar in a basement at 2am is close to the median case for this screen.
+
+**Fix.** Both clients now compose the emergency answer locally when the request
+fails: the same three sentences the coach composes server-side, in the same
+order, over the numbers for the account's country. The web client prefers the
+list cached for that account and falls back to the bundled table; the phone uses
+the bundled table. The mobile craving plan gets the same treatment — it had a
+`try/finally` with no `catch`, so a failed request left the button doing
+nothing at the peak of a craving — and logging an outcome now says so when it
+does not save rather than failing silently.
+
+**Regression test.** Six unit tests over the fallback (right numbers per
+country, an answer when the country is unknown, labels resolved rather than raw
+keys, the wording matching the server's, the cache preferred) and a browser
+journey that blocks `/v1/coach/message`, presses "yes", and asserts several
+dialable numbers on screen.
+
 ### F21 — The phone had no way to reach its own security and privacy controls · MEDIUM · FIXED
 
 **Symptom.** The mobile client had no settings screen at all. Somebody who used
@@ -50,7 +81,10 @@ via the share sheet, disable with the password), export through the share
 sheet, deletion behind the confirmation word *and* the password, and sign-out.
 A crisis screen reachable while signed out, built from the same
 `emergencyResources` table and the same catalogue the coach uses, so the
-numbers cannot drift apart between surfaces.
+numbers cannot drift apart between surfaces. The three remaining web-only
+screens — Cleat Now, the toolbox and the trigger map — were built at the same
+time, and the phone's second mode now opens Cleat Now rather than the chat, as
+it does in the browser.
 
 **Regression test.** The key scan below, the workspace typecheck, and a Metro
 bundle of the app. **NOT VERIFIED:** the screens themselves have not been driven
