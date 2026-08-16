@@ -57,6 +57,12 @@ export default function LandingPage() {
           <Link href="/kris" className={styles.secondary}>
             Jag behöver hjälp nu
           </Link>
+          {/* The relative is not a secondary audience reached through a footer.
+              Most people who carry this never look for anything for themselves,
+              because the problem is framed as somebody else's. */}
+          <Link href="/nara" className={styles.secondary}>
+            Jag är anhörig
+          </Link>
         </div>
       </section>
 

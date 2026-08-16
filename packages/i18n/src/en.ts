@@ -813,6 +813,173 @@ export const en: Catalog = {
   'privacy.exportLarge':
     'The export is large ({kilobytes} kB). Some apps truncate long text — open the web version if you want it as a file.',
 
+  // ---- Cleat Near — for the person standing next to it ----
+  'near.title': 'For the person standing next to it',
+  'near.tagline': 'You are not the reason, and you are not the cure. But you live in the middle of it.',
+  'near.intro':
+    'This is for you if you are the partner, parent, child, sibling or friend of somebody who uses. It is not connected to their account and shows nothing about them. It exists so you can understand what is actually happening, and so that you are still here when this is over.',
+  'near.noAccountNeeded': 'You need no account to read this, and the visit is stored nowhere.',
+
+  'near.emergencyTitle': 'When it stops being a conversation',
+  'near.emergencyLede':
+    'Call the emergency number first and read the rest afterwards. These are not situations to solve alone.',
+  'near.sign.unresponsive': 'Cannot be woken, or only surfaces for a second.',
+  'near.sign.seizure': 'Seizures, shaking that will not stop, rigidity.',
+  'near.sign.breathing': 'Slow, rattling or irregular breathing. Blue lips or fingers.',
+  'near.sign.confusion': 'Seeing or hearing things that are not there, not knowing where they are.',
+  'near.sign.talking_about_dying': 'Talking about not wanting to be here, or saying goodbye.',
+  'near.sign.alcohol_or_benzo_withdrawal':
+    'Stopping alcohol or sedatives abruptly and becoming shaky, sweating, confused — the withdrawal itself can be fatal.',
+  'near.recoveryPosition':
+    'If they are unconscious but breathing: put them in the recovery position and stay until help arrives.',
+
+  'near.understandTitle': 'What is actually happening',
+  'near.topic.what_a_craving_is': 'A craving is not a craving for something nice',
+  'near.topic.what_a_craving_is.body':
+    'It is closer to thirst or panic than to wanting a treat. The body raises an alarm that something is wrong and points at one solution. It passes — most cravings peak within twenty minutes — but while it runs, thinking about anything else is hard. That is why ten minutes can be the difference, and why "can you not just not" lands like a question from another planet.',
+  'near.topic.the_negotiation_voice': 'The voice that negotiates',
+  'near.topic.the_negotiation_voice.body':
+    '"Just once." "I have been good." "I will start on Monday." "I need it to sleep." It sounds like decisions and it is not — it is the addiction arguing, and it is often very convincing. When you hear it you are not talking to the whole person. That is not the same as them lying to you on purpose.',
+  'near.topic.why_willpower_framing_fails': 'Why "pull yourself together" does not work',
+  'near.topic.why_willpower_framing_fails.body':
+    'It is not that they care too little about you. Addiction changes how the brain values things in the moment, not how much somebody loves their children. Explaining the consequences one more time does not fix something that was never about not knowing — they already know. And shame measurably makes it worse: it is one of the most common routes back to using.',
+  'near.topic.why_they_lie': 'Why you get lied to',
+  'near.topic.why_they_lie.body':
+    'Almost always to avoid the shame and to avoid the conversation, rarely to fool you specifically. That does not make it acceptable and you do not have to accept it. But knowing where it comes from makes it easier to answer without the whole evening turning into an interrogation.',
+  'near.topic.withdrawal_can_be_dangerous': 'Stopping abruptly can be dangerous',
+  'near.topic.withdrawal_can_be_dangerous.body':
+    'Alcohol, benzodiazepines and other sedatives can cause seizures and delirium when stopped suddenly, and that can be life-threatening. After a break from opioids, tolerance drops — the old dose can then be enough for a fatal overdose, which is why relapse after a period of abstinence is especially dangerous. Never force an abrupt stop on your own. Call the health advice line and ask.',
+  'near.topic.relapse_is_not_a_moral_failure': 'A relapse does not mean it was all for nothing',
+  'near.topic.relapse_is_not_a_moral_failure.body':
+    'Relapse is common in recovery, much as it is in other chronic conditions. It does not erase the months before — those remain as experience, as know-how, as proof that it is possible. What usually matters is how quickly somebody comes back, not that it happened.',
+  'near.topic.what_actually_helps': 'What actually helps',
+  'near.topic.what_actually_helps.body':
+    'Being predictable. Saying what you will do rather than what they must do. Keeping on inviting them into the life outside the addiction. Talking about something else sometimes. Answering calmly when they tell you something difficult, so that telling you is still possible next time. Separating the person from the behaviour, out loud.',
+  'near.topic.what_does_not_help': 'What rarely helps',
+  'near.topic.what_does_not_help.body':
+    'Ultimatums you do not intend to keep. Pouring things away or hiding them. Policing amounts. Taking over the bills, the job and the consequences. Arguing with somebody who is intoxicated — that person will not remember the conversation. Making yourself the treatment: you cannot be both family and clinician, and refusing that role is not mean.',
+  'near.topic.you_did_not_cause_it': 'You did not cause it',
+  'near.topic.you_did_not_cause_it.body':
+    'You cannot have caused an addiction by being the wrong sort of partner, parent or child. You cannot control it, and you cannot cure it. What you can do is decide what you yourself do, and not disappear in the meantime.',
+
+  'near.checkTitle': 'Where are you in all this?',
+  'near.checkLede':
+    'Fourteen statements about completely ordinary weeks. Answer as things are, not as you think they ought to be. Nothing is sent anywhere — this is worked out on your device and gone when you close the page.',
+  'near.checkNotADiagnosis':
+    'This is not a test and not a diagnosis. The word "co-dependency" gets used in twenty different ways and is not used here. This only reflects back what your own answers said.',
+  'near.scale.0': 'Never',
+  'near.scale.1': 'Sometimes',
+  'near.scale.2': 'Often',
+  'near.scale.3': 'Almost always',
+  'near.checkResult': 'This is what your answers said',
+  'near.checkTooLittle': 'Too few answers to say anything. Fill in more if you want something here.',
+  'near.checkNothingLoud':
+    'No pattern stands out in your answers. That does not mean it is easy — only that what you filled in does not point anywhere in particular today.',
+  'near.checkReset': 'Start again',
+
+  'near.statement.count_what_is_left': 'I keep track of how much is left.',
+  'near.statement.check_their_things': 'I search their things, phone or pockets.',
+  'near.statement.covered_for_them': 'I have explained them away to other people.',
+  'near.statement.paid_what_was_theirs': 'I have paid or fixed things that were their responsibility.',
+  'near.statement.said_last_time_again': 'I have said "this is the last time" more than once.',
+  'near.statement.agree_to_avoid_a_fight': 'I say yes to things to avoid the argument.',
+  'near.statement.stopped_doing_what_i_liked': 'I have stopped doing things I used to enjoy.',
+  'near.statement.sleep_badly_from_worry': 'I sleep badly because I am worried.',
+  'near.statement.keep_people_away': 'I keep other people away from the house.',
+  'near.statement.avoid_saying_how_it_is': 'I avoid telling anyone how things actually are.',
+  'near.statement.think_it_is_my_fault': 'I think it is something I have done.',
+  'near.statement.search_for_what_i_missed': 'I go over what I should have seen sooner.',
+  'near.statement.read_the_mood_first': 'I read the mood before I say anything.',
+  'near.statement.calm_only_when_i_know_where': 'I am only calm once I know where they are.',
+
+  'near.pattern.control': 'You are keeping track',
+  'near.pattern.control.body':
+    'Counting, searching and checking makes sense — it is an attempt to get some predictability back. It just tends not to work: amounts can be hidden, and you are left with the work. What you get in return is that part of your attention is permanently on another person’s body.',
+  'near.pattern.control.step':
+    'Try picking one thing you stop counting for a week, and notice what actually happens.',
+  'near.pattern.rescue': 'You catch everything before it lands',
+  'near.pattern.rescue.body':
+    'Covering and paying is love under pressure. It is also what makes the consequences land on you instead of where they arose — and consequences are often what eventually moves somebody to get help. This is not "you are enabling it". It is that you are carrying something that is not yours.',
+  'near.pattern.rescue.step':
+    'Consider what you would stop doing if you knew it did not help. Start with the smallest one.',
+  'near.pattern.boundaries': 'Your boundaries keep moving',
+  'near.pattern.boundaries.body':
+    '"The last time" that became several times is not weakness. It usually means the boundary was phrased as a demand on them rather than as a statement about what you will do — and that kind of boundary is impossible to keep, because you do not control their behaviour.',
+  'near.pattern.boundaries.step':
+    'Rewrite one boundary so it is only about you: "I will drive you to the hospital. I will not give you money."',
+  'near.pattern.own_needs': 'You have disappeared a little',
+  'near.pattern.own_needs.body':
+    'Sleep, friends and the things you enjoyed are not rewards you get once they are well. They are what makes staying possible at all. This often runs for years, and nobody manages years of being on call around the clock.',
+  'near.pattern.own_needs.step':
+    'Put one thing in the diary this week that is yours and is not about them. One is enough.',
+  'near.pattern.secrecy': 'It has gone quiet around you',
+  'near.pattern.secrecy.body':
+    'Keeping people away protects them from shame and you from questions. The price is that you are alone with it, and isolation is one of the things that makes this hardest to carry. You do not have to tell everyone. But one more human being knowing is not the same as gossip.',
+  'near.pattern.secrecy.step': 'Pick one person who gets to know how things actually are at home.',
+  'near.pattern.blame': 'You are looking for your own fault in it',
+  'near.pattern.blame.body':
+    'Going over what you should have seen is a way of trying to put order into something that is not orderly. But you did not cause it, you cannot control it, and you cannot cure it. That is not a comforting phrase — it is simply not your access.',
+  'near.pattern.blame.step':
+    'Next time the thought comes: write down what you could actually have decided in that situation.',
+  'near.pattern.hypervigilance': 'You are always on watch',
+  'near.pattern.hypervigilance.body':
+    'Reading the mood before you speak, and only being calm once you know where they are — that is a body that has been on alert for too long. It usually shows up in sleep, in your stomach and in your temper long before anybody connects it.',
+  'near.pattern.hypervigilance.step':
+    'Tell somebody who is not them how your week has actually been. A clinician counts.',
+
+  'near.boundariesTitle': 'Sentences you can say out loud',
+  'near.boundariesLede':
+    'A boundary is not a threat. It is a statement about what you will do — the only part anybody controls.',
+  'near.boundary.asked_for_money': 'They ask for money',
+  'near.boundary.asked_for_money.say':
+    '"I am not giving you money. I will buy food with you, and I will sit with you while you call for help."',
+  'near.boundary.drunk_at_home': 'They come home intoxicated',
+  'near.boundary.drunk_at_home.say':
+    '"I am not discussing this tonight. We will do it tomorrow when you are sober." And then do that.',
+  'near.boundary.promises_again': 'They promise again',
+  'near.boundary.promises_again.say':
+    '"I believe you mean it. I stopped going by promises — I go by what happens."',
+  'near.boundary.wants_a_lift': 'They want a lift to a party',
+  'near.boundary.wants_a_lift.say':
+    '"I will not drive you there. I will pick you up whenever you want to come home, no complaints."',
+  'near.boundary.blames_you': 'They blame you',
+  'near.boundary.blames_you.say':
+    '"I am not the reason you use. I am still here, but I am not taking this."',
+  'near.boundary.family_dinner': 'The dinner where everyone is watching',
+  'near.boundary.family_dinner.say':
+    'Decide in advance what you will do if it goes wrong, and tell them beforehand: "If it goes like that, I am going home at nine."',
+  'near.boundary.driving': 'They are about to drive',
+  'near.boundary.driving.say':
+    'This one is not a boundary to negotiate. Take the keys if you can, do not get in the car, and call the emergency number if they drive anyway.',
+
+  'near.resourcesTitle': 'You are allowed somewhere to go too',
+  'support.se.alcohol_line': 'Alcohol helpline (Sweden) — also answers relatives',
+  'support.se.gambling_line': 'Gambling support line — for people close to somebody who gambles',
+  'support.se.health': '1177 Swedish healthcare advice line',
+  'support.se.municipal': 'Municipal carer support — search your municipality and "anhörigstöd"',
+  'support.se.bris': 'Bris — for under-18s with a parent who uses (Sweden)',
+  'support.us.samhsa': 'SAMHSA National Helpline — also for family members',
+  'support.us.crisis': '988 Suicide & Crisis Lifeline',
+  'support.gb.adfam': 'Adfam — for families affected by someone else’s drug or alcohol use',
+  'support.gb.health': 'NHS 111',
+  'support.generic.local': 'Carer support where you live — ask your clinic or local authority',
+  'near.noRequirement':
+    'Cleat never requires you to join any organisation, group or movement — neither you nor them.',
+
+  'near.talkTitle': 'Somewhere to think out loud',
+  'near.talkLede':
+    'A conversation about your situation, not theirs. You can say it straight out: that you are tired, that you are angry, that you are thinking about leaving, that you do not recognise yourself any more.',
+  'near.talkGreeting': 'What is heaviest right now — for you, that is?',
+  'near.talkPlaceholder': 'Write what is going on with you…',
+  'near.talkNotAboutThem':
+    'I know nothing about the person you are describing, and I have no connection to their account. I can only go on what you tell me.',
+  'near.talkNoAdviceOnLeaving':
+    'Nobody here is going to tell you to stay or to go. You know more about that decision than any app does.',
+  'near.talkSignIn': 'Create your own account to talk',
+  'near.backToApp': 'To Cleat',
+  'near.forThePersonTitle': 'Is it you who uses?',
+  'near.forThePersonBody': 'Then the rest of Cleat is built for you.',
+
   // ---- Goal of the product ----
   'about.objective':
     "The goal isn't for you to use the app every day forever. The goal is for you to build a life where you don't need it.",

@@ -254,6 +254,10 @@ export default function SettingsScreen() {
         <Text style={styles.buttonText}>{t('safety.resourcesTitle')}</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.button} onPress={() => router.push('/nara')}>
+        <Text style={styles.buttonText}>{t('near.title')}</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.button} onPress={() => void signOut()}>
         <Text style={styles.buttonText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>

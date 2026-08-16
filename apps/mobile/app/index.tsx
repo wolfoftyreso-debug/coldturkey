@@ -259,6 +259,13 @@ export default function SignInScreen() {
         <Text style={styles.buttonText}>{t('crisis.title')}</Text>
       </TouchableOpacity>
 
+      {/* The relative is not a secondary audience reached through a settings
+          menu. Most people carrying this never look for anything for
+          themselves, because the problem is framed as somebody else's. */}
+      <TouchableOpacity style={styles.button} onPress={() => router.push('/nara')}>
+        <Text style={styles.buttonText}>{t('near.title')}</Text>
+      </TouchableOpacity>
+
       <Text style={[styles.muted, { marginTop: 30, textAlign: 'center' }]}>
         {t('safety.disclaimer')}
       </Text>

@@ -817,6 +817,173 @@ export const sv = {
   'privacy.exportLarge':
     'Exporten är stor ({kilobytes} kB). Vissa appar kortar av lång text — öppna webbversionen om du vill ha den som fil.',
 
+  // ---- Cleat Nära — för dig som står bredvid ----
+  'near.title': 'För dig som står bredvid',
+  'near.tagline': 'Du är inte anledningen, och du är inte lösningen. Men du lever mitt i det.',
+  'near.intro':
+    'Det här är för dig som är anhörig, partner, förälder, barn eller vän till någon som använder. Det är inte kopplat till hens konto och visar ingenting om hen. Det finns för att du ska förstå vad som faktiskt händer, och för att du också ska finnas kvar när det här är över.',
+  'near.noAccountNeeded': 'Du behöver inget konto för att läsa det här, och besöket sparas ingenstans.',
+
+  'near.emergencyTitle': 'När det inte är ett samtal längre',
+  'near.emergencyLede':
+    'Ring nödnumret först och läs resten sedan. Det här är inte situationer att lösa själv.',
+  'near.sign.unresponsive': 'Går inte att väcka, eller vaknar bara till för en sekund.',
+  'near.sign.seizure': 'Kramper, skakningar som inte går att stoppa, stelhet.',
+  'near.sign.breathing': 'Långsam, rosslig eller oregelbunden andning. Blå läppar eller fingrar.',
+  'near.sign.confusion': 'Ser eller hör saker som inte finns, vet inte var hen är, kraftig förvirring.',
+  'near.sign.talking_about_dying': 'Pratar om att inte vilja finnas kvar, eller tar farväl.',
+  'near.sign.alcohol_or_benzo_withdrawal':
+    'Slutar tvärt med alkohol eller lugnande läkemedel och blir skakig, svettig, förvirrad — abstinensen i sig kan vara livsfarlig.',
+  'near.recoveryPosition':
+    'Är hen medvetslös men andas: lägg hen i stabilt sidoläge och stanna kvar tills hjälpen kommer.',
+
+  'near.understandTitle': 'Vad som faktiskt händer',
+  'near.topic.what_a_craving_is': 'Ett sug är inte ett sug efter något gott',
+  'near.topic.what_a_craving_is.body':
+    'Det liknar mer törst eller panik än lust. Kroppen larmar om att något är fel och pekar på en enda lösning. Det går över — de flesta sug kulminerar inom tjugo minuter — men medan det pågår är det svårt att tänka på något annat. Det är därför tio minuter kan vara skillnaden, och därför "kan du inte bara låta bli" landar som en fråga från en annan planet.',
+  'near.topic.the_negotiation_voice': 'Rösten som förhandlar',
+  'near.topic.the_negotiation_voice.body':
+    '"Bara en gång." "Jag har varit duktig." "Jag börjar på måndag." "Jag behöver det för att sova." Det låter som beslut och det är det inte — det är beroendet som argumenterar, och det är ofta väldigt övertygande. När du hör det pratar du inte med hela människan. Det är inte samma sak som att hen ljuger för dig med flit.',
+  'near.topic.why_willpower_framing_fails': 'Varför "skärp dig" inte fungerar',
+  'near.topic.why_willpower_framing_fails.body':
+    'Det handlar inte om att hen bryr sig för lite om dig. Beroendet ändrar hur hjärnan värderar saker just i stunden, inte hur mycket hen älskar sina barn. Att förklara konsekvenserna en gång till löser inte något som inte handlar om okunskap — hen vet redan. Skam gör det dessutom mätbart värre: det är en av de vanligaste vägarna tillbaka till användandet.',
+  'near.topic.why_they_lie': 'Varför du blir ljugen för',
+  'near.topic.why_they_lie.body':
+    'Nästan alltid för att slippa skammen och för att slippa samtalet, sällan för att lura just dig. Det gör inte lögnen okej och du behöver inte acceptera den. Men om du vet varför den kommer blir det lättare att svara på den utan att hela kvällen blir ett förhör.',
+  'near.topic.withdrawal_can_be_dangerous': 'Att sluta tvärt kan vara farligt',
+  'near.topic.withdrawal_can_be_dangerous.body':
+    'Alkohol, bensodiazepiner och andra lugnande läkemedel kan ge kramper och delirium när de sätts ut abrupt, och det kan vara livshotande. Efter ett uppehåll från opioider sjunker toleransen — den gamla dosen kan då räcka för en dödlig överdos, vilket är varför återfall efter en tid nykter är särskilt farligt. Pressa aldrig fram en tvärstopp på egen hand. Ring 1177 och fråga.',
+  'near.topic.relapse_is_not_a_moral_failure': 'Ett återfall är inte att allt var förgäves',
+  'near.topic.relapse_is_not_a_moral_failure.body':
+    'Återfall är vanligt i återhämtning, ungefär som det är i andra kroniska tillstånd. Det raderar inte månaderna innan — de finns kvar som erfarenhet, som veta-hur, som bevis på att det går. Det som avgör är oftast hur snabbt någon kommer tillbaka, inte att det hände.',
+  'near.topic.what_actually_helps': 'Det som faktiskt hjälper',
+  'near.topic.what_actually_helps.body':
+    'Att vara förutsägbar. Att säga vad du själv gör, inte vad hen måste göra. Att fortsätta bjuda in hen till livet utanför beroendet. Att prata om något annat ibland. Att svara lugnt när hen berättar något svårt, så att det går att berätta nästa gång också. Att skilja på personen och beteendet, högt.',
+  'near.topic.what_does_not_help': 'Det som sällan hjälper',
+  'near.topic.what_does_not_help.body':
+    'Ultimatum du inte tänker stå för. Att hälla ut eller gömma. Att kontrollera mängder. Att ta över räkningar, jobb och konsekvenser. Att argumentera med någon som är påverkad — den personen kommer inte ihåg samtalet. Att göra dig själv till behandlare: du kan inte vara både anhörig och vårdgivare, och det är inte snålt att säga nej till det.',
+  'near.topic.you_did_not_cause_it': 'Du orsakade det inte',
+  'near.topic.you_did_not_cause_it.body':
+    'Du kan inte ha orsakat ett beroende genom att vara fel sorts partner, förälder eller barn. Du kan inte kontrollera det, och du kan inte bota det. Det du kan göra är att bestämma vad du själv gör, och att inte försvinna själv under tiden.',
+
+  'near.checkTitle': 'Var är du själv i det här?',
+  'near.checkLede':
+    'Fjorton påståenden om helt vanliga veckor. Svara som det faktiskt är, inte som du tycker att det borde vara. Ingenting skickas någonstans — det här räknas ut i din telefon och försvinner när du stänger sidan.',
+  'near.checkNotADiagnosis':
+    'Det här är inget test och ingen diagnos. Ordet "medberoende" används på tjugo olika sätt och används inte här. Det här visar bara tillbaka vad dina egna svar sa.',
+  'near.scale.0': 'Aldrig',
+  'near.scale.1': 'Ibland',
+  'near.scale.2': 'Ofta',
+  'near.scale.3': 'Nästan alltid',
+  'near.checkResult': 'Det här sa dina svar',
+  'near.checkTooLittle': 'För få svar för att säga något. Fyll i fler om du vill se något här.',
+  'near.checkNothingLoud':
+    'Inget mönster sticker ut i dina svar. Det betyder inte att det är lätt — bara att det du fyllde i inte pekar åt något särskilt håll idag.',
+  'near.checkReset': 'Börja om',
+
+  'near.statement.count_what_is_left': 'Jag håller koll på hur mycket som är kvar.',
+  'near.statement.check_their_things': 'Jag letar i hens saker, telefon eller fickor.',
+  'near.statement.covered_for_them': 'Jag har förklarat bort hen inför andra.',
+  'near.statement.paid_what_was_theirs': 'Jag har betalat eller fixat sådant som var hens ansvar.',
+  'near.statement.said_last_time_again': 'Jag har sagt "sista gången" mer än en gång.',
+  'near.statement.agree_to_avoid_a_fight': 'Jag säger ja till saker för att slippa bråket.',
+  'near.statement.stopped_doing_what_i_liked': 'Jag har slutat med sådant jag brukade tycka om.',
+  'near.statement.sleep_badly_from_worry': 'Jag sover dåligt för att jag oroar mig.',
+  'near.statement.keep_people_away': 'Jag håller andra borta från hemmet.',
+  'near.statement.avoid_saying_how_it_is': 'Jag undviker att berätta hur det faktiskt är.',
+  'near.statement.think_it_is_my_fault': 'Jag tänker att det är något jag har gjort.',
+  'near.statement.search_for_what_i_missed': 'Jag går igenom vad jag borde ha sett tidigare.',
+  'near.statement.read_the_mood_first': 'Jag läser av humöret innan jag säger något.',
+  'near.statement.calm_only_when_i_know_where': 'Jag är lugn först när jag vet var hen är.',
+
+  'near.pattern.control': 'Du håller koll',
+  'near.pattern.control.body':
+    'Att räkna, leta och kontrollera är begripligt — det är ett försök att få tillbaka lite förutsägbarhet. Det brukar bara inte fungera: mängden går att dölja, och du blir kvar med jobbet. Det du får i utbyte är att en del av din uppmärksamhet alltid ligger på en annan människas kropp.',
+  'near.pattern.control.step':
+    'Prova att välja en sak du slutar hålla räkningen på i en vecka, och märk vad som faktiskt händer.',
+  'near.pattern.rescue': 'Du fångar upp',
+  'near.pattern.rescue.body':
+    'Att täcka upp och betala är kärlek under press. Det är också det som gör att konsekvenserna landar hos dig i stället för där de uppstod — och konsekvenser är ofta det som till slut får någon att söka hjälp. Det här är inte "du möjliggör beroendet". Det är att du bär något som inte är ditt.',
+  'near.pattern.rescue.step':
+    'Fundera på vad du skulle sluta göra om du visste att det inte hjälpte. Börja med det minsta.',
+  'near.pattern.boundaries': 'Dina gränser flyttar sig',
+  'near.pattern.boundaries.body':
+    '"Sista gången" som blev flera gånger är inte svaghet. Det betyder oftast att gränsen var formulerad som ett krav på hen i stället för som ett besked om vad du själv gör — och den sortens gräns är omöjlig att hålla, eftersom du inte styr över hens beteende.',
+  'near.pattern.boundaries.step':
+    'Skriv om en gräns så att den bara handlar om dig: "Jag kör dig till akuten. Jag ger dig inte pengar."',
+  'near.pattern.own_needs': 'Du har försvunnit lite',
+  'near.pattern.own_needs.body':
+    'Sömn, vänner och sådant du tyckte om är inte belöningar du får när hen blir frisk. De är det som gör att du orkar vara kvar över huvud taget. Det här pågår ofta i flera år, och ingen klarar flera år på beredskap dygnet runt.',
+  'near.pattern.own_needs.step':
+    'Boka in en sak den här veckan som är din och som inte handlar om hen. En sak räcker.',
+  'near.pattern.secrecy': 'Det har blivit tyst runt er',
+  'near.pattern.secrecy.body':
+    'Att hålla andra borta skyddar hen från skam och dig från frågor. Priset är att ni blir ensamma med det, och isolering är en av de saker som gör det här svårast att bära. Du behöver inte berätta för alla. Men en människa till som vet är inte samma sak som att skvallra.',
+  'near.pattern.secrecy.step': 'Välj en person som får veta hur det faktiskt är hemma.',
+  'near.pattern.blame': 'Du letar efter ditt eget fel',
+  'near.pattern.blame.body':
+    'Att gå igenom vad du borde ha sett är ett sätt att försöka få ordning på något som inte är i ordning. Men du orsakade det inte, du kan inte kontrollera det, och du kan inte bota det. Det är inte en tröstformulering — det är helt enkelt inte din åtkomst.',
+  'near.pattern.blame.step':
+    'Nästa gång tanken kommer: skriv ner vad du faktiskt hade kunnat bestämma över i den situationen.',
+  'near.pattern.hypervigilance': 'Du är alltid på vakt',
+  'near.pattern.hypervigilance.body':
+    'Att läsa av humöret innan du säger något, och att bara vara lugn när du vet var hen är — det är en kropp som stått i beredskap för länge. Det brukar synas i sömnen, magen och humöret långt innan man själv kopplar ihop det.',
+  'near.pattern.hypervigilance.step':
+    'Berätta för någon som inte är hen hur din vecka faktiskt har varit. Vården räknas.',
+
+  'near.boundariesTitle': 'Meningar som går att säga högt',
+  'near.boundariesLede':
+    'En gräns är inte ett hot. Det är ett besked om vad du själv gör — den enda delen någon rår över.',
+  'near.boundary.asked_for_money': 'Hen ber om pengar',
+  'near.boundary.asked_for_money.say':
+    '"Jag ger dig inte pengar. Jag kan handla mat med dig, och jag kan följa med när du ringer vården."',
+  'near.boundary.drunk_at_home': 'Hen kommer hem påverkad',
+  'near.boundary.drunk_at_home.say':
+    '"Jag pratar inte om det här ikväll. Vi tar det imorgon när du är nykter." Och gör sedan det.',
+  'near.boundary.promises_again': 'Hen lovar igen',
+  'near.boundary.promises_again.say':
+    '"Jag tror att du menar det. Jag går inte på löften längre, jag går på vad som händer."',
+  'near.boundary.wants_a_lift': 'Hen vill ha skjuts till en fest',
+  'near.boundary.wants_a_lift.say':
+    '"Jag kör dig inte dit. Jag hämtar dig när du vill hem, när som helst, utan gnäll."',
+  'near.boundary.blames_you': 'Hen skyller på dig',
+  'near.boundary.blames_you.say':
+    '"Jag är inte anledningen till att du använder. Jag är kvar, men jag tar inte det här."',
+  'near.boundary.family_dinner': 'Middagen där alla ser på',
+  'near.boundary.family_dinner.say':
+    'Bestäm i förväg vad du gör om det spårar, och säg det till hen innan: "Om det blir så här går jag hem klockan nio."',
+  'near.boundary.driving': 'Hen tänker köra bil',
+  'near.boundary.driving.say':
+    'Det här är inte en gräns att förhandla om. Ta nycklarna om du kan, låt bli att åka med, och ring 112 om hen kör ändå.',
+
+  'near.resourcesTitle': 'Du får också ha någonstans att ta vägen',
+  'support.se.alcohol_line': 'Alkohollinjen — svarar även anhöriga',
+  'support.se.gambling_line': 'Stödlinjen — för dig som står nära någon som spelar',
+  'support.se.health': '1177 Vårdguiden',
+  'support.se.municipal': 'Kommunens anhörigstöd — sök på kommunens namn och "anhörigstöd"',
+  'support.se.bris': 'Bris — för dig under 18 som har en förälder som använder',
+  'support.us.samhsa': 'SAMHSA National Helpline — also for family members',
+  'support.us.crisis': '988 Suicide & Crisis Lifeline',
+  'support.gb.adfam': 'Adfam — for families affected by someone else’s drug or alcohol use',
+  'support.gb.health': 'NHS 111',
+  'support.generic.local': 'Anhörigstöd där du bor — fråga vårdcentralen eller kommunen',
+  'near.noRequirement':
+    'Cleat kräver aldrig att du går med i någon organisation, grupp eller rörelse — varken du eller hen.',
+
+  'near.talkTitle': 'Bollplank',
+  'near.talkLede':
+    'Ett samtal om din situation, inte hens. Du kan skriva rakt ut: att du är trött, att du är arg, att du funderar på att lämna, att du inte känner igen dig själv längre.',
+  'near.talkGreeting': 'Vad är det som är tyngst just nu — för dig, alltså?',
+  'near.talkPlaceholder': 'Skriv vad som händer hos dig…',
+  'near.talkNotAboutThem':
+    'Jag vet ingenting om personen du beskriver, och jag har ingen kontakt med hens konto. Jag kan bara utgå från det du berättar.',
+  'near.talkNoAdviceOnLeaving':
+    'Ingen här kommer att säga åt dig att stanna eller att gå. Det beslutet vet du mer om än någon app.',
+  'near.talkSignIn': 'Skapa ett eget konto för att prata',
+  'near.backToApp': 'Till Cleat',
+  'near.forThePersonTitle': 'Är det du själv som använder?',
+  'near.forThePersonBody': 'Då är resten av Cleat byggt för dig.',
+
   // ---- Goal of the product ----
   'about.objective':
     'Målet är inte att du ska använda appen varje dag för alltid. Målet är att du bygger ett liv där du inte behöver den.',

@@ -80,6 +80,14 @@ export default function CrisisPage() {
         <p className={styles.crisisBody}>{t('crisis.detoxBody')}</p>
       </section>
 
+      <section className={styles.crisis}>
+        <h2 className={styles.crisisTitle}>{t('near.title')}</h2>
+        <p className={styles.crisisBody}>{t('near.tagline')}</p>
+        <Link href="/nara" className={styles.crisisLink}>
+          {t('near.understandTitle')} →
+        </Link>
+      </section>
+
       <footer className={styles.footer}>
         <p>{t('crisis.privacyNote')}</p>
       </footer>

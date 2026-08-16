@@ -45,6 +45,80 @@ test.describe('crisis surface', () => {
   });
 });
 
+test.describe('the surface for relatives', () => {
+  /**
+   * Cleat Nära has to work for somebody who will never register for an app
+   * about another person's drinking, so it is held to the same bar as the
+   * crisis page: no account, and the reading half with no JavaScript at all.
+   */
+  test('a relative can read all of it with no account and no JavaScript', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto('/nara');
+
+    // `innerText` rather than `textContent`: the latter includes the contents of
+    // <script>, and React's serialised payload carries the list keys — which are
+    // translation keys, and would fail the raw-key assertion below without ever
+    // being on screen.
+    const shown = await page.locator('main').innerText();
+
+    // The emergency block, the explanations and the boundary scripts are all
+    // server-rendered; only the self-check needs a bundle.
+    expect(shown).toMatch(/går inte att väcka/i);
+    expect(shown).toMatch(/förhandlar/i);
+    expect(shown).toMatch(/ger dig inte pengar/i);
+    expect(shown).toContain('112');
+
+    // Nothing a person can see may be a raw translation key.
+    expect(shown).not.toContain('near.');
+    expect(shown).not.toContain('support.se.');
+
+    await context.close();
+  });
+
+  test('the self-check reflects patterns back and keeps everything on the device', async ({
+    page,
+  }) => {
+    const errors = failOnConsoleErrors(page);
+
+    // Any request carrying the answers would be a betrayal of what the page
+    // promises, so the test watches the network rather than trusting the code.
+    const posts: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() !== 'GET') posts.push(`${request.method()} ${request.url()}`);
+    });
+
+    await page.goto('/nara');
+
+    // Too little answered must say so rather than invent a shape.
+    const almostAlways = page.getByRole('button', { name: /nästan alltid/i });
+    await almostAlways.first().click();
+    await expect(page.getByText(/för få svar/i)).toBeVisible();
+
+    const count = await almostAlways.count();
+    for (let index = 1; index < count; index += 1) {
+      await almostAlways.nth(index).click();
+    }
+
+    // Every statement at "almost always" — every pattern should be named.
+    await expect(page.getByText(/du håller koll/i)).toBeVisible();
+    await expect(page.getByText(/dina gränser flyttar sig/i)).toBeVisible();
+    await expect(page.getByText(/du är alltid på vakt/i)).toBeVisible();
+
+    await page.getByRole('button', { name: /börja om/i }).click();
+    await expect(page.getByText(/för få svar/i)).toBeVisible();
+
+    expect(posts, 'the self-check must not send anything anywhere').toEqual([]);
+    expectNoConsoleErrors(errors);
+  });
+
+  test('the landing page offers it without making anyone hunt for it', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: /jag är anhörig/i }).click();
+    await expect(page).toHaveURL(/\/nara/);
+  });
+});
+
 test.describe('first run', () => {
   test('sign up, make a plan, and see it on the home screen', async ({ page }) => {
     const errors = failOnConsoleErrors(page);

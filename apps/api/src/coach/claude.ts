@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { loadConfig } from '../config.js';
-import { MODE_BUDGET, SYSTEM_IDENTITY, type CoachMode } from './prompt.js';
+import { identityFor, MODE_BUDGET, type CoachMode } from './prompt.js';
 
 let client: Anthropic | null = null;
 
@@ -51,7 +51,10 @@ export async function askCoach(
     thinking: { type: 'adaptive' },
     output_config: { effort: budget.effort },
     system: [
-      { type: 'text', text: SYSTEM_IDENTITY, cache_control: { type: 'ephemeral' } },
+      // Two byte-stable identities, one per audience, each caching on its own
+      // breakpoint. Cleat Nära speaks to somebody who is not the person using,
+      // and the recovery prompt addresses them in nearly every line.
+      { type: 'text', text: identityFor(mode), cache_control: { type: 'ephemeral' } },
       { type: 'text', text: contextBlock },
     ],
     messages: history.map((turn) => ({ role: turn.role, content: turn.content })),

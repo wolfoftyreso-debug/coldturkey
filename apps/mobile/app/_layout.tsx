@@ -34,6 +34,11 @@ export default function RootLayout() {
           {/* Registered outside any auth gate on purpose: the moment somebody
               needs this screen, being asked to sign in first is a wall. */}
           <Stack.Screen name="kris" options={{ title: 'Cleat' }} />
+          {/* Cleat Nära, also outside the auth gate: a relative who has never
+              heard of this app should be able to read it without registering
+              for a product about somebody else's drinking. */}
+          <Stack.Screen name="nara" options={{ title: 'Cleat Nära' }} />
+          <Stack.Screen name="nara-samtal" options={{ title: 'Cleat Nära' }} />
         </Stack>
       </SessionProvider>
     </SafeAreaProvider>

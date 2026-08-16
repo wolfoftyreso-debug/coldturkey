@@ -34,6 +34,12 @@ mobile client, and the Kubernetes manifests to run it.
 | **MY PATTERNS** | Cleat Patterns | Triggers, behaviours, recurring patterns, seven indicators. |
 | **REBUILD MY LIFE** | Cleat Rebuild | Sleep, health, home, money, work, exercise, social, relationships, identity, purpose. |
 
+Alongside the five, one surface that is not for the person using at all:
+
+| | | |
+|---|---|---|
+| **FOR THE PERSON STANDING NEXT TO IT** | Cleat Nära | For a relative. What is actually happening, what helps, what does not, sentences that can be said out loud, a self-check about where *they* have got to, and somewhere to think out loud. Reachable with no account. Connected to nobody's data — see below. |
+
 `MASTERPROMPT.md` is the full specification. `BRAND.md` covers naming,
 positioning and visual identity.
 
@@ -54,6 +60,7 @@ positioning and visual identity.
 | **Daily check-ins** | Morning and evening, feeding the indicators and the pattern engine. |
 | **AI coach** | Claude with the Cleat system prompt, motivational-interviewing language, and coach memory. Falls back to a fully functional local coach when the model is unavailable. |
 | **Privacy** | Export everything, delete everything. First-class controls, not a support ticket, and present in both clients. |
+| **Cleat Nära** | A tool for the relative, not a window into the patient. It shows nothing about any particular person, by design: somebody who can watch another person's streak counter has been handed a surveillance tool, and in these households surveillance is usually already part of the problem. The self-check computes in the browser and is posted nowhere; the sounding board runs on its own system prompt that is forbidden to tell anybody to stay or leave, to assign blame, or to promise that the other person will recover. |
 | **Account recovery** | Forgotten password, reset link, email confirmation, and an optional second factor with recovery codes. Losing an account here means losing the record of the hardest thing somebody has done, so the way back in is treated as a feature rather than a support address. |
 
 Both Swedish and English are shipped from day one; the Swedish catalog is the
@@ -66,7 +73,8 @@ source of truth and the English one is type-checked against it.
 ```
 packages/core      Pure domain engine. No I/O, no clock reads it did not receive.
                    Safety triage, phases, craving plans, streaks, indicators,
-                   insights, rebuild domains, reclaimed money and time. 266 tests.
+                   insights, rebuild domains, reclaimed money and time, and the
+                   supporter surface. 277 tests.
 packages/i18n      Swedish + English catalogs, type-checked for completeness.
 
 apps/api           Fastify + PostgreSQL. Multi-tenant via row-level security.
@@ -184,10 +192,10 @@ export JWT_SECRET=a-local-secret-that-is-long-enough-for-hs256
 export FIELD_ENCRYPTION_KEYS='dev:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
 export FIELD_ENCRYPTION_ACTIVE_KEY=dev
 
-pnpm -r test         # 456 unit and integration tests
+pnpm -r test         # 479 unit and integration tests
 
 pnpm --filter @cleat/web exec playwright install --with-deps chromium
-bash scripts/e2e.sh  # 14 browser journeys, same environment
+bash scripts/e2e.sh  # 17 browser journeys, same environment
 ```
 
 The database role must **not** be a superuser: superusers bypass row-level

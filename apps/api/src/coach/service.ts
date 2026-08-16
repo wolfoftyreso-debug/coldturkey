@@ -17,7 +17,7 @@ import {
 } from '@cleat/core';
 import { localizeInsightParams, translate, type Locale } from '@cleat/i18n';
 import { askCoach, coachEnabled, type CoachTurn } from './claude.js';
-import { buildContextBlock, type CoachMode } from './prompt.js';
+import { buildContextBlock, buildSupporterContext, type CoachMode } from './prompt.js';
 
 export interface CoachRequest {
   snapshot: RecoverySnapshot;
@@ -102,32 +102,44 @@ export async function coach(request: CoachRequest): Promise<CoachResponse> {
   }
 
   try {
-    const contextBlock = buildContextBlock({
-      locale,
-      displayName: request.displayName,
-      phase: assessPhase(snapshot, now).phase,
-      substance: snapshot.quit?.substance ?? null,
-      streakDays: snapshot.quit ? computeStreak(snapshot.quit, snapshot.relapses, now).currentDays : null,
-      longestStreakDays: snapshot.quit
-        ? computeStreak(snapshot.quit, snapshot.relapses, now).longestDays
-        : null,
-      totalDaysInRecovery: snapshot.quit
-        ? computeStreak(snapshot.quit, snapshot.relapses, now).totalDaysInRecovery
-        : null,
-      restarts: snapshot.quit ? computeStreak(snapshot.quit, snapshot.relapses, now).restarts : 0,
-      whyStatement: snapshot.profile.whyStatement ?? null,
-      supportContactNames: snapshot.supportContacts.map((c) => c.name),
-      topTriggers: topTriggers(snapshot),
-      whatHasWorked: whatHasWorked(snapshot, now),
-      indicators: computeIndicators(snapshot, now).indicators,
-      safetyLevel: safety.level,
-      safetyCategories: safety.categories,
-      negotiationTypes: negotiation.matches.map((m) => m.type),
-      mode,
-      detoxWarningRequired: snapshot.quit
-        ? detoxWarning(snapshot.quit.substance).required
-        : false,
-    });
+    // Cleat Nära gets a context of its own. The block below is a set of facts
+    // about the account holder's *own* addiction — streak, substance, why
+    // statement, triggers — and a relative has none of them. Worse, a relative
+    // who also has their own quit plan would have it injected into a
+    // conversation about somebody else.
+    const contextBlock = mode === 'supporter'
+      ? buildSupporterContext({
+          locale,
+          displayName: request.displayName,
+          safetyLevel: safety.level,
+          safetyCategories: safety.categories,
+        })
+      : buildContextBlock({
+        locale,
+        displayName: request.displayName,
+        phase: assessPhase(snapshot, now).phase,
+        substance: snapshot.quit?.substance ?? null,
+        streakDays: snapshot.quit ? computeStreak(snapshot.quit, snapshot.relapses, now).currentDays : null,
+        longestStreakDays: snapshot.quit
+          ? computeStreak(snapshot.quit, snapshot.relapses, now).longestDays
+          : null,
+        totalDaysInRecovery: snapshot.quit
+          ? computeStreak(snapshot.quit, snapshot.relapses, now).totalDaysInRecovery
+          : null,
+        restarts: snapshot.quit ? computeStreak(snapshot.quit, snapshot.relapses, now).restarts : 0,
+        whyStatement: snapshot.profile.whyStatement ?? null,
+        supportContactNames: snapshot.supportContacts.map((c) => c.name),
+        topTriggers: topTriggers(snapshot),
+        whatHasWorked: whatHasWorked(snapshot, now),
+        indicators: computeIndicators(snapshot, now).indicators,
+        safetyLevel: safety.level,
+        safetyCategories: safety.categories,
+        negotiationTypes: negotiation.matches.map((m) => m.type),
+        mode,
+        detoxWarningRequired: snapshot.quit
+          ? detoxWarning(snapshot.quit.substance).required
+          : false,
+      });
 
     const history: CoachTurn[] = [...request.history, { role: 'user', content: message }];
     const reply = await askCoach(contextBlock, history, mode);
@@ -188,6 +200,18 @@ export function localCoach(
   // project, one direct question costs a sentence.
   if (askDirectly) {
     parts.push(t('safety.askDirectly'));
+  }
+
+  // Before the negotiation branch, and the ordering is the point. A relative
+  // writing "he says he'll only have one more" trips the same detector, and the
+  // counter it produces is addressed to whoever is doing the negotiating. Aimed
+  // at the exhausted partner quoting it, that reads as the app telling them
+  // their own brain is bargaining with them.
+  if ((request.mode ?? 'general') === 'supporter') {
+    parts.push(t('near.talkGreeting'));
+    parts.push(t('near.talkNotAboutThem'));
+    parts.push(t('near.topic.you_did_not_cause_it.body'));
+    return parts.filter(Boolean).join('\n\n');
   }
 
   if (negotiationTypes.length > 0) {

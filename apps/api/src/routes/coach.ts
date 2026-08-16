@@ -9,7 +9,7 @@ import { authenticate, currentUser } from '../plugins/auth.js';
 
 const messageBody = z.object({
   message: z.string().min(1).max(4000),
-  mode: z.enum(['acute', 'relapse', 'general', 'deep']).optional(),
+  mode: z.enum(['acute', 'relapse', 'general', 'deep', 'supporter']).optional(),
   immediateDanger: z.boolean().optional(),
 });
 

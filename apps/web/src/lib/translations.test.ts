@@ -2,6 +2,15 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { en, sv } from '@cleat/i18n';
+import {
+  BOUNDARY_SITUATIONS,
+  supporterResources,
+  SUPPORTER_EMERGENCY_SIGNS,
+  SUPPORTER_PATTERNS,
+  SUPPORTER_SCALE,
+  SUPPORTER_STATEMENTS,
+  SUPPORTER_TOPICS,
+} from '@cleat/core';
 
 /**
  * Every translation key the two clients ask for must exist.
@@ -64,6 +73,48 @@ describe('translation keys the clients ask for', () => {
       .filter((request) => !known.has(request.key))
       .map((request) => `${request.file}: ${request.key}`);
     expect([...new Set(missing)]).toEqual([]);
+  });
+});
+
+describe('Cleat Nära', () => {
+  /**
+   * Every label on the supporter surface is built by appending a table entry to
+   * a key prefix, so none of them is visible to the scan above. A missing one
+   * renders as `near.pattern.hypervigilance` on a page somebody opened because
+   * they are frightened, which is the worst possible moment to be shown the
+   * inside of the software.
+   */
+  const required: string[] = [
+    ...SUPPORTER_TOPICS.flatMap((topic) => [`near.topic.${topic}`, `near.topic.${topic}.body`]),
+    ...SUPPORTER_PATTERNS.flatMap((pattern) => [
+      `near.pattern.${pattern}`,
+      `near.pattern.${pattern}.body`,
+      `near.pattern.${pattern}.step`,
+    ]),
+    ...SUPPORTER_STATEMENTS.map((statement) => `near.statement.${statement.id}`),
+    ...SUPPORTER_EMERGENCY_SIGNS.map((sign) => `near.sign.${sign}`),
+    ...BOUNDARY_SITUATIONS.flatMap((situation) => [
+      `near.boundary.${situation}`,
+      `near.boundary.${situation}.say`,
+    ]),
+    ...SUPPORTER_SCALE.map((value) => `near.scale.${value}`),
+    // Every country's list, not just the default one: a resource added for one
+    // country and never translated is invisible until somebody in that country
+    // opens the page.
+    ...['SE', 'US', 'GB', 'ZZ'].flatMap((country) =>
+      supporterResources(country).map((resource) => resource.key),
+    ),
+  ];
+
+  it('has more than a handful of keys to check', () => {
+    expect(required.length).toBeGreaterThan(50);
+  });
+
+  it('has every one of them in both languages', () => {
+    for (const key of required) {
+      expect(sv, `sv is missing ${key}`).toHaveProperty(key);
+      expect(en, `en is missing ${key}`).toHaveProperty(key);
+    }
   });
 });
 
