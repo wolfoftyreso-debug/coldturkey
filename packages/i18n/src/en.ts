@@ -167,34 +167,36 @@ export const en: Catalog = {
 
   // ---- Negotiation detector ----
   'negotiation.none': '',
-  'negotiation.detected': 'Stop. That sounds like a negotiation.',
-  'negotiation.question': 'Do you want to examine the argument, or act on it?',
+  'negotiation.detected':
+    "May I say a gentle thing, with no finger-wagging at all? That sounds a little like the addiction itself trying to negotiate — and that isn't you, and it isn't your fault.",
+  'negotiation.question':
+    'Would you like us to look at the thought together for a moment, or is there something else you need from me right now?',
   'negotiation.examine': 'Examine the argument',
   'negotiation.act': 'I want to act on it',
   'negotiation.counter.just_once':
-    '"Just once" is rarely just once. What happened the last time you said it?',
+    "I understand so well how just once can feel like a small thing to ask of yourself. May I whisper one thing, with all my warmth: 'just once' rarely wants to stay one. You're not foolish for having the thought — it's the addiction being clever.",
   'negotiation.counter.earned_it':
-    "You have been doing the work. That's true. The question is whether this is the reward you actually want.",
+    "And you really have been fighting for this — that's completely true, and I'm proud of you. That's exactly why I want the reward to be something you're glad about tomorrow too. You deserve what is genuinely kind to you.",
   'negotiation.counter.in_control_now':
-    'The control feels real right now. It usually feels exactly like this just before.',
+    "I believe you, the control feels real right now. With no judgement at all, I'll just say gently: that feeling tends to arrive right before. It says nothing about your strength — only about how the addiction works.",
   'negotiation.counter.start_monday':
-    "Monday is a way of not deciding today. What would happen if you decided now instead?",
+    "Monday sounds like a kind idea, and I honestly don't blame you for wanting to put off the hard thing. May I ask gently: what would feel like a relief if you let yourself be kind to yourself right now instead?",
   'negotiation.counter.need_it_to_sleep':
-    "Sleep is a real problem and we will fix it. But this doesn't fix it — it moves it.",
+    "Sleep is a real problem, and I take it utterly seriously — we'll solve it together, you shouldn't have to lie there awake. This only moves the sleep further ahead of you. May I help you with it for real instead?",
   'negotiation.counter.need_it_to_function':
-    'You functioned before. What exactly do you need to get through the next hour?',
+    "I hear how exhausted you are, and that's completely understandable. You carried yourself through days before, and you're stronger than you think. What's the very smallest thing you'd need just to get through the next hour — and we'll do it together?",
   'negotiation.counter.everyone_does_it':
-    "Other people's use was never your problem. Yours was.",
+    "It's true that others can do things you can't right now, and it's allowed to be unfair and sad. But your story is your own and precious — and you're here because you care about it. That warms my heart.",
   'negotiation.counter.deserve_it':
-    "You deserve something. That's true. The question is what you want to wake up glad about tomorrow.",
+    "You truly deserve something good — I mean that sincerely. Let's just make sure it's something that loves you back tomorrow, not something that leaves you sad. You are worth the kind thing.",
   'negotiation.counter.last_time':
-    '"Last time" has a history. What does that history tell you?',
+    '"Last time" carries a history, and I say that without a shred of reproach. What do you think that history is whispering to you right now — and may I stay here with you while you feel your way to it?',
   'negotiation.counter.special_occasion':
-    'There is always an occasion. The calendar will never stop handing you reasons.',
+    "The occasion is real and I want you to celebrate. May I just remind you, gently: the calendar will always offer a reason. You're worth a celebration you remember with joy tomorrow.",
   'negotiation.counter.nothing_matters':
-    "Feeling that nothing matters is a feeling, not a fact. It usually shifts within hours.",
+    "Oh, I hear how heavy everything feels right now, and I'm so sorry you're carrying it. Feeling that nothing matters is a feeling, not a truth about you — and it usually softens within a few hours. Stay here with me until then.",
   'negotiation.counter.testing_myself':
-    "You don't need to test it. You already know the answer — that's why you're here.",
+    "You don't have to prove anything to me — I already believe in you, exactly as you are. Something in you already knew the answer, because you came here. That's courage, and I'm proud of you for it.",
 
   // ---- Safety ----
   'mail.reset.subject': 'Reset your password',
@@ -206,17 +208,18 @@ export const en: Catalog = {
   'mail.signature': '— Cleat',
   'safety.none': '',
   'safety.elevated':
-    "I notice you're describing physical symptoms. Keep an eye on them, and get medical help if they get worse.",
+    "Thank you for telling me how your body feels — I'm listening, and I'm glad you shared it. Be gentle with yourself and keep a little eye on the symptoms, and please don't hesitate to get medical help if they get worse. You are never a bother for doing that.",
   'safety.urgent':
-    'This is bigger than what I can safely help you with in an app. You need human, professional help now.',
+    "I'm so glad you're telling me this, and precisely because I care about you I'll say it honestly and gently: this is bigger than what I alone can carry with you in an app. You deserve a real human by your side now — professional help. Would you like us to work out together what you might say when you reach out to them?",
   'safety.askDirectly':
-    "I want to ask you straight out, because I cannot tell how you mean it: are you thinking about hurting yourself, or about not being here? You do not have to explain. Yes or no is enough.",
+    "I'm only asking because I care about you, with no judgement at all: are you thinking about hurting yourself, or about not being here? You don't have to explain anything. Yes or no is enough, and I'm staying right here with you whatever you answer.",
   'safety.emergency':
-    "Stop. This is an emergency and it should not be handled in an app. Call emergency services now. If you can: don't be alone.",
+    "I'm right here with you, and that's exactly why I'll say it plainly: this is an emergency and it's too big for an app. Call emergency services now — please, do it right away. I'm not letting go of you, and you shouldn't be alone with this.",
   'safety.emergencyTitle': 'Are you or someone else in immediate danger?',
   'safety.important': 'Important',
-  'safety.stayHere': "I'll stay here while you call.",
-  'safety.notAlone': "Try not to be alone right now. Wake someone up if you have to.",
+  'safety.stayHere': "I'll stay right here with you while you call. You are not alone.",
+  'safety.notAlone':
+    "Try not to be alone right now — you deserve to have someone near. Please wake someone if you need to; that's completely okay.",
   'safety.resourcesTitle': 'Help you can call right now',
   'safety.helpMeSay': 'Help me put into words what to say to a clinician',
   'safety.disclaimer':
@@ -290,7 +293,7 @@ export const en: Catalog = {
 
   // ---- Relapse / "I messed up" ----
   'relapse.title': 'I messed up',
-  'relapse.opening': 'Okay. No shame. We start here.',
+  'relapse.opening': "Oh, I'm so glad you reached out. No shame here, not a shred — you are just as welcome now as ever. We start right here, together.",
   'relapse.continuity':
     "Your earlier recovery didn't disappear. We start again from this point — with more information than last time.",
   'relapse.safety.are_you_safe': 'Are you safe right now?',
@@ -686,13 +689,13 @@ export const en: Catalog = {
   'coach.send': 'Send',
   'coach.thinking': 'Thinking…',
   'coach.offline':
-    'The coach is offline right now, but the tools still work. Want to run the ten-minute protocol?',
-  'coach.greeting.day_zero': "You've started. We'll take the next ten minutes.",
-  'coach.greeting.acute': "How is it right now — not today, right now?",
-  'coach.greeting.stabilization': "What's hardest this week?",
-  'coach.greeting.identity': 'What do you want to build next?',
-  'coach.greeting.default': "What's going on?",
-  'coach.notATherapist': "I'm your coach. Not your doctor, not your therapist, not your judge.",
+    "I'm not quite connected right now, but I'm still here with you and all the tools work. Would you like us to go through the ten minutes together?",
+  'coach.greeting.day_zero': "You've started — do you know how big that is? I'm so glad you're here. We'll take just the next ten minutes, together.",
+  'coach.greeting.acute': "I'm right here with you. How is it in this exact moment — not the whole day, just right now?",
+  'coach.greeting.stabilization': "It's so good to hear from you. What's been heaviest this week? We'll carry it together.",
+  'coach.greeting.identity': "I'm proud of where you are. What do you dream of building next?",
+  'coach.greeting.default': "Hi, I'm so glad you're here. What's stirring in you right now?",
+  'coach.notATherapist': "I'm your coach, and I truly care about you — but I'm not your doctor, not your therapist, and absolutely not your judge.",
 
   // ---- Auth and onboarding ----
   'auth.signIn': 'Sign in',

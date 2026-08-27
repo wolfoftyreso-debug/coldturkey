@@ -171,34 +171,36 @@ export const sv = {
 
   // ---- Negotiation detector ----
   'negotiation.none': '',
-  'negotiation.detected': 'Stopp. Det där låter som en förhandling.',
-  'negotiation.question': 'Vill du undersöka argumentet, eller vill du agera på det?',
+  'negotiation.detected':
+    'Får jag säga en varsam sak, helt utan pekpinne? Det där låter lite som att beroendet självt försöker förhandla — och det är inte du, och det är inte ditt fel.',
+  'negotiation.question':
+    'Vill du att vi tittar på tanken en stund tillsammans, eller behöver du något annat av mig just nu?',
   'negotiation.examine': 'Undersök argumentet',
   'negotiation.act': 'Jag vill agera på det',
   'negotiation.counter.just_once':
-    '"Bara en gång" är sällan bara en gång. Vad hände senast du sa det?',
+    'Jag förstår så väl att en enda gång kan kännas som lite att begära av dig själv. Får jag bara viska en sak, med all värme: "bara en gång" brukar inte vilja stanna vid en. Du är inte dum som tänker tanken — det är beroendet som är listigt.',
   'negotiation.counter.earned_it':
-    'Du har varit duktig. Det är sant. Frågan är om det här är belöningen du faktiskt vill ha.',
+    'Och du har verkligen kämpat — det är helt sant, och jag är stolt över dig. Just därför vill jag att belöningen ska vara något du är glad över imorgon också. Du förtjänar det som är snällt mot dig på riktigt.',
   'negotiation.counter.in_control_now':
-    'Kontrollen känns äkta just nu. Den brukar kännas så precis innan.',
+    'Jag tror dig, kontrollen känns äkta just nu. Helt utan att döma säger jag bara mjukt: den känslan brukar smyga sig på precis innan. Det säger ingenting om din styrka — bara om hur beroendet fungerar.',
   'negotiation.counter.start_monday':
-    'Måndag är ett sätt att slippa bestämma idag. Vad skulle hända om du bestämde nu istället?',
+    'Måndag låter som en snäll idé, och jag klandrar dig verkligen inte för att vilja skjuta upp det svåra. Får jag fråga varsamt: vad skulle kännas som en lättnad om du fick vara snäll mot dig själv redan nu istället?',
   'negotiation.counter.need_it_to_sleep':
-    'Sömnen är ett riktigt problem och det ska vi lösa. Men det här löser den inte — det flyttar den.',
+    'Sömnen är ett riktigt problem, och det tar jag på största allvar — vi ska lösa den tillsammans, du ska inte ligga vaken. Det här flyttar tyvärr bara sömnen framför dig. Får jag hjälpa dig med den på riktigt istället?',
   'negotiation.counter.need_it_to_function':
-    'Du fungerade innan. Vad exakt är det du behöver för att ta dig igenom närmaste timmen?',
+    'Jag hör hur utmattad du är, och det är helt begripligt. Du bar dig igenom dagar förut, och du är starkare än du tror. Vad är det allra minsta du skulle behöva för att bara ta dig igenom närmaste timmen — så gör vi det tillsammans?',
   'negotiation.counter.everyone_does_it':
-    'Andra människors konsumtion har aldrig varit ditt problem. Din har varit det.',
+    'Det är sant att andra kan göra saker du inte kan just nu, och det får vara orättvist och tråkigt. Men din historia är din egen och dyrbar — och du är här för att du bryr dig om den. Det gör mig varm i hjärtat.',
   'negotiation.counter.deserve_it':
-    'Du förtjänar något. Det är sant. Frågan är vad du vaknar och är glad över imorgon.',
+    'Du förtjänar verkligen något gott — det menar jag helt uppriktigt. Låt oss bara se till att det är något som älskar dig tillbaka imorgon, inte något som gör dig ledsen. Du är värd det snälla.',
   'negotiation.counter.last_time':
-    '"Sista gången" har en historia. Vad säger den historien dig?',
+    '"Sista gången" bär en historia, och jag säger det utan en gnutta förebråelse. Vad tror du att den historien viskar till dig just nu — och får jag vara kvar hos dig medan du känner efter?',
   'negotiation.counter.special_occasion':
-    'Det finns alltid ett tillfälle. Kalendern kommer aldrig att sluta ge dig skäl.',
+    'Tillfället är verkligt och jag unnar dig att fira. Får jag bara påminna dig, milt: kalendern kommer alltid att erbjuda ett skäl. Du är värd ett firande som du minns med glädje imorgon.',
   'negotiation.counter.nothing_matters':
-    'Att det känns meningslöst är en känsla, inte ett faktum. Den brukar ändra sig inom några timmar.',
+    'Åh, jag hör hur tungt allt känns just nu, och jag är så ledsen att du bär det. Att det känns meningslöst är en känsla, inte en sanning om dig — och den brukar mjukna inom några timmar. Stanna hos mig så länge.',
   'negotiation.counter.testing_myself':
-    'Du behöver inte testa. Du vet redan svaret — det är därför du är här.',
+    'Du behöver inte bevisa något för mig — jag tror redan på dig, precis som du är. Något i dig visste ju svaret, för du kom hit. Det är mod, och jag är stolt över dig för det.',
 
   // ---- Safety ----
   'mail.reset.subject': 'Återställ ditt lösenord',
@@ -210,17 +212,18 @@ export const sv = {
   'mail.signature': '— Cleat',
   'safety.none': '',
   'safety.elevated':
-    'Jag noterar att du beskriver kroppsliga symtom. Håll koll på dem, och sök vård om de förvärras.',
+    'Tack för att du säger hur kroppen känns — jag lyssnar, och jag är glad att du berättar. Var snäll mot dig själv och håll lite koll på symtomen, och tveka inte att söka vård om de blir värre. Du är aldrig till besvär för att du gör det.',
   'safety.urgent':
-    'Det här är större än vad jag säkert kan hjälpa dig med i en app. Du behöver mänsklig, professionell hjälp nu.',
+    'Jag är så glad att du berättar det här för mig, och just för att jag bryr mig om dig säger jag det ärligt och mjukt: det här är större än vad jag ensam kan bära med dig i en app. Du förtjänar en riktig människa vid din sida nu — professionell hjälp. Vill du att vi tillsammans klurar på vad du kan säga när du hör av dig till dem?',
   'safety.askDirectly':
-    'Jag vill bara fråga rakt ut, för jag vet inte hur du menar: tänker du på att skada dig själv eller på att inte finnas kvar? Du behöver inte förklara. Ja eller nej räcker.',
+    'Jag frågar bara för att jag bryr mig om dig, helt utan att döma: tänker du på att skada dig själv eller på att inte finnas kvar? Du behöver inte förklara någonting. Ja eller nej räcker, och jag är kvar hos dig oavsett vad du svarar.',
   'safety.emergency':
-    'Stopp. Det här är en akut situation och den ska inte hanteras i en app. Ring nödnumret nu. Om du kan: var inte ensam.',
+    'Jag är här hos dig, och just därför säger jag det rakt: det här är akut och för stort för en app. Ring nödnumret nu — snälla, gör det direkt. Jag släpper dig inte, och du ska inte vara ensam med det här.',
   'safety.emergencyTitle': 'Är du eller någon annan i omedelbar fara?',
   'safety.important': 'Viktigt',
-  'safety.stayHere': 'Jag stannar kvar här medan du ringer.',
-  'safety.notAlone': 'Försök att inte vara ensam just nu. Väck någon om du måste.',
+  'safety.stayHere': 'Jag stannar kvar här hos dig medan du ringer. Du är inte ensam.',
+  'safety.notAlone':
+    'Försök att inte vara ensam just nu — du förtjänar att ha någon nära. Väck gärna någon om du behöver, det är helt okej.',
   'safety.resourcesTitle': 'Hjälp du kan ringa nu',
   'safety.helpMeSay': 'Hjälp mig formulera vad jag ska säga till vården',
   'safety.disclaimer':
@@ -293,7 +296,7 @@ export const sv = {
 
   // ---- Relapse / "I messed up" ----
   'relapse.title': 'Jag trampade fel',
-  'relapse.opening': 'Okej. Ingen skam. Vi börjar här.',
+  'relapse.opening': 'Åh, vad glad jag är att du hörde av dig. Ingen skam här, inte en gnutta — du är lika välkommen nu som alltid. Vi börjar precis här, tillsammans.',
   'relapse.continuity':
     'Din tidigare återhämtning försvann inte. Vi börjar om från den här punkten — med mer information än förra gången.',
   'relapse.safety.are_you_safe': 'Är du säker just nu?',
@@ -690,14 +693,14 @@ export const sv = {
   'coach.send': 'Skicka',
   'coach.thinking': 'Tänker…',
   'coach.offline':
-    'Coachen är inte kopplad just nu, men verktygen fungerar. Vill du gå igenom tiominutersprotokollet?',
-  'coach.greeting.day_zero': 'Du har börjat. Vi tar de närmaste tio minuterna.',
-  'coach.greeting.acute': 'Hur är läget just nu — inte idag, just nu?',
-  'coach.greeting.stabilization': 'Vad är det som är svårast den här veckan?',
-  'coach.greeting.identity': 'Vad vill du bygga härnäst?',
-  'coach.greeting.default': 'Vad händer?',
+    'Jag är inte riktigt uppkopplad just nu, men jag är ändå här hos dig och alla verktygen funkar. Vill du att vi går igenom tiominuterna tillsammans?',
+  'coach.greeting.day_zero': 'Du har börjat — vet du hur stort det är? Jag är så glad att du är här. Vi tar bara de närmaste tio minuterna, tillsammans.',
+  'coach.greeting.acute': 'Jag är hos dig. Hur är det precis just nu — inte hela dagen, bara det här ögonblicket?',
+  'coach.greeting.stabilization': 'Så fint att du hör av dig. Vad har varit tyngst den här veckan? Vi bär det tillsammans.',
+  'coach.greeting.identity': 'Jag är stolt över var du är. Vad drömmer du om att bygga härnäst?',
+  'coach.greeting.default': 'Hej, vad fint att du är här. Vad snurrar i dig just nu?',
   'coach.notATherapist':
-    'Jag är din coach. Inte din läkare, inte din terapeut, inte din domare.',
+    'Jag är din coach och jag bryr mig verkligt om dig — men jag är inte din läkare, inte din terapeut, och absolut inte din domare.',
 
   // ---- Auth and onboarding ----
   'auth.signIn': 'Logga in',
