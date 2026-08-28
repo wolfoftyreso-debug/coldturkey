@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
-import { closePool, withTenant } from './db/pool.js';
+import { closePool, withoutTenant, withTenant } from './db/pool.js';
 import { migrate } from './db/migrate.js';
 import { createTenant, ensureDefaultTenant } from './db/tenants.js';
 import { hashPassword } from './auth/password.js';
@@ -1687,6 +1687,33 @@ suite('Cleat API', () => {
       const rows = await withTenant('00000000-0000-0000-0000-000000000000', async (client) => {
         const result = await client.query('SELECT count(*)::int AS count FROM cravings');
         return result.rows[0].count as number;
+      });
+      expect(rows).toBe(0);
+    });
+  });
+
+  describe('row-level security fails closed, on a warm connection too', () => {
+    it('returns no rows rather than raising when there is no tenant context', async () => {
+      // PostgreSQL reverts a transaction-local custom GUC to the empty string,
+      // not to unset. So on any pooled connection that has already served one
+      // request, `current_setting('app.tenant_id', true)` is '' rather than
+      // NULL, and the original policies evaluated `''::uuid` — which raises
+      // "invalid input syntax for type uuid" instead of returning nothing.
+      //
+      // Isolation still held (it failed closed, loudly), but it failed as a
+      // 500 on a path that expected an empty result, and only after the pool
+      // warmed up. Migration 008 restores the documented behaviour.
+      // Warm a pooled connection by running one transaction with a context.
+      const probe = await createTenant(`rls-probe-${Date.now()}`, 'RLS probe');
+      await withTenant(probe.id, async (client) => {
+        await client.query('SELECT 1');
+      });
+
+      const rows = await withoutTenant(async (client) => {
+        const result = await client.query<{ count: string }>(
+          'SELECT count(*)::text AS count FROM users',
+        );
+        return Number(result.rows[0]!.count);
       });
       expect(rows).toBe(0);
     });

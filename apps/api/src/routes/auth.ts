@@ -15,7 +15,14 @@ import { loadConfig } from '../config.js';
 import { withTenant } from '../db/pool.js';
 import { createUser, findUserByEmail, findUserById, writeAudit } from '../db/repository.js';
 import { ensureDefaultTenant, findTenantBySlug, tenantSlugFromRequest } from '../db/tenants.js';
-import { badRequest, conflict, forbidden, tooManyRequests, unauthorized } from '../lib/errors.js';
+import {
+  AppError,
+  badRequest,
+  conflict,
+  forbidden,
+  tooManyRequests,
+  unauthorized,
+} from '../lib/errors.js';
 import {
   consumeToken,
   issueToken,
@@ -34,6 +41,8 @@ import {
   resetKey,
 } from '../auth/lockout.js';
 import { authenticate, currentUser } from '../plugins/auth.js';
+import { canAddSeat } from '@cleat/core';
+import { countMembers, entitlementsForTenant } from '../billing/repository.js';
 import { createHash, randomBytes } from 'node:crypto';
 import { decryptField } from '../crypto/field.js';
 import { normaliseRecoveryCode, verifyCode } from '../auth/totp.js';
@@ -99,6 +108,21 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if (!publicSignup) throw forbidden('This tenant does not allow self sign-up');
 
     const passwordHash = await hashPassword(body.password);
+
+    // Seats are enforced here or nowhere. An organisation's licence is a
+    // number of people, and the only moment that number can be exceeded is the
+    // moment a new account is created — checking it on a settings screen would
+    // be decoration. The shared consumer tenant has no ceiling, so individuals
+    // are never turned away.
+    const entitlements = await entitlementsForTenant(tenant.id);
+    const members = await withTenant(tenant.id, (client) => countMembers(client, tenant.id));
+    if (!canAddSeat(entitlements, members)) {
+      throw new AppError(
+        402,
+        'seat_limit_reached',
+        'This organisation has used every seat on its licence',
+      );
+    }
 
     const result = await withTenant(tenant.id, async (client) => {
       const existing = await findUserByEmail(client, body.email);

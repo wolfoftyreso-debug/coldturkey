@@ -65,6 +65,17 @@ const schema = z.object({
   /** Where reset and verification links point. Must be the public web origin. */
   PUBLIC_WEB_URL: z.string().default('http://localhost:3000'),
 
+  // Billing. Absent means the commercial surface is simply off: individuals
+  // never pay, so an API with no Stripe keys is a completely valid deployment
+  // and every clinical feature still works. Only the organisation checkout
+  // stops being offered.
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  /** The per-seat recurring price a clinic subscribes to. */
+  STRIPE_PRICE_CLINIC_SEAT: z.string().optional(),
+  /** Overridable so the suite can exercise real request shaping against a stub. */
+  STRIPE_API_BASE: z.string().default('https://api.stripe.com'),
+
   // Field-level encryption for the free text people write. Format:
   // `id:base64key,id2:base64key2`, 32 bytes each. Absent means values are
   // stored in the clear, which is refused in production below.

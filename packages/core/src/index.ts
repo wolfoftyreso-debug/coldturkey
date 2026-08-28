@@ -15,3 +15,4 @@ export * from './mantras.js';
 export * from './relapse.js';
 export * from './rebuild.js';
 export * from './supporter.js';
+export * from './entitlements.js';

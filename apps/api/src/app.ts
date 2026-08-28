@@ -14,7 +14,21 @@ import { publicRoutes } from './routes/public.js';
 import { openapiRoutes } from './routes/openapi.js';
 import { twoFactorRoutes } from './routes/twofactor.js';
 import { privacyRoutes } from './routes/privacy.js';
+import { billingRoutes } from './routes/billing.js';
 import { recoveryRoutes } from './routes/recovery.js';
+
+/**
+ * The raw request body, kept only for the Stripe webhook route.
+ *
+ * Stripe signs the exact bytes it sent, so signature verification has to see
+ * the body before it became an object. Declared here rather than cast at the
+ * use site, so the one route that needs it reads a typed field.
+ */
+declare module 'fastify' {
+  interface FastifyRequest {
+    rawBody?: string;
+  }
+}
 
 export async function buildApp(): Promise<FastifyInstance> {
   const config = loadConfig();
@@ -48,10 +62,17 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.addContentTypeParser(
     'application/json',
     { parseAs: 'string' },
-    (_request, payload: string, done) => {
+    (request, payload: string, done) => {
       if (payload === undefined || payload === null || payload.trim() === '') {
         done(null, undefined);
         return;
+      }
+      // Stripe signs the exact bytes it sent, so the webhook handler needs the
+      // body before it became an object. Kept only for that one route: holding
+      // a raw copy of every request body would mean recovery notes sitting in
+      // memory twice for no reason.
+      if (request.url === '/v1/billing/webhook') {
+        request.rawBody = payload;
       }
       try {
         done(null, JSON.parse(payload));
@@ -215,6 +236,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(recoveryRoutes);
   await app.register(coachRoutes);
   await app.register(privacyRoutes);
+  await app.register(billingRoutes);
 
   return app;
 }
