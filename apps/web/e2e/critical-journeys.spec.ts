@@ -151,8 +151,13 @@ test.describe('first run', () => {
     await page.goto('/craving');
     // Works with no plan and no history — the state a person is most likely to
     // be in the first time they need it.
-    const body = (await page.textContent('body')) ?? '';
-    expect(body).toMatch(/omedelbar fara|immediate danger/i);
+    //
+    // Asserted web-first rather than by reading the body once. This screen is
+    // a client component, so a single `textContent` after `goto` races
+    // hydration — and it failed that race twice on this machine. A flaky test
+    // on the safety path is worse than no test: it is the one people learn to
+    // re-run instead of read.
+    await expect(page.getByText(/omedelbar fara|immediate danger/i).first()).toBeVisible();
     expectNoConsoleErrors(errors);
   });
 

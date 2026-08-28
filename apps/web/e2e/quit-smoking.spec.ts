@@ -45,8 +45,9 @@ test.describe('somebody quitting smoking', () => {
     // Locale-agnostic on the thousands separator: sv-SE uses a non-breaking
     // space, en-GB a comma, and which the browser negotiates is not what this
     // test is about.
-    const body = await page.locator('main').innerText();
-    expect(body).toMatch(/27[\s,.\u00a0\u202f]?375/);
+    // Web-first, for the same reason the craving assertion is: the figure
+    // arrives with the dashboard fetch, not with the document.
+    await expect(page.locator('main')).toContainText(/27[\s,.\u00a0\u202f]?375/);
   });
 
   test('is not warned about medical detox, the way somebody quitting drinking is', async ({
