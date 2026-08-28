@@ -31,6 +31,7 @@ import {
 } from '@cleat/core';
 import { localizeInsightParams, translate, type Locale } from '@cleat/i18n';
 import { withTenant } from '../db/pool.js';
+import { metrics } from '../observability/metrics.js';
 import {
   createCraving,
   createQuit,
@@ -153,6 +154,8 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
       .parse(request.body);
 
     const profile = substanceProfile(body.substance);
+    // First real value in the funnel: somebody actually made a plan.
+    metrics.quitPlansCreated += 1;
 
     const quit = await withTenant(user.tenant_id, async (client) => {
       const created = await createQuit(client, {

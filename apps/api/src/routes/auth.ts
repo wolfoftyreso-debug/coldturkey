@@ -41,6 +41,7 @@ import {
   resetKey,
 } from '../auth/lockout.js';
 import { authenticate, currentUser } from '../plugins/auth.js';
+import { metrics } from '../observability/metrics.js';
 import { canAddSeat } from '@cleat/core';
 import { countMembers, entitlementsForTenant } from '../billing/repository.js';
 import { createHash, randomBytes } from 'node:crypto';
@@ -117,6 +118,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const entitlements = await entitlementsForTenant(tenant.id);
     const members = await withTenant(tenant.id, (client) => countMembers(client, tenant.id));
     if (!canAddSeat(entitlements, members)) {
+      metrics.seatLimitRejections += 1;
       throw new AppError(
         402,
         'seat_limit_reached',
@@ -183,6 +185,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       ver: result.user.token_version,
     });
 
+    metrics.signupsCompleted += 1;
     return reply.code(201).send({
       accessToken,
       refreshToken: result.refreshToken,

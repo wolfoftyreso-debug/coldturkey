@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { entitlementsFor, isTenantPlan, type TenantPlan } from '@cleat/core';
 import { loadConfig } from '../config.js';
+import { metrics } from '../observability/metrics.js';
 import { withoutTenant, withTenant } from '../db/pool.js';
 import { writeAudit } from '../db/repository.js';
 import { badRequest, forbidden } from '../lib/errors.js';
@@ -53,6 +54,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     } catch (error) {
       // Logged, because a stream of these means either a misconfigured secret
       // or somebody trying to grant themselves a plan.
+      metrics.webhookRejections += 1;
       request.log.warn(
         { err: error instanceof Error ? error.message : 'unknown' },
         'stripe webhook rejected',
@@ -82,7 +84,10 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
         tenantId,
         outcome: event.type,
       });
-      if (!fresh) return 'duplicate';
+      if (!fresh) {
+        metrics.webhookDuplicates += 1;
+        return 'duplicate';
+      }
 
       switch (event.type) {
         case 'checkout.session.completed': {
@@ -115,6 +120,8 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
             action: 'billing.subscription_synced',
             meta: { status, plan, event: event.type },
           });
+          if (plan === 'clinic') metrics.subscriptionsActivated += 1;
+          if (plan === 'suspended') metrics.subscriptionsSuspended += 1;
           return `plan_${plan}`;
         }
 
@@ -228,6 +235,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
               meta: { seats: body.seats },
             }),
           );
+          metrics.checkoutsStarted += 1;
           return { url: session.url };
         } catch (error) {
           if (error instanceof StripeError) {

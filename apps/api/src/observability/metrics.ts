@@ -61,6 +61,28 @@ export const metrics = {
   mailFailed: 0,
   loginFailures: 0,
   loginLockouts: 0,
+
+  // --- The commercial funnel -------------------------------------------------
+  // Aggregate counts only, and that is a deliberate answer to "add analytics".
+  // The usual instrumentation for a funnel is a third-party SDK that ships a
+  // per-user event stream to another company; on a product whose events are
+  // "started a quit plan" and "logged a relapse", that stream is a list of
+  // named people with an addiction, held by a vendor nobody chose for that.
+  // These counters answer the questions a funnel is for — are people finishing
+  // registration, is checkout converting, are webhooks being rejected — without
+  // any of them being about a person.
+  signupsCompleted: 0,
+  /** First real value: a person actually made a quit plan. */
+  quitPlansCreated: 0,
+  checkoutsStarted: 0,
+  subscriptionsActivated: 0,
+  subscriptionsSuspended: 0,
+  /** Registrations refused because an organisation's licence was full. */
+  seatLimitRejections: 0,
+  /** Webhook bodies that failed signature verification. Should be ~0. */
+  webhookRejections: 0,
+  /** Stripe redeliveries the idempotency claim absorbed. */
+  webhookDuplicates: 0,
 };
 
 export function recordRequest(
@@ -103,6 +125,15 @@ export function render(): string {
 
   counter('cleat_requests_total', 'Total HTTP requests handled.', metrics.requests);
   counter('cleat_errors_total', 'Total HTTP responses with status >= 500.', metrics.errors);
+
+  counter('cleat_signups_completed_total', 'Accounts created.', metrics.signupsCompleted);
+  counter('cleat_quit_plans_created_total', 'Quit plans created — first real value.', metrics.quitPlansCreated);
+  counter('cleat_checkouts_started_total', 'Organisation checkouts started.', metrics.checkoutsStarted);
+  counter('cleat_subscriptions_activated_total', 'Subscriptions that reached a paying state.', metrics.subscriptionsActivated);
+  counter('cleat_subscriptions_suspended_total', 'Subscriptions that lapsed.', metrics.subscriptionsSuspended);
+  counter('cleat_seat_limit_rejections_total', 'Registrations refused for a full licence.', metrics.seatLimitRejections);
+  counter('cleat_webhook_rejections_total', 'Webhook bodies that failed signature verification.', metrics.webhookRejections);
+  counter('cleat_webhook_duplicates_total', 'Stripe redeliveries absorbed by the idempotency claim.', metrics.webhookDuplicates);
 
   lines.push(
     '# HELP cleat_http_requests_total HTTP requests by method, route template and status class.',
