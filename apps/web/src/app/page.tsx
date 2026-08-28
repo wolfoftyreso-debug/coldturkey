@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import type { Metadata } from 'next';
 import { translate } from '@cleat/i18n';
 import { LandingRedirect } from '../components/LandingRedirect';
 import styles from './landing.module.css';
+import { publicPage } from '../lib/seo';
 
 /**
  * The landing page.
@@ -18,11 +18,12 @@ import styles from './landing.module.css';
  * anyone has been anything. The visual brief this brand is held to is: never
  * look like a hospital, an AA meeting, or a meditation app.
  */
-export const metadata: Metadata = {
-  title: 'Cleat',
+export const metadata = publicPage({
+  title: 'Cleat — lämna beroendet, bygg tillbaka livet',
   description:
-    'En sekulär återhämtningscoach. Byggd för de tio minuter då ett återfall avgörs.',
-};
+    'Ett sekulärt verktyg vid alkohol- och drogberoende. Sugmotor, återfallsanalys och krisstöd — utan skam, utan religion och utan tolvstegskrav. Gratis för privatpersoner.',
+  path: '/',
+});
 
 const sv = (key: string) => translate('sv', key);
 
@@ -131,6 +132,19 @@ export default function LandingPage() {
           </p>
         </article>
       </section>
+
+      {/* Internal linking: every indexable page is reachable from the entry
+          point in one hop, which is what a crawler needs and what a person
+          arriving from a search result needs just as much. */}
+      <nav className={styles.footer} aria-label="Mer från Cleat">
+        <p>
+          <Link href="/kris" style={{ color: 'var(--accent-strong)' }}>Akuta nummer</Link>{' · '}
+          <Link href="/nara" style={{ color: 'var(--accent-strong)' }}>För anhöriga</Link>{' · '}
+          <Link href="/medberoende" style={{ color: 'var(--accent-strong)' }}>Medberoende</Link>{' · '}
+          <Link href="/abstinens" style={{ color: 'var(--accent-strong)' }}>Abstinens</Link>{' · '}
+          <Link href="/organisation" style={{ color: 'var(--accent-strong)' }}>För verksamheter</Link>
+        </p>
+      </nav>
 
       <footer className={styles.footer}>
         <p>

@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import type { Metadata } from 'next';
 import {
   BOUNDARY_SITUATIONS,
   emergencyResources,
@@ -8,6 +7,7 @@ import {
   SUPPORTER_TOPICS,
 } from '@cleat/core';
 import { translate } from '@cleat/i18n';
+import { publicPage } from '../../lib/seo';
 import styles from '../landing.module.css';
 import { SupporterCheck } from '../../components/SupporterCheck';
 
@@ -32,11 +32,12 @@ const COUNTRY = 'SE';
 
 const t = (key: string) => translate(LOCALE, key);
 
-export const metadata: Metadata = {
-  title: 'För dig som står bredvid — Cleat',
+export const metadata = publicPage({
+  title: 'Anhörig till någon som dricker eller använder',
   description:
-    'För anhöriga till någon som använder. Vad som faktiskt händer, vad som hjälper, och var du själv tog vägen. Inget konto krävs.',
-};
+    'För dig som är partner, förälder, barn eller vän till någon med ett beroende. Vad som faktiskt händer, vad som hjälper, gränser du kan säga högt — och var du själv tog vägen.',
+  path: '/nara',
+});
 
 export default function SupporterPage() {
   const emergency = emergencyResources(COUNTRY, 'emergency');
@@ -169,6 +170,18 @@ export default function SupporterPage() {
         <p className={styles.crisisBody}>{t('near.talkNoAdviceOnLeaving')}</p>
         <Link href="/login" className={styles.crisisLink}>
           {t('near.talkSignIn')}
+        </Link>
+      </section>
+
+      <section className={styles.crisis}>
+        <h2 className={styles.crisisTitle}>Sökte du på &quot;medberoende&quot;?</h2>
+        <p className={styles.crisisBody}>
+          Ordet används på tjugo olika sätt och är ingen diagnos. Vi har skrivit ut vad det
+          betyder, vad forskningen faktiskt säger, och varför vi inte sätter det som etikett
+          på dig.
+        </p>
+        <Link href="/medberoende" className={styles.crisisLink}>
+          Vad medberoende betyder →
         </Link>
       </section>
 

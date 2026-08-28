@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import type { Metadata } from 'next';
 import { emergencyResources } from '@cleat/core';
 import { translate } from '@cleat/i18n';
+import { publicPage } from '../../lib/seo';
 import styles from '../landing.module.css';
 
 /**
@@ -28,10 +28,12 @@ const LOCALE = 'sv';
 
 const t = (key: string) => translate(LOCALE, key);
 
-export const metadata: Metadata = {
-  title: 'Akut hjälp — Cleat',
-  description: 'Nummer att ringa nu. Inget konto krävs.',
-};
+export const metadata = publicPage({
+  title: 'Akut hjälp — nummer att ringa nu',
+  description:
+    'Svenska krisnummer vid överdos, självmordstankar, abstinens och oro för någon annan. Inget konto, ingen inloggning, sidan fungerar utan JavaScript.',
+  path: '/kris',
+});
 
 export default function CrisisPage() {
   const resources = emergencyResources(COUNTRY, 'emergency');

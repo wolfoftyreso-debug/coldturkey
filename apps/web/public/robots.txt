@@ -1,5 +1,0 @@
-# Nothing in this application should ever appear in a search index. Someone's
-# recovery is not public information, and a URL that leaks in a referrer header
-# is one of the ways that goes wrong.
-User-agent: *
-Disallow: /
