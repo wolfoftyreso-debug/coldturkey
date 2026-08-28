@@ -143,6 +143,33 @@ somebody turns one on.
 
 ---
 
+## Organisation enquiries
+
+Individuals never pay, so a clinic getting in touch is the only conversion
+event this product has. `POST /v1/contact/organisation` stores the enquiry
+*before* it tries to email anybody, because mail is the part most likely to
+fail and an enquiry that only ever existed as an email is a customer who wrote
+to you and got silence.
+
+The free text is encrypted at rest with the same key ring as the clinical free
+text, which means `psql` alone cannot read it. Use the command:
+
+```bash
+pnpm --filter @cleat/api enquiries                  # everything unanswered
+pnpm --filter @cleat/api enquiries -- --all         # including handled and spam
+pnpm --filter @cleat/api enquiries -- --contacted <id>
+```
+
+Rows marked `[NOT ANNOUNCED]` were stored while mail was failing — nobody was
+told they exist. The command counts them at the end for exactly that reason,
+and `cleat_org_enquiries_unnotified_total` is the metric to alert on. It
+should never move.
+
+Set `CONTACT_NOTIFY_EMAIL` to where enquiries should be announced; it falls
+back to `MAIL_FROM`.
+
+---
+
 ## Backups
 
 CloudNativePG writes continuously to MinIO:

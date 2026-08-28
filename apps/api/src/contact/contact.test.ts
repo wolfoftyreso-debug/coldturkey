@@ -8,6 +8,7 @@ import { decryptField, isEncrypted } from '../crypto/field.js';
 import { setMailer, type Mail, type Mailer } from '../mail/smtp.js';
 import { metrics } from '../observability/metrics.js';
 import { resetConfig } from '../config.js';
+import { listEnquiries, markContacted } from './cli.js';
 
 /**
  * The organisation enquiry endpoint.
@@ -307,5 +308,93 @@ suite('organisation enquiries', () => {
     });
     expect(response.statusCode).toBe(202);
     expect((await rows(email))[0]!.message).toBeNull();
+  });
+});
+
+/**
+ * The operator's side of the same feature.
+ *
+ * The message is encrypted at rest, so `psql` alone cannot read it. Without
+ * this command an operator recovering from a mail outage can see that four
+ * clinics wrote in and not a word of what any of them said.
+ */
+suite('the operator can read and triage what came in', () => {
+  beforeAll(async () => {
+    await migrate();
+  });
+
+  afterAll(async () => {
+    await closePool();
+  });
+
+  it('lists only what is still waiting, until asked for everything', async () => {
+    setMailer(new CapturingMailer());
+    const app = await buildApp();
+    await app.ready();
+    const email = `triage+${Date.now()}@klinik.example`;
+    try {
+      await app.inject({
+        method: 'POST',
+        url: '/v1/contact/organisation',
+        payload: {
+          organisation: 'Triagemottagningen',
+          contactName: 'Eva Ek',
+          contactEmail: email,
+          message: 'Vi vill veta mer.',
+        },
+      });
+    } finally {
+      await app.close();
+    }
+
+    const waiting = await listEnquiries(false);
+    const mine = waiting.find((row) => row.contact_email === email);
+    expect(mine, 'a new enquiry shows up as waiting').toBeDefined();
+
+    // And the message comes back readable, which is the entire reason this
+    // command exists.
+    expect(
+      decryptField(mine!.message, {
+        tenantId: 'no-tenant',
+        table: 'org_enquiries',
+        column: 'message',
+        ownerId: mine!.id,
+      }),
+    ).toBe('Vi vill veta mer.');
+
+    expect(await markContacted(mine!.id)).toBe(true);
+    const stillWaiting = await listEnquiries(false);
+    expect(stillWaiting.some((row) => row.id === mine!.id)).toBe(false);
+    const everything = await listEnquiries(true);
+    expect(everything.find((row) => row.id === mine!.id)?.status).toBe('contacted');
+  });
+
+  it('will not quietly mark a spam row as handled', async () => {
+    setMailer(new CapturingMailer());
+    const app = await buildApp();
+    await app.ready();
+    const email = `spamtriage+${Date.now()}@spam.example`;
+    try {
+      await app.inject({
+        method: 'POST',
+        url: '/v1/contact/organisation',
+        payload: {
+          organisation: 'Bots R Us',
+          contactName: 'Bot Botsson',
+          contactEmail: email,
+          website: 'http://spam.example',
+        },
+      });
+    } finally {
+      await app.close();
+    }
+    const row = (await listEnquiries(true)).find((r) => r.contact_email === email);
+    expect(row?.status).toBe('spam');
+    // Nothing to contact. Saying so beats silently reporting success.
+    expect(await markContacted(row!.id)).toBe(false);
+  });
+
+  it('reports nothing found for an id that does not exist', async () => {
+    expect(await markContacted('00000000-0000-0000-0000-000000000000')).toBe(false);
   });
 });

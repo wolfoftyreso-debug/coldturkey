@@ -2,7 +2,7 @@
   "name": "@cleat/api",
   "version": "1.0.0",
   "private": true,
-  "description": "Cleat API — multi-tenant Fastify server backed by PostgreSQL row-level security.",
+  "description": "Cleat API \u2014 multi-tenant Fastify server backed by PostgreSQL row-level security.",
   "type": "module",
   "main": "./dist/server.js",
   "files": [
@@ -19,7 +19,8 @@
     "seed": "tsx src/db/seed.ts",
     "test": "vitest run",
     "smoke": "tsx src/smoke.ts",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "enquiries": "tsx src/contact/cli.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
