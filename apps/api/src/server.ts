@@ -4,6 +4,7 @@ import { closePool } from './db/pool.js';
 import { migrate } from './db/migrate.js';
 import { ensureDefaultTenant } from './db/tenants.js';
 import { assertKeyRingUsable } from './crypto/field.js';
+import { mailer } from './mail/smtp.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -46,7 +47,16 @@ async function main(): Promise<void> {
 
   await app.listen({ port: config.PORT, host: config.HOST });
   app.log.info(
-    { port: config.PORT, coach: config.ANTHROPIC_API_KEY ? 'model' : 'local' },
+    {
+      port: config.PORT,
+      coach: config.ANTHROPIC_API_KEY ? 'model' : 'local',
+      // Which transport actually got selected, on the first line of the log.
+      // `mail: "log"` on a server that real people are using means every
+      // password reset is being written to a log file and delivered nowhere.
+      // Configuration refuses to let that happen in production, but staging
+      // is where somebody notices it in time.
+      mail: mailer().kind,
+    },
     'Cleat API ready',
   );
 }

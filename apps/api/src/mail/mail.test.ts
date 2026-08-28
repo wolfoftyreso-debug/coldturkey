@@ -261,3 +261,50 @@ describe('transport selection', () => {
     expect(loadConfig().RESEND_API_KEY).toBe('re_key');
   });
 });
+
+/**
+ * Configuration that is wrong in a way nobody notices until somebody is
+ * locked out.
+ *
+ * Both of these used to be plain strings. A `MAIL_FROM` with a typo and a
+ * `PUBLIC_WEB_URL` with the scheme left off both let the process boot, pass
+ * every health probe, and serve the whole product correctly — right up until
+ * a person who cannot sign in asks for a reset. Then the relay refuses the
+ * envelope, or the mail arrives with a link no client will make clickable,
+ * and the one user who cannot report the bug is the one who hit it.
+ */
+describe('mail configuration is checked at boot, not at reset time', () => {
+  const saved = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...saved };
+    resetConfig();
+  });
+
+  function load(env: Record<string, string>): () => unknown {
+    process.env.DATABASE_URL = 'postgres://unused/unused';
+    process.env.JWT_SECRET = 'a-secret-long-enough-for-hs256-signing-in-tests';
+    Object.assign(process.env, env);
+    resetConfig();
+    return () => loadConfig();
+  }
+
+  it('rejects a MAIL_FROM that is not an address', () => {
+    expect(load({ MAIL_FROM: 'Cleat' })).toThrow(/MAIL_FROM must be an email address/);
+  });
+
+  it('rejects a PUBLIC_WEB_URL with no scheme', () => {
+    expect(load({ PUBLIC_WEB_URL: 'app.cleat.se' })).toThrow(
+      /PUBLIC_WEB_URL must be an absolute URL/,
+    );
+  });
+
+  it('accepts the values a real deployment would use', () => {
+    const config = load({
+      MAIL_FROM: 'no-reply@cleat.se',
+      PUBLIC_WEB_URL: 'https://app.cleat.se',
+    })() as { MAIL_FROM: string; PUBLIC_WEB_URL: string };
+    expect(config.MAIL_FROM).toBe('no-reply@cleat.se');
+    expect(config.PUBLIC_WEB_URL).toBe('https://app.cleat.se');
+  });
+});

@@ -60,17 +60,31 @@ const schema = z.object({
     .string()
     .default('true')
     .transform((v) => v !== 'false'),
-  MAIL_FROM: z.string().default('no-reply@cleat.app'),
+  // Validated as an address, not just a string. An unparseable MAIL_FROM does
+  // not fail at boot on its own — it fails the first time somebody who is
+  // locked out of their account asks for a reset, which is the worst place in
+  // this product to discover a typo.
+  MAIL_FROM: z.string().email('MAIL_FROM must be an email address').default('no-reply@cleat.app'),
 
   // The other transport. A key here takes precedence over SMTP_HOST, because
   // most container platforms block outbound port 587 outright and a reset mail
   // that never leaves the network is the failure this product cannot have.
   RESEND_API_KEY: z.string().optional(),
   /** Overridable so the suite can exercise real request shaping against a stub. */
-  RESEND_API_BASE: z.string().default('https://api.resend.com'),
+  RESEND_API_BASE: z.string().url().default('https://api.resend.com'),
 
-  /** Where reset and verification links point. Must be the public web origin. */
-  PUBLIC_WEB_URL: z.string().default('http://localhost:3000'),
+  /**
+   * Where reset and verification links point. Must be the public web origin.
+   *
+   * Validated as a URL for the same reason as MAIL_FROM: a value with the
+   * scheme left off ("app.cleat.se") produces links that no mail client will
+   * make clickable, and the only person who finds out is someone who cannot
+   * sign in.
+   */
+  PUBLIC_WEB_URL: z
+    .string()
+    .url('PUBLIC_WEB_URL must be an absolute URL including the scheme')
+    .default('http://localhost:3000'),
 
   // Billing. Absent means the commercial surface is simply off: individuals
   // never pay, so an API with no Stripe keys is a completely valid deployment
@@ -81,7 +95,7 @@ const schema = z.object({
   /** The per-seat recurring price a clinic subscribes to. */
   STRIPE_PRICE_CLINIC_SEAT: z.string().optional(),
   /** Overridable so the suite can exercise real request shaping against a stub. */
-  STRIPE_API_BASE: z.string().default('https://api.stripe.com'),
+  STRIPE_API_BASE: z.string().url().default('https://api.stripe.com'),
 
   // Field-level encryption for the free text people write. Format:
   // `id:base64key,id2:base64key2`, 32 bytes each. Absent means values are
@@ -92,7 +106,7 @@ const schema = z.object({
 
   // Observability. Without a URL, reports go to the log — correct for a
   // deployment that has not decided where to send them, and never silent.
-  ERROR_REPORTING_URL: z.string().optional(),
+  ERROR_REPORTING_URL: z.string().url().optional(),
   /** Stamped on every error report so a regression can be tied to a deploy. */
   RELEASE: z.string().default('dev'),
 });
