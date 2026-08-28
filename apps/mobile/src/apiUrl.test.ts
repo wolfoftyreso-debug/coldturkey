@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveApiUrl } from './apiUrl.js';
 
@@ -58,5 +60,51 @@ describe('resolveApiUrl', () => {
     expect(() => resolveApiUrl({ apiUrl: 'api.cleat.se', profile: 'production' })).toThrow(
       /is not a URL/,
     );
+  });
+});
+
+/**
+ * The screen that was missing.
+ *
+ * Mobile could edit a why statement and nothing else: no way to create a quit
+ * plan, which meant no streak, no milestones and no reclaimed time. The whole
+ * product, waiting on a screen that did not exist — and mobile is where
+ * somebody who found us by searching "sluta röka" on a phone would live.
+ *
+ * Read as text rather than rendered, because rendering React Native in a Node
+ * test runner buys a large dependency and proves less than the bundle step
+ * that already runs in CI.
+ */
+describe('the mobile plan screen can start a plan', () => {
+  const screen = readFileSync(join(import.meta.dirname, '../app/plan.tsx'), 'utf8');
+
+  it('posts a quit plan', () => {
+    expect(screen).toContain("'/v1/quit'");
+    expect(screen).toContain('baselineUnitsPerDay');
+    expect(screen).toContain('unitCostMinor');
+  });
+
+  it('offers the form only while there is no plan yet', () => {
+    // Otherwise somebody with three months behind them meets a form asking
+    // what they used to drink.
+    expect(screen).toContain('data?.quit ? null : (');
+  });
+
+  it('prices by the pack where the substance says so, without naming nicotine', () => {
+    expect(screen).toContain('substanceProfile(option).costBasis.unitsPerPurchase');
+    expect(screen).toContain("t('onboarding.purchaseCost', { purchase: purchaseLabel })");
+    expect(screen).not.toContain("substance === 'nicotine'");
+  });
+
+  it('shows the detox warning the API returns rather than deciding for itself', () => {
+    // For alcohol and benzodiazepines this is the difference between a hard
+    // week and a seizure. The client must not be the thing that judges it.
+    expect(screen).toContain('response.detoxWarning.required');
+    expect(screen).toContain('styles.cardWarning');
+  });
+
+  it('computes the per-unit price in minor units, so nothing rounds oddly', () => {
+    expect(screen).toContain('Math.round((Number(purchaseCost) * 100 || 0) / size)');
+    expect(screen).toContain('Math.max(1, Number(purchaseSize) || 1)');
   });
 });

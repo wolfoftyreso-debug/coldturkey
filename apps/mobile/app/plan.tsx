@@ -1,8 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { substanceProfile, type SubstanceKind } from '@cleat/core';
 import { api, type Dashboard } from '../src/api';
 import { useSession } from '../src/session';
 import { colors, styles } from '../src/theme';
+
+/**
+ * The order matters: what most people are here for first, and the two that
+ * carry a medical-detox warning last, so nobody taps one by accident while
+ * scrolling.
+ */
+const SUBSTANCES: SubstanceKind[] = [
+  'alcohol',
+  'nicotine',
+  'cannabis',
+  'gambling',
+  'stimulants',
+  'opioids',
+  'benzodiazepines',
+  'sedatives',
+  'polysubstance',
+  'other_behaviour',
+];
 
 /**
  * My recovery — the person's own plan.
@@ -16,6 +35,12 @@ export default function PlanScreen() {
   const [why, setWhy] = useState('');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [substance, setSubstance] = useState<SubstanceKind>('alcohol');
+  const [unitsPerDay, setUnitsPerDay] = useState('6');
+  /** The price of what people actually buy — a pack, not a cigarette. */
+  const [purchaseCost, setPurchaseCost] = useState('30');
+  const [purchaseSize, setPurchaseSize] = useState('1');
+  const [detoxMessage, setDetoxMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -31,6 +56,28 @@ export default function PlanScreen() {
     void load();
   }, [load]);
 
+  async function createPlan() {
+    setBusy(true);
+    try {
+      const size = Math.max(1, Number(purchaseSize) || 1);
+      const response = await api.post<{
+        detoxWarning: { required: boolean; message?: string };
+      }>('/v1/quit', {
+        substance,
+        baselineUnitsPerDay: Number(unitsPerDay) || 0,
+        // Minor units all the way, so nothing rounds oddly.
+        unitCostMinor: Math.round((Number(purchaseCost) * 100 || 0) / size),
+        currency: 'SEK',
+      });
+      setDetoxMessage(
+        response.detoxWarning.required ? response.detoxWarning.message ?? null : null,
+      );
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function save() {
     setBusy(true);
     try {
@@ -41,6 +88,10 @@ export default function PlanScreen() {
       setBusy(false);
     }
   }
+
+  const basis = substanceProfile(substance).costBasis;
+  const byThePack = basis.unitsPerPurchase > 1;
+  const purchaseLabel = t(basis.purchaseKey);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -57,6 +108,92 @@ export default function PlanScreen() {
               </View>
             ))}
           </View>
+        </View>
+      ) : null}
+
+      {/*
+        Creating the plan was missing here entirely: mobile could edit a why
+        statement and nothing else, so a person who installed the app and never
+        opened the website had no streak, no milestones and no reclaimed time —
+        the whole product, waiting on a screen that did not exist.
+      */}
+      {data?.quit ? null : (
+        <>
+          <Text style={styles.h2}>{t('onboarding.pickSubstance').toUpperCase()}</Text>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              {SUBSTANCES.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  onPress={() => {
+                    setSubstance(option);
+                    setPurchaseSize(String(substanceProfile(option).costBasis.unitsPerPurchase));
+                  }}
+                  style={[styles.chip, option === substance ? styles.chipSelected : null]}
+                >
+                  <Text style={styles.chipText}>{t(`substance.${option}`)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.muted, { marginTop: 14 }]}>
+              {t('onboarding.unitsPerDay', { unit: t(substanceProfile(substance).unitKey) })}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={unitsPerDay}
+              onChangeText={setUnitsPerDay}
+              keyboardType="number-pad"
+              placeholderTextColor={colors.textFaint}
+            />
+
+            <Text style={[styles.muted, { marginTop: 12 }]}>
+              {byThePack
+                ? t('onboarding.purchaseCost', { purchase: purchaseLabel })
+                : t('onboarding.cost', { unit: t(substanceProfile(substance).unitKey) })}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={purchaseCost}
+              onChangeText={setPurchaseCost}
+              keyboardType="decimal-pad"
+              placeholderTextColor={colors.textFaint}
+            />
+
+            {byThePack ? (
+              <>
+                <Text style={[styles.muted, { marginTop: 12 }]}>
+                  {t('onboarding.purchaseSize', { purchase: purchaseLabel })}
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={purchaseSize}
+                  onChangeText={setPurchaseSize}
+                  keyboardType="number-pad"
+                  placeholderTextColor={colors.textFaint}
+                />
+              </>
+            ) : null}
+
+            <TouchableOpacity
+              style={[styles.button, styles.buttonPrimary]}
+              onPress={() => void createPlan()}
+              disabled={busy}
+            >
+              <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
+                {t('onboarding.done')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+      {/* Never softened and never dismissed by a tap elsewhere: for alcohol and
+          benzodiazepines this is the difference between a hard week and a
+          seizure. */}
+      {detoxMessage ? (
+        <View style={[styles.card, styles.cardWarning]}>
+          <Text style={styles.body}>{detoxMessage}</Text>
         </View>
       ) : null}
 
