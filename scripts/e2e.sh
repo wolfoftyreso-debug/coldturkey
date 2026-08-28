@@ -30,6 +30,10 @@ export E2E_SMTP_PORT="${E2E_SMTP_PORT:-2525}"
 export E2E_MAIL_FILE="${E2E_MAIL_FILE:-/tmp/cleat-e2e-mail.jsonl}"
 export SMTP_HOST=127.0.0.1
 export SMTP_PORT="$E2E_SMTP_PORT"
+# An API key takes precedence over a relay host, so one left in a developer's
+# shell would send this suite's password resets to real inboxes over the real
+# internet. The suite picks its own transport.
+unset RESEND_API_KEY
 export MAIL_FROM="${MAIL_FROM:-cleat@cleat.test}"
 # The links in those mails have to point at the origin the browser is on, or the
 # reset page opens on a host that is not running.
