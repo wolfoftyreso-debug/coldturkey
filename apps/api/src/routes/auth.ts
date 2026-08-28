@@ -70,6 +70,13 @@ const sha256 = (value: string): string => createHash('sha256').update(value).dig
 const sha256Recovery = (value: string): string =>
   createHash('sha256').update(normaliseRecoveryCode(value)).digest('hex');
 
+/**
+ * Second key of the advisory lock that serialises seat checks, so this lock
+ * can never collide with an advisory lock taken somewhere else for another
+ * reason. Arbitrary, but fixed.
+ */
+const SEAT_LOCK_NAMESPACE = 8_25_14;
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   const config = loadConfig();
 
@@ -115,18 +122,44 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     // moment a new account is created — checking it on a settings screen would
     // be decoration. The shared consumer tenant has no ceiling, so individuals
     // are never turned away.
+    //
+    // The plan and the purchased quantity are read outside the transaction
+    // because they cannot change underneath us in a way that matters here; the
+    // *count* is read inside it, under a lock, and that distinction is the
+    // whole of the fix below.
     const entitlements = await entitlementsForTenant(tenant.id);
-    const members = await withTenant(tenant.id, (client) => countMembers(client, tenant.id));
-    if (!canAddSeat(entitlements, members)) {
-      metrics.seatLimitRejections += 1;
-      throw new AppError(
-        402,
-        'seat_limit_reached',
-        'This organisation has used every seat on its licence',
-      );
-    }
 
     const result = await withTenant(tenant.id, async (client) => {
+      // Counting in one transaction and inserting in another let two people
+      // registering in the same second both see the last seat free and both
+      // take it. Measured, not theorised: eight simultaneous registrations
+      // against a licence with one seat left produced two accounts.
+      //
+      // Registration is exactly the operation that arrives in bursts — a
+      // clinic onboarding its staff sits down and does all of them at once —
+      // and the consequence is an organisation quietly running a thirty-person
+      // unit on a twenty-five seat licence, discovered as a billing dispute.
+      //
+      // The lock is per tenant and held only to the end of this transaction,
+      // so registrations into different organisations never wait on each
+      // other, and the free consumer tenant — which has no ceiling — does not
+      // take it at all.
+      if (entitlements.seats !== null) {
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [
+          tenant.id,
+          SEAT_LOCK_NAMESPACE,
+        ]);
+        const members = await countMembers(client, tenant.id);
+        if (!canAddSeat(entitlements, members)) {
+          metrics.seatLimitRejections += 1;
+          throw new AppError(
+            402,
+            'seat_limit_reached',
+            'This organisation has used every seat on its licence',
+          );
+        }
+      }
+
       const existing = await findUserByEmail(client, body.email);
       if (existing) throw conflict('email_taken', 'An account with that email already exists');
 
