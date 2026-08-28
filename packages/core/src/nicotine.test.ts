@@ -88,3 +88,36 @@ describe('the nicotine milestones', () => {
     expect(substanceProfile('alcohol').medicalDetoxAdvised).toBe(true);
   });
 });
+
+describe('what the app asks a smoker to type', () => {
+  it('prices cigarettes by the pack, not one at a time', () => {
+    // Nobody knows what one cigarette costs. Asking for it gets a wrong number
+    // or an abandoned form, and the money figure is one of the few things that
+    // keeps somebody opening the app in week three.
+    expect(nicotine.costBasis.unitsPerPurchase).toBe(20);
+    expect(nicotine.costBasis.purchaseKey).toBe('purchase.pack');
+  });
+
+  it('leaves every other substance priced per unit', () => {
+    // A bottle of wine is not a unit of alcohol and a pack is not a dose. Only
+    // cigarettes have a purchase size that everybody already knows.
+    for (const profile of Object.values(SUBSTANCE_PROFILES)) {
+      if (profile.kind === 'nicotine') continue;
+      expect(profile.costBasis.unitsPerPurchase, profile.kind).toBe(1);
+      expect(profile.costBasis.purchaseKey, profile.kind).toBe(profile.unitKey);
+    }
+  });
+
+  it('turns a Swedish pack price into a sane per-cigarette cost', () => {
+    // 20 a day, 75 kr a pack: the arithmetic the form does before it posts.
+    const perUnitMinor = Math.round((75 * 100) / nicotine.costBasis.unitsPerPurchase);
+    expect(perUnitMinor).toBe(375);
+    // Which is what a pack a day actually costs over a year, to the krona.
+    expect(Math.round((perUnitMinor * 20 * 365) / 100)).toBe(27_375);
+  });
+
+  it('counts seven minutes a cigarette, so a pack a day is over two hours', () => {
+    expect(nicotine.defaultMinutesPerUnit).toBe(7);
+    expect(nicotine.defaultMinutesPerUnit * 20).toBeGreaterThan(120);
+  });
+});

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { substanceProfile, type SubstanceKind } from '@cleat/core';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type Dashboard } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
@@ -27,9 +28,19 @@ export default function PlanPage() {
   const [contactName, setContactName] = useState('');
   const [contactRelation, setContactRelation] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [substance, setSubstance] = useState<string>('alcohol');
+  const [substance, setSubstance] = useState<SubstanceKind>('alcohol');
   const [unitsPerDay, setUnitsPerDay] = useState(6);
-  const [unitCost, setUnitCost] = useState(30);
+  /**
+   * The price of the thing the person actually buys, not of one unit.
+   *
+   * For most substances those are the same and this is a per-unit price. For
+   * cigarettes it is the pack, because nobody knows what one costs — asking
+   * for the per-unit figure gets a wrong number or an abandoned form, and the
+   * money this gives back is one of the few things that keeps somebody opening
+   * the app in week three.
+   */
+  const [purchaseCost, setPurchaseCost] = useState(30);
+  const [purchaseSize, setPurchaseSize] = useState(1);
   const [detoxMessage, setDetoxMessage] = useState<string | null>(null);
   const { busy, error, run } = useAction(t);
 
@@ -45,6 +56,11 @@ export default function PlanPage() {
     void reload().catch(() => undefined);
   }, [user]);
 
+  const basis = substanceProfile(substance).costBasis;
+  const byThePack = basis.unitsPerPurchase > 1;
+  const unitLabel = t(substanceProfile(substance).unitKey);
+  const purchaseLabel = t(basis.purchaseKey);
+
   if (loading || !user) return <Loading />;
 
   async function saveProfile() {
@@ -58,8 +74,9 @@ export default function PlanPage() {
     }>('/v1/quit', {
       substance,
       baselineUnitsPerDay: unitsPerDay,
-      // The API stores money in minor units so nothing ever rounds oddly.
-      unitCostMinor: Math.round(unitCost * 100),
+      // The API stores money in minor units so nothing ever rounds oddly, and
+      // the division happens here in minor units for the same reason.
+      unitCostMinor: Math.round((purchaseCost * 100) / Math.max(1, purchaseSize)),
       currency: 'SEK',
     });
     setDetoxMessage(response.detoxWarning.required ? response.detoxWarning.message ?? null : null);
@@ -94,7 +111,10 @@ export default function PlanPage() {
                 key={option}
                 className="chip"
                 data-selected={substance === option}
-                onClick={() => setSubstance(option)}
+                onClick={() => {
+                  setSubstance(option);
+                  setPurchaseSize(substanceProfile(option).costBasis.unitsPerPurchase);
+                }}
               >
                 {t(`substance.${option}`)}
               </button>
@@ -103,7 +123,7 @@ export default function PlanPage() {
 
           <div className="card" style={{ marginTop: 14 }}>
             <div className="field">
-              <label htmlFor="units">{t('onboarding.unitsPerDay')}</label>
+              <label htmlFor="units">{t('onboarding.unitsPerDay', { unit: unitLabel })}</label>
               <input
                 id="units"
                 type="number"
@@ -113,15 +133,33 @@ export default function PlanPage() {
               />
             </div>
             <div className="field">
-              <label htmlFor="cost">{t('onboarding.cost').replace('{unit}', '')}</label>
+              <label htmlFor="cost">
+                {byThePack
+                  ? t('onboarding.purchaseCost', { purchase: purchaseLabel })
+                  : t('onboarding.cost', { unit: unitLabel })}
+              </label>
               <input
                 id="cost"
                 type="number"
                 min={0}
-                value={unitCost}
-                onChange={(event) => setUnitCost(Number(event.target.value))}
+                value={purchaseCost}
+                onChange={(event) => setPurchaseCost(Number(event.target.value))}
               />
             </div>
+            {byThePack ? (
+              <div className="field">
+                <label htmlFor="size">
+                  {t('onboarding.purchaseSize', { purchase: purchaseLabel })}
+                </label>
+                <input
+                  id="size"
+                  type="number"
+                  min={1}
+                  value={purchaseSize}
+                  onChange={(event) => setPurchaseSize(Math.max(1, Number(event.target.value)))}
+                />
+              </div>
+            ) : null}
             <button className="btn primary wide" onClick={run(createPlan)} disabled={busy}>
               {t('onboarding.done')}
             </button>

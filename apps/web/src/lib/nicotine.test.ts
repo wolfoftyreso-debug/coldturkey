@@ -82,3 +82,40 @@ describe('the quit-smoking page and the app tell the same story', () => {
     expect(page).toContain('vi är inte läkare');
   });
 });
+
+describe('the plan form asks for what a smoker actually knows', () => {
+  const plan = readFileSync(join(import.meta.dirname, '../app/plan/page.tsx'), 'utf8');
+
+  it('names the unit in the label instead of an empty gap', () => {
+    // The label used to be produced by `t('onboarding.cost').replace('{unit}',
+    // '')`, which rendered the literal Swedish "Ungefär vad kostade ett ?" —
+    // a broken sentence with a dangling article, on the first screen of the
+    // product, for every substance.
+    expect(plan).not.toContain("replace('{unit}', '')");
+    expect(plan).toContain("t('onboarding.unitsPerDay', { unit: unitLabel })");
+  });
+
+  it('switches to pack pricing from the substance profile, not a hardcoded check', () => {
+    expect(plan).toContain('substanceProfile(substance).costBasis');
+    expect(plan).toContain("t('onboarding.purchaseCost', { purchase: purchaseLabel })");
+    // No `substance === 'nicotine'` anywhere: the data decides.
+    expect(plan).not.toContain("substance === 'nicotine'");
+  });
+
+  it('has copy for every interpolation the form performs', () => {
+    for (const locale of ['sv', 'en'] as const) {
+      for (const key of [
+        'onboarding.unitsPerDay',
+        'onboarding.cost',
+        'onboarding.purchaseCost',
+        'onboarding.purchaseSize',
+        'purchase.pack',
+      ]) {
+        expect(translate(locale, key), `${locale} ${key}`).not.toBe(key);
+      }
+      // And the placeholders are actually filled, never left showing.
+      expect(translate(locale, 'onboarding.purchaseCost', { purchase: 'x' })).not.toContain('{');
+      expect(translate(locale, 'onboarding.unitsPerDay', { unit: 'x' })).not.toContain('{');
+    }
+  });
+});

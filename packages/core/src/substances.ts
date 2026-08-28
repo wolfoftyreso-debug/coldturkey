@@ -25,6 +25,15 @@ export interface SubstanceProfile {
   /** Unit label translation key, e.g. a cigarette, a standard drink, a session. */
   unitKey: string;
   /**
+   * What the person actually buys, when that is not one unit.
+   *
+   * Nobody knows what one cigarette costs. They know the pack price. Asking
+   * for the per-unit figure gets either a wrong number or an abandoned form,
+   * and the money this product gives back is one of the few things that keeps
+   * somebody opening it in week three.
+   */
+  costBasis: CostBasis;
+  /**
    * Milestone timeline in hours since the last use. Keys resolve to text in
    * `@cleat/i18n`; the wording there is deliberately non-clinical and
    * describes what people commonly report rather than promising outcomes.
@@ -45,6 +54,13 @@ export interface SubstanceProfile {
  * source with it.
  */
 export type MilestoneSource = 'NHS' | 'CDC';
+
+export interface CostBasis {
+  /** Units in one purchase. 1 when people buy them one at a time. */
+  unitsPerPurchase: number;
+  /** Translation key for the thing bought — a pack, a bottle, a single unit. */
+  purchaseKey: string;
+}
 
 export interface SubstanceMilestone {
   hours: number;
@@ -71,6 +87,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: true,
     defaultMinutesPerUnit: 45,
     unitKey: 'unit.alcohol',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.alcohol' },
     milestones: [
       { hours: 12, key: 'milestone.alcohol.h12' },
       { hours: 72, key: 'milestone.alcohol.h72' },
@@ -87,6 +104,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: true,
     defaultMinutesPerUnit: 20,
     unitKey: 'unit.dose',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.dose' },
     milestones: SHARED_TIME_MILESTONES,
   },
   sedatives: {
@@ -96,6 +114,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: true,
     defaultMinutesPerUnit: 20,
     unitKey: 'unit.dose',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.dose' },
     milestones: SHARED_TIME_MILESTONES,
   },
   opioids: {
@@ -107,6 +126,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: true,
     defaultMinutesPerUnit: 60,
     unitKey: 'unit.dose',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.dose' },
     milestones: [
       { hours: 12, key: 'milestone.opioids.h12' },
       { hours: 72, key: 'milestone.opioids.h72' },
@@ -123,6 +143,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: true,
     defaultMinutesPerUnit: 60,
     unitKey: 'unit.dose',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.dose' },
     milestones: SHARED_TIME_MILESTONES,
   },
   stimulants: {
@@ -132,6 +153,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: true,
     defaultMinutesPerUnit: 90,
     unitKey: 'unit.dose',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.dose' },
     milestones: [
       { hours: 72, key: 'milestone.stimulants.h72' },
       { hours: 168, key: 'milestone.stimulants.week1' },
@@ -147,6 +169,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: false,
     defaultMinutesPerUnit: 60,
     unitKey: 'unit.session',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.session' },
     milestones: [
       { hours: 72, key: 'milestone.cannabis.h72' },
       { hours: 336, key: 'milestone.cannabis.week2' },
@@ -162,6 +185,8 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: false,
     defaultMinutesPerUnit: 7,
     unitKey: 'unit.nicotine',
+    // A pack of twenty is what a Swedish smoker actually buys.
+    costBasis: { unitsPerPurchase: 20, purchaseKey: 'purchase.pack' },
     /**
      * The one timeline in this file taken from published public-health data
      * rather than from what people report, and the reason is that it is the
@@ -204,6 +229,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: false,
     defaultMinutesPerUnit: 120,
     unitKey: 'unit.session',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.session' },
     milestones: [
       { hours: 72, key: 'milestone.gambling.h72' },
       { hours: 336, key: 'milestone.gambling.week2' },
@@ -219,6 +245,7 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: false,
     defaultMinutesPerUnit: 60,
     unitKey: 'unit.session',
+    costBasis: { unitsPerPurchase: 1, purchaseKey: 'unit.session' },
     milestones: SHARED_TIME_MILESTONES,
   },
 };
