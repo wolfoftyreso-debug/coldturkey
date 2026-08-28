@@ -83,6 +83,15 @@ export const metrics = {
   webhookRejections: 0,
   /** Stripe redeliveries the idempotency claim absorbed. */
   webhookDuplicates: 0,
+  /** Organisation enquiries received. The only B2B conversion event there is. */
+  orgEnquiries: 0,
+  /** Of those, ones the honeypot caught. */
+  orgEnquiriesSpam: 0,
+  /**
+   * Enquiries stored but never announced, because mail failed. Should be 0;
+   * anything else is a clinic waiting for a reply nobody knows they are owed.
+   */
+  orgEnquiriesUnnotified: 0,
 };
 
 export function recordRequest(
@@ -192,6 +201,21 @@ export function render(): string {
   counter('cleat_mail_failed_total', 'Messages the relay refused.', metrics.mailFailed);
   counter('cleat_login_failures_total', 'Failed login attempts.', metrics.loginFailures);
   counter('cleat_login_lockouts_total', 'Login attempts refused by the lockout.', metrics.loginLockouts);
+  counter(
+    'cleat_org_enquiries_total',
+    'Organisation enquiries received.',
+    metrics.orgEnquiries,
+  );
+  counter(
+    'cleat_org_enquiries_spam_total',
+    'Organisation enquiries the honeypot caught.',
+    metrics.orgEnquiriesSpam,
+  );
+  counter(
+    'cleat_org_enquiries_unnotified_total',
+    'Enquiries stored but never announced because mail failed. Alert on any increase.',
+    metrics.orgEnquiriesUnnotified,
+  );
 
   gauge('cleat_process_resident_memory_bytes', 'Resident memory size in bytes.', memory.rss);
   gauge('cleat_process_heap_used_bytes', 'Heap in use in bytes.', memory.heapUsed);

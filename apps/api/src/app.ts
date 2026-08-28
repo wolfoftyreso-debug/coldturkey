@@ -16,6 +16,7 @@ import { twoFactorRoutes } from './routes/twofactor.js';
 import { privacyRoutes } from './routes/privacy.js';
 import { billingRoutes } from './routes/billing.js';
 import { recoveryRoutes } from './routes/recovery.js';
+import { contactRoutes } from './routes/contact.js';
 
 /**
  * The raw request body, kept only for the Stripe webhook route.
@@ -237,6 +238,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(coachRoutes);
   await app.register(privacyRoutes);
   await app.register(billingRoutes);
+  await app.register(contactRoutes);
 
   return app;
 }

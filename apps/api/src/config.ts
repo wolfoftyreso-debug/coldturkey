@@ -44,6 +44,10 @@ const schema = z.object({
   // script from filling the table in an afternoon.
   SIGNUP_LIMIT_MAX: z.coerce.number().int().positive().default(30),
   SIGNUP_LIMIT_WINDOW: z.string().default('1 hour'),
+  // Organisation enquiries, per IP. Tight, because this is an unauthenticated
+  // endpoint that causes mail to be sent, and a real clinic fills it in once.
+  CONTACT_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  CONTACT_LIMIT_WINDOW: z.string().default('1 hour'),
   // Coach messages, per IP. Each one can reach a language model.
   COACH_LIMIT_MAX: z.coerce.number().int().positive().default(20),
   COACH_LIMIT_WINDOW: z.string().default('1 minute'),
@@ -69,6 +73,12 @@ const schema = z.object({
   // The other transport. A key here takes precedence over SMTP_HOST, because
   // most container platforms block outbound port 587 outright and a reset mail
   // that never leaves the network is the failure this product cannot have.
+  /** Where organisation enquiries are announced. Falls back to MAIL_FROM. */
+  CONTACT_NOTIFY_EMAIL: z
+    .string()
+    .email('CONTACT_NOTIFY_EMAIL must be an email address')
+    .optional(),
+
   RESEND_API_KEY: z.string().optional(),
   /** Overridable so the suite can exercise real request shaping against a stub. */
   RESEND_API_BASE: z.string().url().default('https://api.resend.com'),

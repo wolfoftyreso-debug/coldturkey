@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CLINIC_BASE_SEATS } from '@cleat/core';
 import { jsonLd, publicPage } from '../../lib/seo';
+import { OrganisationEnquiry } from '../../components/OrganisationEnquiry';
 import styles from '../landing.module.css';
 
 /**
@@ -108,8 +109,8 @@ export default function OrganisationPage() {
             per verksamhet — hör av er, så räknar vi på antalet klienter ni faktiskt har.
           </p>
           <p style={{ marginTop: 14 }}>
-            <a href="mailto:verksamhet@cleat.app" className={styles.crisisLink}>
-              Kontakta oss →
+            <a href="#kontakt" className={styles.crisisLink}>
+              Hör av er →
             </a>
           </p>
         </article>
@@ -122,7 +123,7 @@ export default function OrganisationPage() {
             säkerhetsgranskning. Vi går igenom kraven tillsammans innan något skrivs på.
           </p>
           <p style={{ marginTop: 14 }}>
-            <a href="mailto:verksamhet@cleat.app" className={styles.crisisLink}>
+            <a href="#kontakt" className={styles.crisisLink}>
               Boka ett samtal →
             </a>
           </p>
@@ -151,6 +152,15 @@ export default function OrganisationPage() {
           utomstående och produkten har inte penetrationstestats av tredje part. Vi säger det
           här innan ni frågar, för att ni ska kunna ta ett informerat beslut.
         </p>
+      </section>
+
+      {/* Last, and after the honest paragraph above it. Somebody should read
+          what this product is not before they ask what it costs. */}
+      <section id="kontakt" aria-labelledby="kontakt-rubrik" style={{ scrollMarginTop: 24 }}>
+        <h2 id="kontakt-rubrik" className={styles.crisisTitle} style={{ marginTop: 48 }}>
+          Kontakta oss
+        </h2>
+        <OrganisationEnquiry />
       </section>
 
       <footer className={styles.footer}>
