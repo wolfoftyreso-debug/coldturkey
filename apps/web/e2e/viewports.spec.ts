@@ -22,7 +22,15 @@ const WIDTHS = [
   { width: 1280, label: 'desktop' },
 ];
 
-const PAGES = ['/', '/kris', '/nara', '/medberoende', '/abstinens', '/organisation'];
+const PAGES = [
+  '/',
+  '/kris',
+  '/nara',
+  '/medberoende',
+  '/abstinens',
+  '/sluta-roka',
+  '/organisation',
+];
 
 test.describe('public pages fit the screen', () => {
   for (const { width, label } of WIDTHS) {

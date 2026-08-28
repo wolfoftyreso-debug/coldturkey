@@ -34,7 +34,15 @@ export const SITE_URL = (
 ).replace(/\/+$/, '');
 
 /** Every path that may be indexed. The sitemap and robots.txt read this list. */
-export const PUBLIC_PATHS = ['/', '/kris', '/nara', '/medberoende', '/abstinens', '/organisation'];
+export const PUBLIC_PATHS = [
+  '/',
+  '/kris',
+  '/nara',
+  '/medberoende',
+  '/abstinens',
+  '/sluta-roka',
+  '/organisation',
+];
 
 export function publicPage(input: {
   title: string;

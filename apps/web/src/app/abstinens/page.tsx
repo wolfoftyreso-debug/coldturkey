@@ -126,6 +126,14 @@ export default function WithdrawalPage() {
 
       <footer className={styles.footer}>
         <p>
+          Nikotin står inte med ovan, och det är för att abstinensen där är obehaglig men inte
+          medicinskt farlig — den skillnaden är hela poängen med den här sidan.{' '}
+          <Link href="/sluta-roka" style={{ color: 'var(--accent-strong)' }}>
+            Vad som händer i kroppen när du slutar röka
+          </Link>
+          .
+        </p>
+        <p>
           Cleat är ett coachverktyg, inte vård. Innehållet här är allmän information och
           ersätter inte en medicinsk bedömning.
         </p>
