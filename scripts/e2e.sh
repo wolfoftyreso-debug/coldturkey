@@ -34,6 +34,10 @@ export SMTP_PORT="$E2E_SMTP_PORT"
 # shell would send this suite's password resets to real inboxes over the real
 # internet. The suite picks its own transport.
 unset RESEND_API_KEY
+# The enquiry form is opt-in, because the public marketing deployment has no API
+# behind it and a form that cannot submit should not be on the page. This suite
+# runs the whole stack, so it turns the form on and exercises it.
+export NEXT_PUBLIC_ENQUIRY_FORM=on
 export MAIL_FROM="${MAIL_FROM:-cleat@cleat.test}"
 # The links in those mails have to point at the origin the browser is on, or the
 # reset page opens on a host that is not running.

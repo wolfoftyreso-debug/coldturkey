@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import { API_BASE } from '../lib/apiBase';
+import { ENQUIRY_FORM_ENABLED } from '../lib/enquiries';
 import styles from '../app/landing.module.css';
 
 /**
@@ -32,6 +33,27 @@ type State =
 export function OrganisationEnquiry() {
   const [state, setState] = useState<State>({ kind: 'idle' });
   const id = useId();
+
+  // No API behind this deployment, so there is nothing to submit to. Saying so
+  // is the only honest option: a form that errors after somebody has typed
+  // their unit's details into it is worse than no form, and much worse than a
+  // sentence admitting where we are.
+  if (!ENQUIRY_FORM_ENABLED) {
+    return (
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>Vi öppnar för förfrågningar inom kort</h3>
+        <p className={styles.cardBody}>
+          Vi har inte satt upp kanalen för verksamhetsförfrågningar än, och vi vill hellre
+          säga det rakt ut än lägga upp ett formulär som inte går fram. Priserna ovan står
+          fast; det som saknas är vår sida av kontakten.
+        </p>
+        <p className={styles.cardBody}>
+          Under tiden är allt kliniskt i Cleat gratis för privatpersoner, utan tidsgräns och
+          utan kort. Era klienter kan börja använda det i dag utan att ni gör någonting.
+        </p>
+      </div>
+    );
+  }
 
   if (state.kind === 'sent') {
     return (

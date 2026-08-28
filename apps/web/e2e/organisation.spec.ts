@@ -82,3 +82,19 @@ test.describe('organisation enquiry', () => {
     await expect(page.locator('[aria-hidden="true"] input[name="website"]')).toHaveCount(1);
   });
 });
+
+/**
+ * The other half of the same decision.
+ *
+ * The public deployment has no API behind it — `/v1/contact/organisation`
+ * returns Next's 404 there, checked against the live site — so the form is
+ * opt-in and this suite turns it on. What must never happen is the form
+ * appearing on a deployment that cannot receive it, and the honest copy is
+ * what stands in its place.
+ */
+test('the form is only offered where something can receive it', async ({ page }) => {
+  await page.goto('/organisation');
+  // This suite runs the whole stack with the form enabled, so it is here.
+  await expect(page.getByRole('button', { name: 'Skicka förfrågan' })).toBeVisible();
+  await expect(page.getByText('Vi öppnar för förfrågningar inom kort')).toHaveCount(0);
+});
