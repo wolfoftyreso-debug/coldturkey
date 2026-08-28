@@ -89,7 +89,27 @@ jobs:
       # invisible to the typechecker and fatal to the bundler — and a phone
       # client that cannot bundle is a client that cannot ship.
       - name: Bundle mobile
+        # `expo export` sets NODE_ENV=production, so the config treats this as a
+        # release and refuses to build without an API URL — which is the guard
+        # working, not a CI problem. A real pipeline supplies one; this one
+        # supplies a placeholder, because the step is checking that Metro can
+        # resolve the graph, not shipping a binary.
+        env:
+          EXPO_PUBLIC_API_URL: https://api.cleat.example
         run: pnpm --filter @cleat/mobile exec expo export --platform android --output-dir /tmp/expo-bundle
+
+      # The guard itself, checked rather than trusted. A release build with no
+      # API URL must fail — the old app.json shipped `http://localhost:8080`,
+      # which produces an app that installs, opens, and then cannot reach
+      # anything from a real phone.
+      - name: A release build without an API URL is refused
+        run: |
+          if pnpm --filter @cleat/mobile exec expo export --platform android \
+               --output-dir /tmp/expo-bundle-unset >/dev/null 2>&1; then
+            echo "::error::mobile bundled a production build with no EXPO_PUBLIC_API_URL"
+            exit 1
+          fi
+          echo "refused, as it should be"
 
       # Security gate. A dependency advisory that reaches code we actually ship
       # blocks the deployment; one in build tooling does not, because failing

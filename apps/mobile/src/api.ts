@@ -2,7 +2,18 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as { apiUrl?: string; tenant?: string };
-const BASE = extra.apiUrl ?? 'http://localhost:8080';
+/**
+ * No fallback on purpose. `app.config.ts` refuses to produce a release build
+ * without this value, so its absence here means a binary that should never
+ * have been built — and a silent `http://localhost:8080` default would turn
+ * that into an app which looks fine and fails every request on a real phone.
+ *
+ * Missing, it fails per request rather than at import. Throwing at module
+ * scope would white-screen the launcher, and this is an app somebody may be
+ * opening at four in the morning: a screen that loads and says what is wrong
+ * still has the crisis numbers on it, which are local and need no server.
+ */
+const BASE = extra.apiUrl ?? null;
 const TENANT = extra.tenant ?? 'public';
 
 const ACCESS_KEY = 'cleat_access';
@@ -45,6 +56,13 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  if (!BASE) {
+    throw new ApiError(
+      0,
+      'not_configured',
+      'Den här versionen av appen byggdes utan en serveradress och kan inte nå Cleat. Installera om appen från källan du fick den ifrån.',
+    );
+  }
   const { access } = await tokenStore.get();
   const headers: Record<string, string> = { 'x-tenant': TENANT };
   if (init.body) headers['content-type'] = 'application/json';

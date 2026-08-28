@@ -143,6 +143,19 @@ pnpm dev:web    # http://localhost:3000
 pnpm dev:mobile # Expo
 ```
 
+The mobile client reads its API URL from the environment at build time:
+
+```bash
+# A physical device on the same wifi needs the machine's LAN address here;
+# a simulator reaches the host on localhost and needs nothing.
+export EXPO_PUBLIC_API_URL=http://192.168.1.20:8080
+```
+
+For a release build it is required and must be `https`. `app.config.ts`
+refuses to produce a `production` or `preview` build without it, rather than
+shipping a binary that points at the phone itself — which is what the old
+`app.json` did, and which fails only once the app is in somebody's hands.
+
 Seeded accounts:
 
 | Tenant | Email | Password |
