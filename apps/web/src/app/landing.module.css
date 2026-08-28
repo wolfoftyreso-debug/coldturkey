@@ -171,3 +171,37 @@
   color: var(--text-faint);
   opacity: 0.85;
 }
+
+/**
+ * A real button, for the one form on the public pages.
+ *
+ * The enquiry form's submit started life styled as `.crisisLink`, which is a
+ * text link: 15px tall, and a 320-wide viewport test caught it as a target too
+ * small to press. A link is the right style for "read this next" and the wrong
+ * one for the only action on the page that a customer takes.
+ */
+.submit {
+  appearance: none;
+  background: var(--accent-strong);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #0b0d0f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  /* 44px is the guideline for a target somebody presses with a thumb, and this
+     one is pressed at the end of filling in a form on a phone. */
+  min-height: 44px;
+  padding: 12px 20px;
+  width: 100%;
+}
+
+.submit:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 3px;
+}

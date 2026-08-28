@@ -180,7 +180,7 @@ export function OrganisationEnquiry() {
           </p>
         ) : null}
 
-        <button type="submit" className={styles.crisisLink} disabled={sending}>
+        <button type="submit" className={styles.submit} disabled={sending}>
           {sending ? 'Skickar…' : 'Skicka förfrågan'}
         </button>
 
