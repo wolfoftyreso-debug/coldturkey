@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { substanceProfile, type SubstanceKind } from '@cleat/core';
+import { substanceProfile, type IntakeForm, type SubstanceKind } from '@cleat/core';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type Dashboard } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
@@ -41,6 +41,8 @@ export default function PlanPage() {
    */
   const [purchaseCost, setPurchaseCost] = useState(30);
   const [purchaseSize, setPurchaseSize] = useState(1);
+  /** Nicotine only. Unanswered is allowed and means "the safe subset". */
+  const [intakeForm, setIntakeForm] = useState<IntakeForm | null>(null);
   const [detoxMessage, setDetoxMessage] = useState<string | null>(null);
   const { busy, error, run } = useAction(t);
 
@@ -78,6 +80,7 @@ export default function PlanPage() {
       // the division happens here in minor units for the same reason.
       unitCostMinor: Math.round((purchaseCost * 100) / Math.max(1, purchaseSize)),
       currency: 'SEK',
+      ...(substance === 'nicotine' && intakeForm ? { intakeForm } : {}),
     });
     setDetoxMessage(response.detoxWarning.required ? response.detoxWarning.message ?? null : null);
     await reload();
@@ -160,6 +163,32 @@ export default function PlanPage() {
                 />
               </div>
             ) : null}
+            {/* Asked rather than assumed, and skippable. Somebody quitting
+                snus in Sweden may never have lit anything, and telling them
+                their lung function has improved is a false claim about their
+                body — not encouragement that misses. */}
+            {substance === 'nicotine' ? (
+              <div className="field">
+                <label>{t('onboarding.intakeForm')}</label>
+                <div className="chips">
+                  {(['smoked', 'oral', 'both'] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className="chip"
+                      data-selected={intakeForm === option}
+                      onClick={() => setIntakeForm(intakeForm === option ? null : option)}
+                    >
+                      {t(`intake.${option}`)}
+                    </button>
+                  ))}
+                </div>
+                <p className="muted" style={{ marginTop: 8 }}>
+                  {t('onboarding.intakeForm.hint')}
+                </p>
+              </div>
+            ) : null}
+
             <button className="btn primary wide" onClick={run(createPlan)} disabled={busy}>
               {t('onboarding.done')}
             </button>

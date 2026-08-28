@@ -90,10 +90,23 @@ describe('the mobile plan screen can start a plan', () => {
     expect(screen).toContain('data?.quit ? null : (');
   });
 
-  it('prices by the pack where the substance says so, without naming nicotine', () => {
+  it('prices by the pack from the substance profile, not from its name', () => {
     expect(screen).toContain('substanceProfile(option).costBasis.unitsPerPurchase');
     expect(screen).toContain("t('onboarding.purchaseCost', { purchase: purchaseLabel })");
-    expect(screen).not.toContain("substance === 'nicotine'");
+    expect(screen).toContain('byThePack');
+    // The substance is named exactly twice, and both times it guards the
+    // intake question — once for rendering it, once for sending it. Nicotine
+    // is the one substance where how it was taken changes which claims about
+    // a body are true. Pricing must never be one of those mentions.
+    for (const [index, line] of screen.split('\n').entries()) {
+      if (!line.includes("substance === 'nicotine'")) continue;
+      // Either the guard itself names the intake form, or the four lines it
+      // opens do. What must never appear near it is a price.
+      const block = screen.split('\n').slice(index, index + 5).join(' ');
+      expect(block, line.trim()).toContain('intakeForm');
+      expect(block, line.trim()).not.toContain('purchaseCost');
+    }
+    expect(screen.match(/substance === 'nicotine'/g) ?? []).toHaveLength(2);
   });
 
   it('shows the detox warning the API returns rather than deciding for itself', () => {

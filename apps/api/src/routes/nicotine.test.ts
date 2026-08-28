@@ -56,6 +56,7 @@ suite('the dashboard for somebody quitting smoking', () => {
         baselineUnitsPerDay: 20,
         unitCostMinor: 350,
         currency: 'SEK',
+        intakeForm: 'smoked',
         startedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
       },
     });
@@ -82,7 +83,7 @@ suite('the dashboard for somebody quitting smoking', () => {
     return response.json<Dashboard>();
   }
 
-  it('has already given them four milestones by day three', () => {
+  it('has already given them five milestones by day three', () => {
     // The argument for a front-loaded ladder. Somebody three days into
     // quitting smoking has done the hardest part and needs to be told what it
     // bought — not to wait a month for the first marker.
@@ -93,6 +94,7 @@ suite('the dashboard for somebody quitting smoking', () => {
         'milestone.nicotine.h12',
         'milestone.nicotine.h24',
         'milestone.nicotine.h48',
+        'milestone.nicotine.h72',
       ]);
     });
   });
@@ -100,9 +102,9 @@ suite('the dashboard for somebody quitting smoking', () => {
   it('carries the source all the way to the payload, not just into core', async () => {
     const body = await dashboard();
     for (const milestone of body.milestones!.reached) {
-      expect(milestone.source, milestone.key).toMatch(/^(NHS|CDC)$/);
+      expect(milestone.source, milestone.key).toMatch(/^(NHS|CDC|1177)$/);
     }
-    expect(body.milestones!.next?.source).toMatch(/^(NHS|CDC)$/);
+    expect(body.milestones!.next?.source).toMatch(/^(NHS|CDC|1177)$/);
   });
 
   it('translates the milestone text rather than shipping the key', async () => {
@@ -130,5 +132,87 @@ suite('the dashboard for somebody quitting smoking', () => {
     // people to ignore the one that counts.
     const body = await dashboard();
     expect(body.detoxWarning?.required ?? false).toBe(false);
+  });
+});
+
+/**
+ * The same three days, for somebody who has never lit anything.
+ *
+ * Sweden is the reason this exists. A large share of the people this product
+ * is for use snus and have never smoked, and the sourced timeline for
+ * stopping smoking is about lungs and carbon monoxide. Handing it to them
+ * would be a false claim about their body, made in order to be encouraging.
+ */
+suite('the dashboard for somebody quitting snus', () => {
+  let app: FastifyInstance;
+  let auth: { authorization: string };
+
+  beforeAll(async () => {
+    await migrate();
+    await ensureDefaultTenant();
+    setMailer(new SilentMailer());
+    app = await buildApp();
+    await app.ready();
+
+    const registered = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        email: `snus-${Date.now()}@cleat.test`,
+        password: 'a-long-enough-password',
+        displayName: 'Snusare',
+      },
+    });
+    auth = { authorization: `Bearer ${registered.json().accessToken as string}` };
+
+    await app.inject({
+      method: 'POST',
+      url: '/v1/quit',
+      headers: auth,
+      payload: {
+        substance: 'nicotine',
+        baselineUnitsPerDay: 12,
+        unitCostMinor: 200,
+        currency: 'SEK',
+        intakeForm: 'oral',
+        startedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+      },
+    });
+  });
+
+  afterAll(async () => {
+    setMailer(null);
+    await app.close();
+    await closePool();
+  });
+
+  it('is told nothing about lungs or carbon monoxide', async () => {
+    const response = await app.inject({ method: 'GET', url: '/v1/dashboard', headers: auth });
+    const body = response.json<{
+      milestones: { reached: { key: string; text: string }[] } | null;
+    }>();
+    const text = body.milestones!.reached.map((m) => m.text).join(' ');
+    expect(text).not.toMatch(/lung|kolmonoxid|carbon monoxide|hjärtinfarkt/i);
+  });
+
+  it('is still told the thing that is true on day one', async () => {
+    const response = await app.inject({ method: 'GET', url: '/v1/dashboard', headers: auth });
+    const body = response.json<{
+      milestones: { reached: { key: string; source?: string }[] } | null;
+    }>();
+    const keys = body.milestones!.reached.map((m) => m.key);
+    expect(keys).toContain('milestone.nicotine.h24');
+    expect(keys).toContain('milestone.nicotine.h72');
+    expect(keys).not.toContain('milestone.nicotine.min20');
+  });
+
+  it('cites 1177 for the claims that are about nicotine rather than lungs', async () => {
+    const response = await app.inject({ method: 'GET', url: '/v1/dashboard', headers: auth });
+    const body = response.json<{
+      milestones: { reached: { key: string; source?: string }[] } | null;
+    }>();
+    const sources = new Set(body.milestones!.reached.map((m) => m.source));
+    expect(sources.has('1177')).toBe(true);
+    expect(sources.has('NHS')).toBe(false);
   });
 });

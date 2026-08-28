@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { substanceProfile, type SubstanceKind } from '@cleat/core';
+import { substanceProfile, type IntakeForm, type SubstanceKind } from '@cleat/core';
 import { api, type Dashboard } from '../src/api';
 import { useSession } from '../src/session';
 import { colors, styles } from '../src/theme';
@@ -41,6 +41,8 @@ export default function PlanScreen() {
   const [purchaseCost, setPurchaseCost] = useState('30');
   const [purchaseSize, setPurchaseSize] = useState('1');
   const [detoxMessage, setDetoxMessage] = useState<string | null>(null);
+  /** Nicotine only. Unanswered is allowed and means "the safe subset". */
+  const [intakeForm, setIntakeForm] = useState<IntakeForm | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -68,6 +70,7 @@ export default function PlanScreen() {
         // Minor units all the way, so nothing rounds oddly.
         unitCostMinor: Math.round((Number(purchaseCost) * 100 || 0) / size),
         currency: 'SEK',
+        ...(substance === 'nicotine' && intakeForm ? { intakeForm } : {}),
       });
       setDetoxMessage(
         response.detoxWarning.required ? response.detoxWarning.message ?? null : null,
@@ -172,6 +175,31 @@ export default function PlanScreen() {
                   keyboardType="number-pad"
                   placeholderTextColor={colors.textFaint}
                 />
+              </>
+            ) : null}
+
+            {/* Asked rather than assumed, and skippable. Somebody quitting
+                snus may never have lit anything, and a milestone about lungs
+                would be a false claim about their body. */}
+            {substance === 'nicotine' ? (
+              <>
+                <Text style={[styles.muted, { marginTop: 14 }]}>
+                  {t('onboarding.intakeForm')}
+                </Text>
+                <View style={styles.row}>
+                  {(['smoked', 'oral', 'both'] as const).map((option) => (
+                    <TouchableOpacity
+                      key={option}
+                      onPress={() => setIntakeForm(intakeForm === option ? null : option)}
+                      style={[styles.chip, intakeForm === option ? styles.chipSelected : null]}
+                    >
+                      <Text style={styles.chipText}>{t(`intake.${option}`)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={[styles.muted, { marginTop: 6 }]}>
+                  {t('onboarding.intakeForm.hint')}
+                </Text>
               </>
             ) : null}
 

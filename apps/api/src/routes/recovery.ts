@@ -150,6 +150,12 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
         unitCostMinor: z.number().int().min(0).max(10_000_000),
         currency: z.string().length(3).default('SEK'),
         minutesPerUnit: z.number().int().min(0).max(1440).optional(),
+        /**
+         * Nicotine only. Optional because it is a question, not a requirement:
+         * somebody who skips it gets the milestones that hold either way
+         * rather than being blocked on answering.
+         */
+        intakeForm: z.enum(['smoked', 'oral', 'both']).optional(),
       })
       .parse(request.body);
 
@@ -162,6 +168,9 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
         tenantId: user.tenant_id,
         userId: user.id,
         substance: body.substance,
+        // Only meaningful for nicotine; stored as null for everything else so
+        // the column cannot quietly acquire a meaning it was not designed for.
+        intakeForm: body.substance === 'nicotine' ? body.intakeForm ?? null : null,
         startedAt: body.startedAt ?? new Date(),
         baselineUnitsPerDay: body.baselineUnitsPerDay,
         unitCostMinor: body.unitCostMinor,
@@ -222,7 +231,11 @@ export async function recoveryRoutes(app: FastifyInstance): Promise<void> {
         snapshot.quit && streak ? computeReclaimed(snapshot.quit, streak.currentMs, now) : null;
       const milestones =
         snapshot.quit && streak
-          ? computeMilestones(snapshot.quit.substance, streak.currentMs / 3_600_000)
+          ? computeMilestones(
+              snapshot.quit.substance,
+              streak.currentMs / 3_600_000,
+              snapshot.quit.intakeForm,
+            )
           : null;
 
       return {

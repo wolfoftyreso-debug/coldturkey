@@ -31,7 +31,7 @@ describe('the nicotine milestones', () => {
 
   it('cites only the sources the copy actually names', () => {
     const sources = new Set(nicotine.milestones.map((m) => m.source));
-    expect([...sources].sort()).toEqual(['CDC', 'NHS']);
+    expect([...sources].sort()).toEqual(['1177', 'CDC', 'NHS']);
   });
 
   it('runs in order, with no two entries within a day of each other', () => {
@@ -50,7 +50,9 @@ describe('the nicotine milestones', () => {
     // The whole argument for a front-loaded ladder: on day zero a person needs
     // evidence that something is already happening, and twenty minutes is the
     // first honest thing there is to say.
-    const summary = computeMilestones('nicotine', 0.5 * HOUR);
+    // A smoker: the twenty-minute marker is about carbon monoxide, so it is
+    // one of the claims that only holds for somebody who lit something.
+    const summary = computeMilestones('nicotine', 0.5 * HOUR, 'smoked');
     expect(summary.reached).toHaveLength(1);
     expect(summary.reached[0]!.key).toBe('milestone.nicotine.min20');
     expect(summary.reached[0]!.source).toBe('NHS');
@@ -59,7 +61,7 @@ describe('the nicotine milestones', () => {
   it('still has something to say after a year, unlike every other substance', () => {
     // Somebody eighteen months in is exactly who stops opening the app. The
     // stroke and heart-disease figures are the honest thing left to tell them.
-    const atEighteenMonths = computeMilestones('nicotine', 13_140);
+    const atEighteenMonths = computeMilestones('nicotine', 13_140, 'smoked');
     expect(atEighteenMonths.next).not.toBeNull();
     expect(atEighteenMonths.next!.key).toBe('milestone.nicotine.year5');
 
@@ -119,5 +121,87 @@ describe('what the app asks a smoker to type', () => {
   it('counts seven minutes a cigarette, so a pack a day is over two hours', () => {
     expect(nicotine.defaultMinutesPerUnit).toBe(7);
     expect(nicotine.defaultMinutesPerUnit * 20).toBeGreaterThan(120);
+  });
+});
+
+/**
+ * Snus.
+ *
+ * Cleat models nicotine as one substance and that is right — the dependence,
+ * the craving waves and the withdrawal are the same. What is not the same is
+ * the body. The sourced timeline for stopping smoking is about lungs, carbon
+ * monoxide and cardiovascular risk, and this is Sweden: a large share of the
+ * people this product is for have never lit anything.
+ *
+ * Telling one of them that their lung function has improved is not
+ * encouragement that misses. It is a false claim about their body, from a
+ * product whose entire argument is that it does not make those.
+ */
+describe('somebody quitting snus', () => {
+  const lungClaims = [
+    'milestone.nicotine.min20',
+    'milestone.nicotine.h12',
+    'milestone.nicotine.h48',
+    'milestone.nicotine.week2',
+    'milestone.nicotine.month1',
+    'milestone.nicotine.week12',
+    'milestone.nicotine.year1',
+    'milestone.nicotine.year5',
+    'milestone.nicotine.year15',
+  ];
+
+  /** Every milestone the ladder would ever reach, at any streak length. */
+  function everything(intake: 'smoked' | 'oral' | 'both' | null) {
+    return computeMilestones('nicotine', 1_000_000, intake).reached.map((m) => m.key);
+  }
+
+  it('is never told anything about lungs or carbon monoxide', () => {
+    const keys = everything('oral');
+    for (const claim of lungClaims) {
+      expect(keys, claim).not.toContain(claim);
+    }
+  });
+
+  it('still gets the milestones that are about nicotine rather than lungs', () => {
+    expect(everything('oral')).toEqual([
+      'milestone.nicotine.h24',
+      'milestone.nicotine.h72',
+      'milestone.nicotine.week3',
+    ]);
+  });
+
+  it('gets something in the first day, when it is hardest', () => {
+    const dayone = computeMilestones('nicotine', 25, 'oral');
+    expect(dayone.reached.map((m) => m.key)).toEqual(['milestone.nicotine.h24']);
+  });
+
+  it('sources the ones it does get from a public health service, not a shop', () => {
+    // Everything published about quitting snus beyond this comes from
+    // companies that sell snus or sell the patches. 1177 is the Swedish
+    // regions' joint health service and is the only public source that covers
+    // it — so the claims stop where 1177 stops.
+    const sources = computeMilestones('nicotine', 1_000_000, 'oral').reached.map((m) => m.source);
+    expect(sources).toEqual(['CDC', '1177', '1177']);
+  });
+
+  it('gives somebody who does both the full smoking ladder', () => {
+    // The stronger claim set applies: they have smoked.
+    expect(everything('both')).toEqual(everything('smoked'));
+    expect(everything('both')).toContain('milestone.nicotine.year1');
+  });
+
+  it('treats an unanswered question as snus, not as smoking', () => {
+    // Every plan made before the question existed, and everybody who skips it.
+    // The safe subset is the one that cannot be wrong about a body.
+    expect(everything(null)).toEqual(everything('oral'));
+    expect(everything(undefined as unknown as null)).toEqual(everything('oral'));
+  });
+
+  it('leaves every other substance unaffected by intake', () => {
+    for (const kind of ['alcohol', 'cannabis', 'gambling'] as const) {
+      const withIntake = computeMilestones(kind, 1_000_000, 'oral').reached.map((m) => m.key);
+      const without = computeMilestones(kind, 1_000_000).reached.map((m) => m.key);
+      expect(withIntake, kind).toEqual(without);
+    }
   });
 });

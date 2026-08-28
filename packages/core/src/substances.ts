@@ -53,7 +53,18 @@ export interface SubstanceProfile {
  * body carry that body, and every surface that shows the milestone shows the
  * source with it.
  */
-export type MilestoneSource = 'NHS' | 'CDC';
+export type MilestoneSource = 'NHS' | 'CDC' | '1177';
+
+/**
+ * How somebody takes nicotine.
+ *
+ * Only nicotine needs this, and only because the sourced timeline for
+ * stopping smoking is about lungs and carbon monoxide. Somebody quitting snus
+ * in Sweden may never have lit anything, and telling them their lung function
+ * has improved is not encouragement that misses — it is a false claim about
+ * their body.
+ */
+export type IntakeForm = 'smoked' | 'oral' | 'both';
 
 export interface CostBasis {
   /** Units in one purchase. 1 when people buy them one at a time. */
@@ -66,6 +77,12 @@ export interface SubstanceMilestone {
   hours: number;
   key: string;
   source?: MilestoneSource;
+  /**
+   * Present when the claim only holds for somebody who took it this way.
+   * Absent means it holds regardless — which is the safe default, and the one
+   * anybody who was never asked receives.
+   */
+  intake?: 'smoked';
 }
 
 const SHARED_TIME_MILESTONES: SubstanceMilestone[] = [
@@ -205,21 +222,31 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
      * the stroke figure is the honest thing to tell them.
      */
     milestones: [
-      { hours: 0.34, key: 'milestone.nicotine.min20', source: 'NHS' },
-      { hours: 12, key: 'milestone.nicotine.h12', source: 'CDC' },
+      { hours: 0.34, key: 'milestone.nicotine.min20', source: 'NHS', intake: 'smoked' },
+      { hours: 12, key: 'milestone.nicotine.h12', source: 'CDC', intake: 'smoked' },
+      // Nicotine leaves the blood the same way whichever route it arrived by,
+      // and the first day is the hardest either way. Everybody gets this one.
       { hours: 24, key: 'milestone.nicotine.h24', source: 'CDC' },
-      { hours: 48, key: 'milestone.nicotine.h48', source: 'NHS' },
-      { hours: 336, key: 'milestone.nicotine.week2', source: 'CDC' },
+      { hours: 48, key: 'milestone.nicotine.h48', source: 'NHS', intake: 'smoked' },
+      // Craving waves and the shape of withdrawal are about nicotine, not about
+      // lungs. 1177, the Swedish regions' joint health service, is the source
+      // that covers snus — and the only public one that does. Everything the
+      // web offers beyond this about quitting snus is published by companies
+      // that sell snus or sell the patches, which is not a source this product
+      // will build a claim on.
+      { hours: 72, key: 'milestone.nicotine.h72', source: '1177' },
+      { hours: 336, key: 'milestone.nicotine.week2', source: 'CDC', intake: 'smoked' },
+      { hours: 504, key: 'milestone.nicotine.week3', source: '1177' },
       // One month sits inside the CDC's "2 weeks to 3 months" band rather than
       // being a finding of its own. It stays because a month is the first
       // number most people say out loud, and dropping it would leave a
       // ten-week hole in exactly the stretch where somebody needs evidence
       // that time is still buying them something.
-      { hours: 720, key: 'milestone.nicotine.month1', source: 'CDC' },
-      { hours: 2016, key: 'milestone.nicotine.week12', source: 'NHS' },
-      { hours: 8760, key: 'milestone.nicotine.year1', source: 'NHS' },
-      { hours: 43_800, key: 'milestone.nicotine.year5', source: 'CDC' },
-      { hours: 131_400, key: 'milestone.nicotine.year15', source: 'CDC' },
+      { hours: 720, key: 'milestone.nicotine.month1', source: 'CDC', intake: 'smoked' },
+      { hours: 2016, key: 'milestone.nicotine.week12', source: 'NHS', intake: 'smoked' },
+      { hours: 8760, key: 'milestone.nicotine.year1', source: 'NHS', intake: 'smoked' },
+      { hours: 43_800, key: 'milestone.nicotine.year5', source: 'CDC', intake: 'smoked' },
+      { hours: 131_400, key: 'milestone.nicotine.year15', source: 'CDC', intake: 'smoked' },
     ],
   },
   gambling: {

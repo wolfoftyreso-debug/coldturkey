@@ -98,8 +98,24 @@ describe('the plan form asks for what a smoker actually knows', () => {
   it('switches to pack pricing from the substance profile, not a hardcoded check', () => {
     expect(plan).toContain('substanceProfile(substance).costBasis');
     expect(plan).toContain("t('onboarding.purchaseCost', { purchase: purchaseLabel })");
-    // No `substance === 'nicotine'` anywhere: the data decides.
-    expect(plan).not.toContain("substance === 'nicotine'");
+    // Pricing is driven by `byThePack`, which comes from the data. The one
+    // place the substance is named is the intake question, which genuinely is
+    // nicotine-only — no other substance has a route of administration that
+    // changes which claims about a body are true.
+    expect(plan).toContain('byThePack');
+    // The substance is named exactly twice, and both times it guards the
+    // intake question — once for rendering it, once for sending it. Nicotine
+    // is the one substance where how it was taken changes which claims about
+    // a body are true. Pricing must never be one of those mentions.
+    for (const [index, line] of plan.split('\n').entries()) {
+      if (!line.includes("substance === 'nicotine'")) continue;
+      // Either the guard itself names the intake form, or the four lines it
+      // opens do. What must never appear near it is a price.
+      const block = plan.split('\n').slice(index, index + 5).join(' ');
+      expect(block, line.trim()).toContain('intakeForm');
+      expect(block, line.trim()).not.toContain('purchaseCost');
+    }
+    expect(plan.match(/substance === 'nicotine'/g) ?? []).toHaveLength(2);
   });
 
   it('has copy for every interpolation the form performs', () => {
@@ -116,6 +132,46 @@ describe('the plan form asks for what a smoker actually knows', () => {
       // And the placeholders are actually filled, never left showing.
       expect(translate(locale, 'onboarding.purchaseCost', { purchase: 'x' })).not.toContain('{');
       expect(translate(locale, 'onboarding.unitsPerDay', { unit: 'x' })).not.toContain('{');
+    }
+  });
+});
+
+describe('the intake question', () => {
+  const plan = readFileSync(join(import.meta.dirname, '../app/plan/page.tsx'), 'utf8');
+  const mobilePlan = readFileSync(
+    join(import.meta.dirname, '../../../mobile/app/plan.tsx'),
+    'utf8',
+  );
+
+  it('is asked on both clients, for nicotine only', () => {
+    for (const [name, source] of [['web', plan], ['mobile', mobilePlan]] as const) {
+      expect(source, name).toContain("t('onboarding.intakeForm')");
+      expect(source, name).toContain("substance === 'nicotine' ?");
+      // Skippable: tapping the selected chip clears it, and an unanswered
+      // question is a valid plan.
+      expect(source, name).toContain('intakeForm === option ? null : option');
+    }
+  });
+
+  it('explains why it is being asked', () => {
+    // A product that asks people about their body owes them the reason. The
+    // reason here is that we would otherwise tell a snus user their lungs had
+    // recovered.
+    for (const locale of ['sv', 'en'] as const) {
+      const hint = translate(locale, 'onboarding.intakeForm.hint');
+      expect(hint, locale).not.toBe('onboarding.intakeForm.hint');
+      expect(hint.length, locale).toBeGreaterThan(40);
+    }
+    expect(translate('sv', 'onboarding.intakeForm.hint')).toContain('lungor');
+  });
+
+  it('has all three options in both languages', () => {
+    for (const locale of ['sv', 'en'] as const) {
+      for (const option of ['smoked', 'oral', 'both']) {
+        expect(translate(locale, `intake.${option}`), `${locale} ${option}`).not.toBe(
+          `intake.${option}`,
+        );
+      }
     }
   });
 });

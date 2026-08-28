@@ -3,7 +3,9 @@ import { computeMilestones, nextDayMilestone } from './milestones.js';
 
 describe('computeMilestones', () => {
   it('marks early nicotine milestones as reached within the first day', () => {
-    const m = computeMilestones('nicotine', 25);
+    // Explicitly a smoker: an unanswered intake question now yields only the
+    // claims that hold whichever way the nicotine arrived.
+    const m = computeMilestones('nicotine', 25, 'smoked');
     const keys = m.reached.map((x) => x.key);
     expect(keys).toContain('milestone.nicotine.min20');
     expect(keys).toContain('milestone.nicotine.h12');
@@ -11,18 +13,18 @@ describe('computeMilestones', () => {
   });
 
   it('reports progress toward the next milestone', () => {
-    const m = computeMilestones('nicotine', 30);
+    const m = computeMilestones('nicotine', 30, 'smoked');
     // Between the 24h and 48h markers: (30-24)/(48-24) = 0.25
     expect(m.progressToNext).toBeCloseTo(0.25, 5);
   });
 
   it('has something to show in the first hours — the moment it matters most', () => {
-    expect(computeMilestones('nicotine', 1).reached.length).toBeGreaterThan(0);
+    expect(computeMilestones('nicotine', 1, 'smoked').reached.length).toBeGreaterThan(0);
   });
 
   it('reports no next milestone once every one is passed', () => {
     // Past fifteen years, which is where the nicotine ladder now ends.
-    const m = computeMilestones('nicotine', 200_000);
+    const m = computeMilestones('nicotine', 200_000, 'smoked');
     expect(m.next).toBeNull();
     expect(m.progressToNext).toBe(1);
   });

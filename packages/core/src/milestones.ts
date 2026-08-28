@@ -1,5 +1,5 @@
 import type { SubstanceKind } from './types.js';
-import { substanceProfile, type MilestoneSource } from './substances.js';
+import { substanceProfile, type IntakeForm, type MilestoneSource } from './substances.js';
 
 export interface Milestone {
   key: string;
@@ -34,8 +34,20 @@ export interface MilestoneSummary {
 export function computeMilestones(
   substance: SubstanceKind,
   streakHours: number,
+  /**
+   * How the person took it, for the one substance where that changes what is
+   * true. Undefined means they were never asked — every plan made before the
+   * question existed — and gets only the claims that hold either way.
+   */
+  intake?: IntakeForm | null,
 ): MilestoneSummary {
-  const all = substanceProfile(substance).milestones;
+  const all = substanceProfile(substance).milestones.filter((m) => {
+    if (!m.intake) return true;
+    // A milestone about lungs belongs to somebody who smoked. Showing it to a
+    // person who has only ever used snus is a false claim about their body,
+    // which this product does not get to make in order to be encouraging.
+    return intake === 'smoked' || intake === 'both';
+  });
 
   const mapped: Milestone[] = all.map((m) => ({
     key: m.key,

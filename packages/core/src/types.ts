@@ -1,3 +1,4 @@
+import type { IntakeForm } from './substances.js';
 /**
  * Shared domain types for Cleat.
  *
@@ -79,6 +80,12 @@ export interface QuitPlan {
    * recovering, hiding and dealing with consequences. Defaults per substance.
    */
   minutesPerUnit: number;
+  /**
+   * Nicotine only, and null for every plan made before the question existed.
+   * Decides whether the milestones about lungs and carbon monoxide apply —
+   * see `computeMilestones`.
+   */
+  intakeForm: IntakeForm | null;
   status: 'active' | 'paused' | 'archived';
 }
 

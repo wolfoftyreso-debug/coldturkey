@@ -166,6 +166,7 @@ interface QuitRow {
   unit_cost_minor: number;
   currency: string;
   minutes_per_unit: number;
+  intake_form: 'smoked' | 'oral' | 'both' | null;
   status: 'active' | 'paused' | 'archived';
 }
 
@@ -178,12 +179,13 @@ function toQuitPlan(row: QuitRow): QuitPlan {
     unitCostMinor: row.unit_cost_minor,
     currency: row.currency,
     minutesPerUnit: row.minutes_per_unit,
+    intakeForm: row.intake_form,
     status: row.status,
   };
 }
 
 const QUIT_COLUMNS =
-  'id, substance, started_at, baseline_units_per_day, unit_cost_minor, currency, minutes_per_unit, status';
+  'id, substance, started_at, baseline_units_per_day, unit_cost_minor, currency, minutes_per_unit, intake_form, status';
 
 export async function getActiveQuit(client: Client, userId: string): Promise<QuitPlan | null> {
   const { rows } = await client.query<QuitRow>(
@@ -206,6 +208,7 @@ export async function createQuit(
     unitCostMinor: number;
     currency: string;
     minutesPerUnit: number;
+    intakeForm?: 'smoked' | 'oral' | 'both' | null;
   },
 ): Promise<QuitPlan> {
   // One active plan at a time. Starting a new one archives the old rather than
@@ -216,8 +219,8 @@ export async function createQuit(
   );
   const { rows } = await client.query<QuitRow>(
     `INSERT INTO quits (tenant_id, user_id, substance, started_at, baseline_units_per_day,
-                        unit_cost_minor, currency, minutes_per_unit)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        unit_cost_minor, currency, minutes_per_unit, intake_form)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING ${QUIT_COLUMNS}`,
     [
       input.tenantId,
@@ -228,6 +231,7 @@ export async function createQuit(
       input.unitCostMinor,
       input.currency,
       input.minutesPerUnit,
+      input.intakeForm ?? null,
     ],
   );
   return toQuitPlan(rows[0]!);
