@@ -19,11 +19,19 @@ import type { Metadata } from 'next';
  * So public pages opt in, one at a time, through this helper.
  */
 
-/** Where this deployment actually lives. Canonical URLs are absolute. */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cleat.app').replace(
-  /\/+$/,
-  '',
-);
+/**
+ * Where this deployment actually lives. Canonical URLs have to be absolute.
+ *
+ * Falls back to the host Vercel assigns when no site URL is configured, because
+ * the alternative is what the first deployment did: emit canonical tags and a
+ * sitemap pointing at a domain nobody has registered yet, which tells a crawler
+ * that the real pages are duplicates of something that does not exist.
+ */
+const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (vercelHost ? `https://${vercelHost}` : 'https://cleat.app')
+).replace(/\/+$/, '');
 
 /** Every path that may be indexed. The sitemap and robots.txt read this list. */
 export const PUBLIC_PATHS = ['/', '/kris', '/nara', '/medberoende', '/abstinens', '/organisation'];
