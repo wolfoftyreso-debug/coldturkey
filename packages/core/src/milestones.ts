@@ -1,5 +1,5 @@
 import type { SubstanceKind } from './types.js';
-import { substanceProfile } from './substances.js';
+import { substanceProfile, type MilestoneSource } from './substances.js';
 
 export interface Milestone {
   key: string;
@@ -7,6 +7,13 @@ export interface Milestone {
   reached: boolean;
   /** Hours remaining until reached. Zero once passed. */
   hoursRemaining: number;
+  /**
+   * Who established this, when it is a claim about a body rather than an
+   * observation about how people feel. Carried all the way to the screen: a
+   * product that must never pretend to be a doctor has to be able to say where
+   * a number came from, and the person reading it should be able to check.
+   */
+  source?: MilestoneSource;
 }
 
 export interface MilestoneSummary {
@@ -35,6 +42,7 @@ export function computeMilestones(
     hours: m.hours,
     reached: streakHours >= m.hours,
     hoursRemaining: Math.max(0, m.hours - streakHours),
+    ...(m.source ? { source: m.source } : {}),
   }));
 
   const reached = mapped.filter((m) => m.reached);

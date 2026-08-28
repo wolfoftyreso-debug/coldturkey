@@ -151,7 +151,8 @@ export interface Dashboard {
     projectedYear1: { moneyMinor: number };
   } | null;
   milestones: {
-    next: { text: string } | null;
+    /** `source` is present on physiological claims — see MilestoneSource in core. */
+    next: { text: string; source?: string } | null;
     progressToNext: number;
   } | null;
   indicators: { key: string; value: number | null; label: string; higherIsBetter: boolean }[];

@@ -233,8 +233,9 @@ export interface Dashboard {
     projectedYear1: { moneyMinor: number; minutes: number; units: number };
   } | null;
   milestones: {
-    reached: { key: string; text: string }[];
-    next: { key: string; text: string; hoursRemaining: number } | null;
+    reached: { key: string; text: string; source?: string }[];
+    /** `source` is present on physiological claims — see MilestoneSource in core. */
+    next: { key: string; text: string; hoursRemaining: number; source?: string } | null;
     progressToNext: number;
   } | null;
   indicators: Indicator[];

@@ -166,6 +166,14 @@ export default function HomePage() {
             <p className="lede" style={{ marginBottom: 12 }}>
               {data.milestones.next.text}
             </p>
+            {/* Present only on claims about a body. This product must never
+                assert one as though it established it, and somebody reading a
+                number about their own heart should be able to check it. */}
+            {data.milestones.next.source ? (
+              <p style={{ opacity: 0.55, fontSize: '0.85rem', marginBottom: 12 }}>
+                {t('milestone.source', { source: data.milestones.next.source })}
+              </p>
+            ) : null}
             <div className="meter-track">
               <div
                 className="meter-fill"

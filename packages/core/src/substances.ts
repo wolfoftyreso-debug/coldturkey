@@ -29,10 +29,30 @@ export interface SubstanceProfile {
    * `@cleat/i18n`; the wording there is deliberately non-clinical and
    * describes what people commonly report rather than promising outcomes.
    */
-  milestones: { hours: number; key: string }[];
+  milestones: SubstanceMilestone[];
 }
 
-const SHARED_TIME_MILESTONES: { hours: number; key: string }[] = [
+/**
+ * Where a milestone's claim comes from, when it is a physiological one.
+ *
+ * Most milestones in this file describe what people commonly report, and
+ * those carry no source because there is nothing to cite — "the cough has
+ * usually settled" is an observation, not a finding. Nicotine is different:
+ * the timeline for stopping smoking is established public-health data, people
+ * search for it by the number, and this product must never assert a fact about
+ * somebody's body as though it established it. So the ones that come from a
+ * body carry that body, and every surface that shows the milestone shows the
+ * source with it.
+ */
+export type MilestoneSource = 'NHS' | 'CDC';
+
+export interface SubstanceMilestone {
+  hours: number;
+  key: string;
+  source?: MilestoneSource;
+}
+
+const SHARED_TIME_MILESTONES: SubstanceMilestone[] = [
   { hours: 24, key: 'milestone.shared.day1' },
   { hours: 72, key: 'milestone.shared.day3' },
   { hours: 168, key: 'milestone.shared.week1' },
@@ -142,14 +162,39 @@ export const SUBSTANCE_PROFILES: Record<SubstanceKind, SubstanceProfile> = {
     overdoseRisk: false,
     defaultMinutesPerUnit: 7,
     unitKey: 'unit.nicotine',
+    /**
+     * The one timeline in this file taken from published public-health data
+     * rather than from what people report, and the reason is that it is the
+     * single most-searched question about quitting anything: what happens in
+     * the body, and when.
+     *
+     * Sourced from NHS Better Health and the CDC, attributed per row. The
+     * public page at /sluta-roka renders this same array — it used to carry
+     * its own copy, and the two had already drifted apart: the page said the
+     * risk of a heart attack is halved at one year, the app said it had
+     * "dropped markedly". Somebody who reads the page and then opens the app
+     * should meet the same number, not a softer one.
+     *
+     * It also runs past a year, which nothing else here does. At eighteen
+     * months a person needs to be told they are still winning something, and
+     * the stroke figure is the honest thing to tell them.
+     */
     milestones: [
-      { hours: 0.34, key: 'milestone.nicotine.min20' },
-      { hours: 12, key: 'milestone.nicotine.h12' },
-      { hours: 48, key: 'milestone.nicotine.h48' },
-      { hours: 336, key: 'milestone.nicotine.week2' },
-      { hours: 720, key: 'milestone.nicotine.month1' },
-      { hours: 2160, key: 'milestone.nicotine.month3' },
-      { hours: 8760, key: 'milestone.nicotine.year1' },
+      { hours: 0.34, key: 'milestone.nicotine.min20', source: 'NHS' },
+      { hours: 12, key: 'milestone.nicotine.h12', source: 'CDC' },
+      { hours: 24, key: 'milestone.nicotine.h24', source: 'CDC' },
+      { hours: 48, key: 'milestone.nicotine.h48', source: 'NHS' },
+      { hours: 336, key: 'milestone.nicotine.week2', source: 'CDC' },
+      // One month sits inside the CDC's "2 weeks to 3 months" band rather than
+      // being a finding of its own. It stays because a month is the first
+      // number most people say out loud, and dropping it would leave a
+      // ten-week hole in exactly the stretch where somebody needs evidence
+      // that time is still buying them something.
+      { hours: 720, key: 'milestone.nicotine.month1', source: 'CDC' },
+      { hours: 2016, key: 'milestone.nicotine.week12', source: 'NHS' },
+      { hours: 8760, key: 'milestone.nicotine.year1', source: 'NHS' },
+      { hours: 43_800, key: 'milestone.nicotine.year5', source: 'CDC' },
+      { hours: 131_400, key: 'milestone.nicotine.year15', source: 'CDC' },
     ],
   },
   gambling: {

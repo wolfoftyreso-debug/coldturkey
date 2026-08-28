@@ -197,6 +197,11 @@ export default function HomeScreen() {
           <Text style={styles.h2}>{t('milestone.nextTitle').toUpperCase()}</Text>
           <View style={styles.card}>
             <Text style={styles.lede}>{data.milestones.next.text}</Text>
+            {data.milestones.next.source ? (
+              <Text style={styles.muted}>
+                {t('milestone.source', { source: data.milestones.next.source })}
+              </Text>
+            ) : null}
           </View>
         </>
       ) : null}

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { substanceProfile } from '@cleat/core';
+import { translate } from '@cleat/i18n';
 import { jsonLd, publicPage } from '../../lib/seo';
 import styles from '../landing.module.css';
 
@@ -33,47 +35,18 @@ export const metadata = publicPage({
 });
 
 /**
- * The timeline, with its source next to each row rather than in a footnote.
- * A reader who wants to check one line should not have to work out which of
- * two organisations said it.
+ * The timeline, read out of the product rather than written for the page.
+ *
+ * This array used to live here, hand-typed, and it had already drifted from
+ * what the app tells the same person: the page said the risk of a heart attack
+ * is halved at one year, the app said it had "dropped markedly". Somebody who
+ * reads this page and then opens Cleat should meet the same sentence, not a
+ * softer one — so both render `SUBSTANCE_PROFILES.nicotine.milestones` through
+ * the same translation catalogue, and there is a test that fails if a milestone
+ * is ever shown here without the body that established it.
  */
-const TIMELINE: Array<{ when: string; what: string; source: 'NHS' | 'CDC' }> = [
-  {
-    when: '20 minuter',
-    what: 'Pulsen börjar gå ner mot det normala. Kolmonoxiden i blodet har halverats och syresättningen är på väg tillbaka.',
-    source: 'NHS',
-  },
-  {
-    when: '24 timmar',
-    what: 'Nikotinhalten i blodet är nere på en försumbar nivå. Det är också ungefär här abstinensen är som mest påtaglig.',
-    source: 'CDC',
-  },
-  {
-    when: '48 timmar',
-    what: 'Kolmonoxiden är nere på samma nivå som hos någon som aldrig rökt. Lungorna börjar rensa slem, och lukt och smak börjar komma tillbaka.',
-    source: 'NHS',
-  },
-  {
-    when: '2 veckor till 3 månader',
-    what: 'Risken för hjärtinfarkt börjar sjunka. Lungfunktionen förbättras, och hosta och andfåddhet minskar.',
-    source: 'CDC',
-  },
-  {
-    when: '2 till 12 veckor',
-    what: 'Blodcirkulationen har blivit bättre. Lungfunktionen ökar med upp till tio procent.',
-    source: 'NHS',
-  },
-  {
-    when: '1 år',
-    what: 'Risken för hjärtinfarkt är halverad jämfört med någon som fortsätter röka. Risken att dö i lungcancer är också halverad.',
-    source: 'NHS',
-  },
-  {
-    when: '5 till 15 år',
-    what: 'Risken för stroke är nere på samma nivå som hos någon som aldrig rökt.',
-    source: 'CDC',
-  },
-];
+const LOCALE = 'sv';
+const TIMELINE = substanceProfile('nicotine').milestones;
 
 /**
  * The half nobody puts on the timeline.
@@ -154,12 +127,13 @@ export default function QuitSmokingPage() {
         </h2>
         <div className={styles.grid}>
           {TIMELINE.map((row) => (
-            <article className={styles.card} key={row.when}>
-              <h3 className={styles.cardTitle}>{row.when}</h3>
-              <p className={styles.cardBody}>{row.what}</p>
-              <p className={styles.cardBody} style={{ opacity: 0.55, fontSize: '0.85rem' }}>
-                Källa: {row.source}
-              </p>
+            <article className={styles.card} key={row.key}>
+              <p className={styles.cardBody}>{translate(LOCALE, row.key)}</p>
+              {row.source ? (
+                <p className={styles.cardBody} style={{ opacity: 0.55, fontSize: '0.85rem' }}>
+                  Källa: {row.source}
+                </p>
+              ) : null}
             </article>
           ))}
         </div>

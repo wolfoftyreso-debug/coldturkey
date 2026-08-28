@@ -142,6 +142,7 @@ export default function LandingPage() {
           <Link href="/nara" style={{ color: 'var(--accent-strong)' }}>För anhöriga</Link>{' · '}
           <Link href="/medberoende" style={{ color: 'var(--accent-strong)' }}>Medberoende</Link>{' · '}
           <Link href="/abstinens" style={{ color: 'var(--accent-strong)' }}>Abstinens</Link>{' · '}
+          <Link href="/sluta-roka" style={{ color: 'var(--accent-strong)' }}>Sluta röka</Link>{' · '}
           <Link href="/organisation" style={{ color: 'var(--accent-strong)' }}>För verksamheter</Link>
         </p>
       </nav>
