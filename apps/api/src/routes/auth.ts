@@ -77,6 +77,18 @@ const sha256Recovery = (value: string): string =>
  */
 const SEAT_LOCK_NAMESPACE = 8_25_14;
 
+/**
+ * A Postgres unique-index violation on a named constraint.
+ *
+ * 23505 is `unique_violation`. Matching the constraint name as well as the
+ * code matters: a future index on this table must not be silently reported to
+ * somebody as "that email is taken".
+ */
+function isUniqueViolation(error: unknown, constraint: string): boolean {
+  const candidate = error as { code?: unknown; constraint?: unknown };
+  return candidate?.code === '23505' && candidate?.constraint === constraint;
+}
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   const config = loadConfig();
 
@@ -163,6 +175,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const existing = await findUserByEmail(client, body.email);
       if (existing) throw conflict('email_taken', 'An account with that email already exists');
 
+      // The lookup above answers the common case; `users_tenant_email_key`
+      // is what actually decides. Between the two there is a window, and the
+      // only reason it is hard to hit today is that the password hash in front
+      // of it costs far more than the transaction behind it — which is an
+      // accident of scrypt's cost, not a guarantee. Without this the loser of
+      // that race is shown an internal error for doing nothing wrong.
       const user = await createUser(client, {
         tenantId: tenant.id,
         email: body.email,
@@ -171,6 +189,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         locale: body.locale,
         country: body.country,
         timezone: body.timezone,
+      }).catch((error: unknown) => {
+        if (isUniqueViolation(error, 'users_tenant_email_key')) {
+          throw conflict('email_taken', 'An account with that email already exists');
+        }
+        throw error;
       });
 
       const refresh = createRefreshToken();
