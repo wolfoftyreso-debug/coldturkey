@@ -14,17 +14,45 @@ data:
   ALLOW_PUBLIC_SIGNUP: 'true'
   COACH_MODEL: 'claude-opus-5'
   CORS_ORIGINS: 'https://app.cleat.example'
+  # Where reset and verification links point. Must be the public web origin,
+  # not the API's — a link to the API is a link to a 404.
+  PUBLIC_WEB_URL: 'https://app.cleat.example'
+  # Must be an address on a domain your mail provider has verified, or every
+  # send is refused and nobody can recover an account.
+  MAIL_FROM: 'no-reply@cleat.example'
 ---
 # Template only — never commit real values.
 #
 #   kubectl -n cleat create secret generic cleat-secrets \
 #     --from-literal=DATABASE_URL='postgres://user:pass@host:5432/cleat' \
 #     --from-literal=JWT_SECRET="$(openssl rand -base64 48)" \
+#     --from-literal=FIELD_ENCRYPTION_KEYS="k1:$(openssl rand -base64 32)" \
+#     --from-literal=FIELD_ENCRYPTION_ACTIVE_KEY='k1' \
+#     --from-literal=RESEND_API_KEY='re_...' \
 #     --from-literal=ANTHROPIC_API_KEY='sk-ant-...'
 #
-# ANTHROPIC_API_KEY may be omitted entirely: without it the API serves the
+# Three of those are not optional, and the API refuses to start without them
+# rather than degrading quietly:
+#
+#   FIELD_ENCRYPTION_KEYS  — without it coach transcripts and relapse notes sit
+#                            in the database in cleartext, where a leaked
+#                            backup or an operator's SELECT discloses them.
+#                            Row level security protects neither.
+#   RESEND_API_KEY         — or SMTP_HOST/SMTP_USER/SMTP_PASSWORD instead, if
+#                            you run your own relay. Without one of them a
+#                            password reset returns 202 and sends nothing.
+#   JWT_SECRET             — at least 32 characters.
+#
+# They are left empty here on purpose. A placeholder encryption key committed
+# to a repository is not a placeholder, it is a published key, and a cluster
+# that booted with one would look healthy while encrypting nothing.
+#
+# ANTHROPIC_API_KEY genuinely may be omitted: without it the API serves the
 # deterministic local coach, so the ten-minute protocol, the craving plan and
 # the negotiation counters all keep working.
+#
+# STRIPE_* may be omitted too. Individuals never pay, so an API with no Stripe
+# keys is a complete deployment — only the organisation checkout is withdrawn.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -36,4 +64,10 @@ type: Opaque
 stringData:
   DATABASE_URL: 'postgres://cleat:cleat@cleat-postgres:5432/cleat'
   JWT_SECRET: 'replace-me-with-at-least-32-random-characters'
+  FIELD_ENCRYPTION_KEYS: ''
+  FIELD_ENCRYPTION_ACTIVE_KEY: ''
+  RESEND_API_KEY: ''
   ANTHROPIC_API_KEY: ''
+  STRIPE_SECRET_KEY: ''
+  STRIPE_WEBHOOK_SECRET: ''
+  STRIPE_PRICE_CLINIC_SEAT: ''

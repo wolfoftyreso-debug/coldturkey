@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { connect, type Socket } from 'node:net';
 import { connect as tlsConnect, type TLSSocket } from 'node:tls';
 import { loadConfig } from '../config.js';
+import { resendMailerFromConfig } from './resend.js';
 
 /**
  * A small SMTP client.
@@ -28,8 +29,8 @@ export interface Mail {
 
 export interface Mailer {
   send(mail: Mail): Promise<void>;
-  /** What the caller should tell the user about delivery, for the dev case. */
-  readonly kind: 'smtp' | 'log';
+  /** Which transport this is — used by the health surface and by tests. */
+  readonly kind: 'smtp' | 'resend' | 'log';
 }
 
 const CRLF = '\r\n';
@@ -246,19 +247,34 @@ class LogMailer implements Mailer {
 
 let cached: Mailer | null = null;
 
+/**
+ * Transport selection, in the order a deployment is most likely to mean it.
+ *
+ * An API key is an explicit choice of provider, so it wins over a relay host
+ * that may well be left over from a previous setup. Neither configured means
+ * development, and development gets the digest logger rather than a hard
+ * failure — but `loadConfig` refuses to boot a production process that has
+ * reached this branch, because silently swallowing account recovery is worse
+ * than not starting.
+ */
 export function mailer(): Mailer {
   if (cached) return cached;
   const config = loadConfig();
-  cached = config.SMTP_HOST
-    ? new SmtpMailer({
-        host: config.SMTP_HOST,
-        port: config.SMTP_PORT,
-        user: config.SMTP_USER,
-        pass: config.SMTP_PASSWORD,
-        from: config.MAIL_FROM,
-        rejectUnauthorized: config.SMTP_REJECT_UNAUTHORIZED,
-      })
-    : new LogMailer();
+  const viaResend = resendMailerFromConfig();
+  if (viaResend) {
+    cached = viaResend;
+  } else if (config.SMTP_HOST) {
+    cached = new SmtpMailer({
+      host: config.SMTP_HOST,
+      port: config.SMTP_PORT,
+      user: config.SMTP_USER,
+      pass: config.SMTP_PASSWORD,
+      from: config.MAIL_FROM,
+      rejectUnauthorized: config.SMTP_REJECT_UNAUTHORIZED,
+    });
+  } else {
+    cached = new LogMailer();
+  }
   return cached;
 }
 

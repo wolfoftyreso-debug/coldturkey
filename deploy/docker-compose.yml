@@ -46,11 +46,11 @@ services:
     environment:
       # The image sets NODE_ENV=production, and this overrides it deliberately.
       #
-      # In production the API refuses to boot without SMTP_HOST, because without
-      # it password reset and email verification fail silently — which is the
-      # correct guard, and this stack has no mail server to give it. In
-      # development the same mail is written to the log instead, so you can see
-      # a verification link and carry on.
+      # In production the API refuses to boot without SMTP_HOST or RESEND_API_KEY,
+      # because without one of them password reset and email verification fail
+      # silently — which is the correct guard, and this stack has neither to
+      # give it. In development the same mail is written to the log instead, so
+      # you can see a verification link and carry on.
       #
       # The consequence is the reason this file says "evaluation" at the top:
       # nothing here should serve real people, because their password resets

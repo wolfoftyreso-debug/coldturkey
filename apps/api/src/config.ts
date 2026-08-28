@@ -62,6 +62,13 @@ const schema = z.object({
     .transform((v) => v !== 'false'),
   MAIL_FROM: z.string().default('no-reply@cleat.app'),
 
+  // The other transport. A key here takes precedence over SMTP_HOST, because
+  // most container platforms block outbound port 587 outright and a reset mail
+  // that never leaves the network is the failure this product cannot have.
+  RESEND_API_KEY: z.string().optional(),
+  /** Overridable so the suite can exercise real request shaping against a stub. */
+  RESEND_API_BASE: z.string().default('https://api.resend.com'),
+
   /** Where reset and verification links point. Must be the public web origin. */
   PUBLIC_WEB_URL: z.string().default('http://localhost:3000'),
 
@@ -134,10 +141,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     );
   }
 
-  if (value.NODE_ENV === 'production' && !value.SMTP_HOST) {
+  if (value.NODE_ENV === 'production' && !value.SMTP_HOST && !value.RESEND_API_KEY) {
     throw new Error(
-      'Invalid configuration:\n  SMTP_HOST is required in production — ' +
-        'without it password reset and email verification silently do nothing.',
+      'Invalid configuration:\n  SMTP_HOST or RESEND_API_KEY is required in production — ' +
+        'without one of them password reset and email verification silently do nothing.',
     );
   }
 

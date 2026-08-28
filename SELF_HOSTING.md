@@ -103,14 +103,24 @@ worst possible moment.
 
 ## Mail
 
-Password reset and email verification need a relay. Without `SMTP_HOST` the
-API falls back to a mailer that logs a digest instead of sending — fine for
-development, catastrophic in production, because a reset request would return
-`202` and the person would wait for a mail that was never sent.
+Password reset and email verification need somewhere to hand a message to.
+There are two transports, and you pick one by which credential you set.
 
-**So the API refuses to start in production without `SMTP_HOST`.** A server
-that will not boot is a bug report; a server that silently swallows account
-recovery is not.
+| You set | Transport | Use it when |
+| --- | --- | --- |
+| `SMTP_HOST` (+ `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`) | The built-in SMTP client | You run your own relay, or the platform lets you open port 587 |
+| `RESEND_API_KEY` | Resend over HTTPS | You are on a container platform that blocks outbound SMTP |
+
+Set both and the API key wins — both configured is not a misconfiguration to
+reject, it is somebody midway through a migration, and the key is the newer
+deliberate choice. Set neither and the API falls back to a mailer that logs a
+digest instead of sending: fine for development, catastrophic in production,
+because a reset request would return `202` and the person would wait for a
+mail that was never sent.
+
+**So the API refuses to start in production without one of `SMTP_HOST` or
+`RESEND_API_KEY`.** A server that will not boot is a bug report; a server that
+silently swallows account recovery is not.
 
 The SMTP client upgrades to TLS via STARTTLS whenever the relay offers it, and
 authenticates only after the upgrade. Set `SMTP_REJECT_UNAUTHORIZED=false`
@@ -118,8 +128,18 @@ only against a relay with a self-signed certificate on a network you control,
 and understand that you are turning off the check that stops an attacker on
 that network reading every reset link.
 
+Why the HTTPS transport exists at all: managed container platforms block
+outbound port 587 by default, to stop themselves becoming spam sources. On
+those, an SMTP-only build does not fail loudly — it hangs and then times out,
+one reset at a time. `RESEND_API_KEY` routes the same messages over 443.
+
+Whichever transport is in use, `MAIL_FROM` must be an address on a domain the
+provider has verified, or the send is refused with `422 validation_error`.
+
 Mail is plain text on purpose. HTML mail here would be a tracking surface
-pointed at people in recovery.
+pointed at people in recovery — so open tracking, click tracking, and the
+provider's HTML rendering are all left off, and there is a test that fails if
+somebody turns one on.
 
 ---
 
