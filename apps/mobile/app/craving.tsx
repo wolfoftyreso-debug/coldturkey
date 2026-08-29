@@ -1,25 +1,21 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { CRAVING_FEELINGS, CRAVING_LOCATIONS } from '@cleat/core';
 import { api, type CoachResponse, type CravingPlan } from '../src/api';
 import { offlineCravingPlan, offlineEmergency } from '../src/offline';
 import { useSession } from '../src/session';
 import { styles } from '../src/theme';
 
-const FEELINGS = [
-  'craving',
-  'panic',
-  'loneliness',
-  'anger',
-  'stress',
-  'boredom',
-  'grief',
-  'pain',
-  'social_pressure',
-  'other',
-] as const;
-
-const LOCATIONS = ['home', 'work', 'party', 'with_users', 'alone', 'in_transit', 'other'] as const;
+/**
+ * Read from the domain package rather than copied.
+ *
+ * Both clients kept their own hand-typed copy, which meant three places to
+ * change and two to forget. The API validates against these same arrays, so a
+ * client that drifted would offer a chip the server refuses.
+ */
+const FEELINGS = CRAVING_FEELINGS;
+const LOCATIONS = CRAVING_LOCATIONS;
 
 const INTENSITIES = [2, 4, 6, 8, 10] as const;
 

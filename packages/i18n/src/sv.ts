@@ -141,6 +141,10 @@ export const sv = {
 
   'location.home': 'Hemma',
   'location.work': 'På jobbet',
+  'location.on_a_break': 'På rast',
+  'location.after_meal': 'Efter maten',
+  'location.with_coffee': 'Till kaffet',
+  'location.after_drinking': 'Efter att ha druckit',
   'location.party': 'På fest',
   'location.with_users': 'Med personer som använder',
   'location.alone': 'Ensam',

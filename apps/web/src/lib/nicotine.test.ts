@@ -225,3 +225,33 @@ describe('the snus page claims only what holds for snus', () => {
     expect(PUBLIC_PATHS).toContain('/sluta-snusa');
   });
 });
+
+describe('the craving locations reach the screen', () => {
+  it('has a label in both languages for every one of them', async () => {
+    // A missing label renders the raw enum as a chip — "with_coffee" — which
+    // is how a product tells somebody it was not built for them.
+    const { CRAVING_LOCATIONS, CRAVING_FEELINGS } = await import('@cleat/core');
+    for (const key of [
+      ...CRAVING_LOCATIONS.map((l) => `location.${l}`),
+      ...CRAVING_FEELINGS.map((f) => `feeling.${f}`),
+    ]) {
+      for (const locale of ['sv', 'en'] as const) {
+        expect(translate(locale, key), `${locale} ${key}`).not.toBe(key);
+      }
+    }
+  });
+
+  it('is read from the domain package by both clients, not copied', async () => {
+    // Three hand-typed copies meant three places to change and two to forget,
+    // and a client that drifted would offer a chip the API refuses.
+    const web = readFileSync(join(import.meta.dirname, '../app/craving/page.tsx'), 'utf8');
+    const mobile = readFileSync(
+      join(import.meta.dirname, '../../../mobile/app/craving.tsx'),
+      'utf8',
+    );
+    for (const [name, source] of [['web', web], ['mobile', mobile]] as const) {
+      expect(source, name).toContain('const LOCATIONS = CRAVING_LOCATIONS;');
+      expect(source, name).toContain('const FEELINGS = CRAVING_FEELINGS;');
+    }
+  });
+});

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { CRAVING_FEELINGS, CRAVING_LOCATIONS } from '@cleat/core';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type CoachResponse, type CravingPlan } from '../../lib/api';
 import {
@@ -12,28 +13,15 @@ import {
 } from '../../lib/offline';
 import { useRequireAuth } from '../../lib/session';
 
-const FEELINGS = [
-  'craving',
-  'panic',
-  'loneliness',
-  'anger',
-  'stress',
-  'boredom',
-  'grief',
-  'pain',
-  'social_pressure',
-  'other',
-] as const;
-
-const LOCATIONS = [
-  'home',
-  'work',
-  'party',
-  'with_users',
-  'alone',
-  'in_transit',
-  'other',
-] as const;
+/**
+ * Read from the domain package rather than copied.
+ *
+ * Both clients kept their own hand-typed copy of these lists, which meant
+ * three places to change and two to forget. The API validates against the
+ * same arrays, so a client that drifted would offer a chip the server refuses.
+ */
+const FEELINGS = CRAVING_FEELINGS;
+const LOCATIONS = CRAVING_LOCATIONS;
 
 type Step = 'safety' | 'feeling' | 'location' | 'intensity' | 'plan' | 'emergency';
 

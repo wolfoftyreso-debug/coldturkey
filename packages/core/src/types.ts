@@ -52,9 +52,25 @@ export type CravingFeeling =
   | 'social_pressure'
   | 'other';
 
+/**
+ * Where somebody was when the craving arrived.
+ *
+ * The first list was written for drinking and drugs: a party, people who are
+ * using, being alone. Those are real, and they are also not where a smoker's
+ * day happens. The break outside the door, the cigarette after eating, the one
+ * with the coffee — those are the moments, and "at work" told nobody anything
+ * they could act on.
+ *
+ * Drinking is on the list twice over: it is the single most reliable way to
+ * lose a night's abstinence from nicotine, and the reverse is true too.
+ */
 export type CravingLocation =
   | 'home'
   | 'work'
+  | 'on_a_break'
+  | 'after_meal'
+  | 'with_coffee'
+  | 'after_drinking'
   | 'party'
   | 'with_users'
   | 'alone'

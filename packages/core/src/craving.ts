@@ -28,6 +28,10 @@ export const CRAVING_FEELINGS: CravingFeeling[] = [
 export const CRAVING_LOCATIONS: CravingLocation[] = [
   'home',
   'work',
+  'on_a_break',
+  'after_meal',
+  'with_coffee',
+  'after_drinking',
   'party',
   'with_users',
   'alone',
@@ -104,11 +108,18 @@ const FEELING_TOOLS: Record<CravingFeeling, string[]> = {
 };
 
 /** Locations where the single most useful action is to physically be elsewhere. */
-const LEAVE_FIRST_LOCATIONS: CravingLocation[] = ['party', 'with_users'];
+const LEAVE_FIRST_LOCATIONS: CravingLocation[] = ['party', 'with_users', 'after_drinking'];
 
 const LOCATION_TOOLS: Record<CravingLocation, string[]> = {
   home: ['remove_the_trigger', 'change_environment', 'move_your_body'],
   work: ['change_environment', 'slow_breathing', 'drink_water_eat'],
+  // The break is already short. Waiting it out is usually enough, and the
+  // person is going back inside either way.
+  on_a_break: ['delay_10_minutes', 'slow_breathing', 'move_your_body'],
+  after_meal: ['move_your_body', 'delay_10_minutes', 'drink_water_eat'],
+  with_coffee: ['change_environment', 'delay_10_minutes', 'do_something_you_like'],
+  // Alcohol is what turns an intention into a cigarette. Leaving comes first.
+  after_drinking: ['leave_the_situation', 'call_someone', 'delay_10_minutes'],
   party: ['leave_the_situation', 'call_someone', 'change_environment'],
   with_users: ['leave_the_situation', 'call_someone', 'remove_the_trigger'],
   alone: ['call_someone', 'change_environment', 'do_something_you_like'],

@@ -137,6 +137,10 @@ export const en: Catalog = {
 
   'location.home': 'At home',
   'location.work': 'At work',
+  'location.on_a_break': 'On a break',
+  'location.after_meal': 'After eating',
+  'location.with_coffee': 'With coffee',
+  'location.after_drinking': 'After drinking',
   'location.party': 'At a party',
   'location.with_users': 'With people who use',
   'location.alone': 'Alone',
