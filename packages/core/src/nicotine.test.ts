@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { computeMilestones } from './milestones.js';
-import { substanceProfile, SUBSTANCE_PROFILES } from './substances.js';
+import {
+  costBasisFor,
+  substanceProfile,
+  SUBSTANCE_PROFILES,
+  unitKeyFor,
+} from './substances.js';
 
 /**
  * The nicotine timeline, as data.
@@ -202,6 +207,44 @@ describe('somebody quitting snus', () => {
       const withIntake = computeMilestones(kind, 1_000_000, 'oral').reached.map((m) => m.key);
       const without = computeMilestones(kind, 1_000_000).reached.map((m) => m.key);
       expect(withIntake, kind).toEqual(without);
+    }
+  });
+});
+
+describe('once the app knows how somebody takes it', () => {
+  it('asks a smoker about cigarettes and a snusare about prillor', () => {
+    // `unit.nicotine` is "cigarett/prilla" — the compromise a product makes
+    // when it cannot ask. It can ask now.
+    expect(unitKeyFor('nicotine', 'smoked')).toBe('unit.nicotine.smoked');
+    expect(unitKeyFor('nicotine', 'oral')).toBe('unit.nicotine.oral');
+  });
+
+  it('keeps the slash for somebody who does both, and for somebody unasked', () => {
+    expect(unitKeyFor('nicotine', 'both')).toBe('unit.nicotine');
+    expect(unitKeyFor('nicotine', null)).toBe('unit.nicotine');
+    expect(unitKeyFor('nicotine')).toBe('unit.nicotine');
+  });
+
+  it('prices snus by the can and cigarettes by the pack', () => {
+    expect(costBasisFor('nicotine', 'oral')).toEqual({
+      unitsPerPurchase: 24,
+      purchaseKey: 'purchase.can',
+    });
+    expect(costBasisFor('nicotine', 'smoked').unitsPerPurchase).toBe(20);
+  });
+
+  it('turns a can price into a sane per-portion cost', () => {
+    // A can at 55 kr: about 2.29 kr a prilla, and a can a day is 20 075 kr a
+    // year. The arithmetic the form does before it posts.
+    const perUnitMinor = Math.round((55 * 100) / costBasisFor('nicotine', 'oral').unitsPerPurchase);
+    expect(perUnitMinor).toBe(229);
+    expect(Math.round((perUnitMinor * 24 * 365) / 100)).toBe(20_060);
+  });
+
+  it('leaves every other substance alone', () => {
+    for (const kind of ['alcohol', 'cannabis', 'gambling'] as const) {
+      expect(unitKeyFor(kind, 'oral')).toBe(SUBSTANCE_PROFILES[kind].unitKey);
+      expect(costBasisFor(kind, 'oral')).toEqual(SUBSTANCE_PROFILES[kind].costBasis);
     }
   });
 });

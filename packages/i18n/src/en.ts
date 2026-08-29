@@ -358,6 +358,9 @@ export const en: Catalog = {
   // ---- Units ----
   'unit.alcohol': 'standard drink',
   'unit.nicotine': 'cigarette/pouch',
+  'unit.nicotine.smoked': 'cigarette',
+  'unit.nicotine.oral': 'pouch',
+  'purchase.can': 'can',
   'unit.dose': 'dose',
   'unit.session': 'session',
 

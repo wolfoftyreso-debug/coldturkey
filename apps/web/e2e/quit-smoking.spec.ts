@@ -78,3 +78,29 @@ test.describe('somebody quitting smoking', () => {
     await expect(page).toHaveURL(/\/$/);
   });
 });
+
+test.describe('somebody quitting snus', () => {
+  test('is asked about prillor and priced by the can', async ({ page }) => {
+    await signUp(page, newEmail('snusare'));
+    await page.goto('/plan');
+    await page.locator('button.chip').nth(1).click();
+
+    // Answering "snusar" changes what the form calls a unit and what it
+    // assumes a purchase is. Before the question existed, both said
+    // "cigarett/prilla" and twenty.
+    await page.getByRole('button', { name: /^(Snusar|Snus \/ pouches)$/ }).click();
+    await expect(page.locator('label[for="cost"]')).toContainText(/dosa|can/i);
+    await expect(page.locator('#size')).toHaveValue('24');
+
+    await page.fill('#units', '24');
+    await page.fill('#cost', '55');
+    await page.locator('.card button.btn.primary.wide').first().click();
+
+    await page.goto('/home');
+    await expect(page.locator('.daycount')).toBeVisible();
+
+    // And nothing about lungs anywhere on the screen.
+    const text = await page.locator('main').innerText();
+    expect(text).not.toMatch(/lungfunktion|kolmonoxid|lung function|carbon monoxide/i);
+  });
+});

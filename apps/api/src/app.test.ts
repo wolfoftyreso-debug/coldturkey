@@ -1054,7 +1054,12 @@ suite('Cleat API', () => {
       const noSuchUser = await app.inject({
         method: 'POST',
         url: '/v1/auth/login',
-        payload: { email: 'nobody@example.com', password },
+        // Unique per run, like `alice` above. A fixed address accumulates a
+        // failure here on every run, and the account lockout keeps its counter
+        // in Postgres for fifteen minutes — so on the fifth run inside a
+        // quarter of an hour this assertion started getting 429 instead of
+        // 401, on a code path nobody had touched.
+        payload: { email: `nobody+${Date.now()}@example.com`, password },
       });
       expect(wrongPassword.statusCode).toBe(401);
       expect(noSuchUser.statusCode).toBe(401);

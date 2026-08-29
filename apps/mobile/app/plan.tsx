@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { substanceProfile, type IntakeForm, type SubstanceKind } from '@cleat/core';
+import {
+  costBasisFor,
+  substanceProfile,
+  unitKeyFor,
+  type IntakeForm,
+  type SubstanceKind,
+} from '@cleat/core';
 import { api, type Dashboard } from '../src/api';
 import { useSession } from '../src/session';
 import { colors, styles } from '../src/theme';
@@ -92,7 +98,7 @@ export default function PlanScreen() {
     }
   }
 
-  const basis = substanceProfile(substance).costBasis;
+  const basis = costBasisFor(substance, intakeForm);
   const byThePack = basis.unitsPerPurchase > 1;
   const purchaseLabel = t(basis.purchaseKey);
 
@@ -140,7 +146,7 @@ export default function PlanScreen() {
             </View>
 
             <Text style={[styles.muted, { marginTop: 14 }]}>
-              {t('onboarding.unitsPerDay', { unit: t(substanceProfile(substance).unitKey) })}
+              {t('onboarding.unitsPerDay', { unit: t(unitKeyFor(substance, intakeForm)) })}
             </Text>
             <TextInput
               style={styles.input}
@@ -153,7 +159,7 @@ export default function PlanScreen() {
             <Text style={[styles.muted, { marginTop: 12 }]}>
               {byThePack
                 ? t('onboarding.purchaseCost', { purchase: purchaseLabel })
-                : t('onboarding.cost', { unit: t(substanceProfile(substance).unitKey) })}
+                : t('onboarding.cost', { unit: t(unitKeyFor(substance, intakeForm)) })}
             </Text>
             <TextInput
               style={styles.input}
@@ -190,7 +196,12 @@ export default function PlanScreen() {
                   {(['smoked', 'oral', 'both'] as const).map((option) => (
                     <TouchableOpacity
                       key={option}
-                      onPress={() => setIntakeForm(intakeForm === option ? null : option)}
+                      onPress={() => {
+                        const next = intakeForm === option ? null : option;
+                        setIntakeForm(next);
+                        // A can of snus is not a pack of cigarettes.
+                        setPurchaseSize(String(costBasisFor(substance, next).unitsPerPurchase));
+                      }}
                       style={[styles.chip, intakeForm === option ? styles.chipSelected : null]}
                     >
                       <Text style={styles.chipText}>{t(`intake.${option}`)}</Text>

@@ -361,6 +361,9 @@ export const sv = {
   // ---- Units ----
   'unit.alcohol': 'standardglas',
   'unit.nicotine': 'cigarett/prilla',
+  'unit.nicotine.smoked': 'cigarett',
+  'unit.nicotine.oral': 'prilla',
+  'purchase.can': 'dosa',
   'unit.dose': 'dos',
   'unit.session': 'tillfälle',
 

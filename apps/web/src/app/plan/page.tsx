@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { substanceProfile, type IntakeForm, type SubstanceKind } from '@cleat/core';
+import {
+  costBasisFor,
+  substanceProfile,
+  unitKeyFor,
+  type IntakeForm,
+  type SubstanceKind,
+} from '@cleat/core';
 import { Loading, Shell } from '../../components/Shell';
 import { api, type Dashboard } from '../../lib/api';
 import { useRequireAuth } from '../../lib/session';
@@ -58,9 +64,9 @@ export default function PlanPage() {
     void reload().catch(() => undefined);
   }, [user]);
 
-  const basis = substanceProfile(substance).costBasis;
+  const basis = costBasisFor(substance, intakeForm);
   const byThePack = basis.unitsPerPurchase > 1;
-  const unitLabel = t(substanceProfile(substance).unitKey);
+  const unitLabel = t(unitKeyFor(substance, intakeForm));
   const purchaseLabel = t(basis.purchaseKey);
 
   if (loading || !user) return <Loading />;
@@ -177,7 +183,13 @@ export default function PlanPage() {
                       type="button"
                       className="chip"
                       data-selected={intakeForm === option}
-                      onClick={() => setIntakeForm(intakeForm === option ? null : option)}
+                      onClick={() => {
+                        const next = intakeForm === option ? null : option;
+                        setIntakeForm(next);
+                        // A can of snus is not a pack of cigarettes. The
+                        // number moves with the answer so nobody has to.
+                        setPurchaseSize(costBasisFor(substance, next).unitsPerPurchase);
+                      }}
                     >
                       {t(`intake.${option}`)}
                     </button>

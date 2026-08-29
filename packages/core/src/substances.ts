@@ -288,3 +288,28 @@ export function substanceProfile(kind: SubstanceKind): SubstanceProfile {
 export function requiresMedicalDetoxWarning(kind: SubstanceKind): boolean {
   return SUBSTANCE_PROFILES[kind].medicalDetoxAdvised;
 }
+
+/**
+ * What one unit is called, once we know how the person takes it.
+ *
+ * `unit.nicotine` is "cigarett/prilla" — the compromise a product makes when
+ * it cannot ask. It can ask now, so a smoker is asked about cigarettes and a
+ * snusare about prillor, and neither has to read a slash and work out which
+ * half is theirs.
+ */
+export function unitKeyFor(kind: SubstanceKind, intake?: IntakeForm | null): string {
+  if (kind !== 'nicotine' || !intake || intake === 'both') return SUBSTANCE_PROFILES[kind].unitKey;
+  return intake === 'oral' ? 'unit.nicotine.oral' : 'unit.nicotine.smoked';
+}
+
+/**
+ * What the person buys, once we know how they take it.
+ *
+ * A pack of twenty for cigarettes, a can of about twenty-four for snus. Both
+ * are editable — the point is that the number starts somewhere the person
+ * recognises instead of at one.
+ */
+export function costBasisFor(kind: SubstanceKind, intake?: IntakeForm | null): CostBasis {
+  if (kind !== 'nicotine' || intake !== 'oral') return SUBSTANCE_PROFILES[kind].costBasis;
+  return { unitsPerPurchase: 24, purchaseKey: 'purchase.can' };
+}

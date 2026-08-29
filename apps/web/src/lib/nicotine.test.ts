@@ -96,7 +96,10 @@ describe('the plan form asks for what a smoker actually knows', () => {
   });
 
   it('switches to pack pricing from the substance profile, not a hardcoded check', () => {
-    expect(plan).toContain('substanceProfile(substance).costBasis');
+    // Reads the intake-aware helper: a pack of twenty for cigarettes, a can
+    // of twenty-four for snus, per unit for everything else.
+    expect(plan).toContain('costBasisFor(substance, intakeForm)');
+    expect(plan).toContain('unitKeyFor(substance, intakeForm)');
     expect(plan).toContain("t('onboarding.purchaseCost', { purchase: purchaseLabel })");
     // Pricing is driven by `byThePack`, which comes from the data. The one
     // place the substance is named is the intake question, which genuinely is
