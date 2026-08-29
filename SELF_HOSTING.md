@@ -184,6 +184,34 @@ with a wildcard CORS origin, so a container that comes up is a container that
 was configured. `deploy/k8s` has the manifests for a cluster;
 `deploy/docker-compose.yml` is evaluation only and says so.
 
+### On Vercel, beside the web client
+
+There is a second entry point, `apps/api/api/index.ts`, which runs the same
+application as a Vercel function. It exists so the API can be put in front of
+people using the account that already serves the web client, without standing
+up a host first. Point a Vercel project at `apps/api` as its root directory and
+attach a Postgres from the marketplace — checking `rolbypassrls` on the role it
+gives you, as above.
+
+Two differences from the container, both consequences of the platform:
+
+*Migrations run at deploy time*, from the build command, not at boot. A
+function that migrates on cold start is a hundred concurrent migrations against
+one database the first time traffic arrives.
+
+*The in-process rate limiter is weaker.* Each instance keeps its own counter,
+so the effective per-IP ceiling is the configured number times however many
+instances are warm. The control that matters is unaffected — the login lockout
+keeps its state in Postgres precisely so it cannot be multiplied — but the
+generic limiter becomes a courtesy rather than a bound. Put a real one in front
+if this becomes the permanent home rather than the way to get started.
+
+The adapter is covered by `src/serverless.test.ts`, which drives it over a real
+socket: health, the public crisis resources, a POST whose body has to survive
+the hand-off, an unauthenticated request that must still be refused, and the
+security headers. That proves the adapter. It does not prove the deployment —
+only a deploy does that.
+
 **Data residency.** This is Swedish health data. The web deployment already
 pins its functions to `arn1`; put the database and the API in the EU too, and
 prefer a provider that will sign a data processing agreement — `legal/PUB-AVTAL.md`

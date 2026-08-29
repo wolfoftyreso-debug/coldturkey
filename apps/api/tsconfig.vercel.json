@@ -1,0 +1,13 @@
+{
+  // The Vercel function entry lives outside `src/` on purpose: `rootDir` is
+  // `src`, and the container image must not carry a serverless adapter it will
+  // never call. It still has to typecheck, or it rots silently until a deploy.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": ["api/**/*", "src/**/*"],
+  "exclude": ["src/**/*.test.ts", "dist"]
+}
