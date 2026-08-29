@@ -143,6 +143,54 @@ somebody turns one on.
 
 ---
 
+## Deploying the API
+
+The web client is on Vercel and does not need this. The API does, because it
+holds a database and long-lived connections, and because of one requirement
+that rules out a surprising number of otherwise reasonable hosts.
+
+**The database role must not be a superuser.** Row-level security is what keeps
+one organisation's data out of another's, and Postgres lets a superuser walk
+straight through it — `FORCE ROW LEVEL SECURITY` included. This is not a
+theoretical concern: it was caught here by a test that had been passing for
+weeks against a superuser role and proving nothing. Several managed Postgres
+products hand you a role with `rolbypassrls`, and on those the isolation this
+product depends on is decoration. Check before committing to a provider:
+
+```sql
+SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user;
+-- both must be false
+```
+
+The rest is ordinary. The image is built from `apps/api/Dockerfile`, runs as
+uid 10001, carries a `HEALTHCHECK`, migrates on boot, and handles SIGTERM so
+rolling updates drain. Verified end to end: built here, run against a fresh
+database, and driven through registration, a quit plan, the dashboard and an
+organisation enquiry — including the enquiry surviving a mail provider that
+refused it.
+
+```bash
+docker build -f apps/api/Dockerfile -t cleat-api .
+docker run -p 8080:8080 \
+  -e DATABASE_URL=…  -e JWT_SECRET=…  \
+  -e FIELD_ENCRYPTION_KEYS='k1:…' -e FIELD_ENCRYPTION_ACTIVE_KEY=k1 \
+  -e RESEND_API_KEY=… -e MAIL_FROM=no-reply@cleat.se \
+  -e PUBLIC_WEB_URL=https://cleat.se -e CORS_ORIGINS=https://cleat.se \
+  cleat-api
+```
+
+It refuses to start without the encryption keys, without a mail credential, or
+with a wildcard CORS origin, so a container that comes up is a container that
+was configured. `deploy/k8s` has the manifests for a cluster;
+`deploy/docker-compose.yml` is evaluation only and says so.
+
+**Data residency.** This is Swedish health data. The web deployment already
+pins its functions to `arn1`; put the database and the API in the EU too, and
+prefer a provider that will sign a data processing agreement — `legal/PUB-AVTAL.md`
+is the draft to send them.
+
+---
+
 ## Switching the domain on
 
 `cleat.se` is the primary. Until it resolves, canonical URLs fall back to the
