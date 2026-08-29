@@ -68,7 +68,7 @@ const schema = z.object({
   // not fail at boot on its own — it fails the first time somebody who is
   // locked out of their account asks for a reset, which is the worst place in
   // this product to discover a typo.
-  MAIL_FROM: z.string().email('MAIL_FROM must be an email address').default('no-reply@cleat.app'),
+  MAIL_FROM: z.string().email('MAIL_FROM must be an email address').default('no-reply@cleat.se'),
 
   // The other transport. A key here takes precedence over SMTP_HOST, because
   // most container platforms block outbound port 587 outright and a reset mail

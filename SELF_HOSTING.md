@@ -143,6 +143,62 @@ somebody turns one on.
 
 ---
 
+## Switching the domain on
+
+`cleat.se` is the primary. Until it resolves, canonical URLs fall back to the
+hostname Vercel assigns, which is correct but temporary. This is everything
+that has to change, in the order it has to change, so none of it has to be
+worked out twice.
+
+**1. DNS at the registrar.** Point the nameservers wherever the apex is being
+served from, then add the records Resend asks for — it will not verify without
+them, and `MAIL_FROM` on an unverified domain fails every send with
+`422 validation_error`, silently as far as the person waiting for a reset is
+concerned.
+
+**2. Resend, before touching `MAIL_FROM`.** Add `cleat.se`, publish the DKIM
+and SPF records, wait for verified. Only then set `MAIL_FROM=no-reply@cleat.se`
+on the API. Doing it in the other order breaks account recovery for however
+long DNS takes to propagate.
+
+**3. Vercel.**
+
+```
+NEXT_PUBLIC_SITE_URL=https://cleat.se
+```
+
+Then **redeploy**. This one is inlined into the client bundle at build time, so
+setting it without a new build changes nothing — the canonical tags and the
+sitemap keep pointing at the old host, and a crawler that has already indexed
+the Vercel hostname keeps being told that is the real page.
+
+**4. The API.**
+
+```
+PUBLIC_WEB_URL=https://cleat.se        # where reset links point
+CORS_ORIGINS=https://cleat.se          # explicit; "*" is refused in production
+CONTACT_NOTIFY_EMAIL=…                 # where organisation enquiries land
+```
+
+`PUBLIC_WEB_URL` is validated as an absolute URL at boot, so a missing scheme
+stops the rollout instead of producing unclickable links in a mail nobody can
+report.
+
+**5. The enquiry form, last.** `NEXT_PUBLIC_ENQUIRY_FORM=on` — and only once
+the API is actually reachable at `/v1` on the same origin. It is opt-in
+precisely so that a marketing-only deployment does not show a clinic a form
+that cannot submit. Turning it on early recreates the exact defect it exists to
+prevent.
+
+**A note on the same origin.** The Content-Security-Policy is `connect-src
+'self'`, and `API_BASE` defaults to the empty string, which means the browser
+calls `/v1` on whatever host served the page. Putting the API on a different
+hostname means changing both, together — `csp.test.ts` pins them to each other
+for the reason that shipping them out of step once made every API call fail
+with healthy pods and nothing in any log.
+
+---
+
 ## Organisation enquiries
 
 Individuals never pay, so a clinic getting in touch is the only conversion

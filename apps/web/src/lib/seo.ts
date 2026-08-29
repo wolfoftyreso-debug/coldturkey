@@ -30,7 +30,7 @@ import type { Metadata } from 'next';
 const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ??
-  (vercelHost ? `https://${vercelHost}` : 'https://cleat.app')
+  (vercelHost ? `https://${vercelHost}` : 'https://cleat.se')
 ).replace(/\/+$/, '');
 
 /** Every path that may be indexed. The sitemap and robots.txt read this list. */

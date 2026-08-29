@@ -160,7 +160,7 @@ Seeded accounts:
 
 | Tenant | Email | Password |
 |---|---|---|
-| `public` (consumer) | `demo@cleat.app` | `demo-password-123` |
+| `public` (consumer) | `demo@cleat.se` | `demo-password-123` |
 | `demo-clinic` (organisation) | `patient@demo-clinic.se` | `demo-password-123` |
 
 Or the whole stack in containers:

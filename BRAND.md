@@ -92,22 +92,25 @@ in the environment where this was written.
 `cleat.com` is a common English noun and is almost certainly registered. Assume
 you are buying it, not claiming it, and get a price before you commit.
 
-**Priority order:**
+**Settled: `cleat.se` is the primary.** Checked and available; being
+registered at Loopia. `cleat.app` was the original first choice and is taken by
+somebody else, which is why the canonical URLs spent a while pointing at a
+Vercel hostname instead. A `.se` apex is the right answer anyway for a
+Swedish-first product handling Swedish health data — it is the address a
+Swedish clinic expects, and it does not route the brand through a registry in
+another jurisdiction.
 
-1. `cleat.app` — Google-run TLD, HTTPS-only by policy, reads as a product.
-   The most realistic primary.
-2. `cleat.se` — required for the Swedish market whatever else you do.
-3. `cleat.com` — worth a quote; walk away if the number is silly.
-4. `getcleat.com`, `trycleat.com`, `cleatapp.com` — defensive.
+**Still worth a quote, later:** `cleat.com`, and `getcleat.se` /
+`cleatapp.se` defensively. None of them is on the critical path.
 
 **Do not** register `cleat.health` or `cleat.care`. A health TLD in the address
 bar tells anyone glancing at the screen what the person is dealing with. That is
 a privacy leak in the shape of a domain, and it throws away the camouflage the
 name just bought you.
 
-**Subdomains.** Organisation tenants resolve by subdomain — `clinic.cleat.app` —
+**Subdomains.** Organisation tenants resolve by subdomain — `clinic.cleat.se` —
 which puts a clinic's name in the URL of every request its patients make. Keep
-consumers on the apex; default organisations to a neutral slug (`t-4821.cleat.app`)
+consumers on the apex; default organisations to a neutral slug (`t-4821.cleat.se`)
 and let them opt into a readable one.
 
 ---

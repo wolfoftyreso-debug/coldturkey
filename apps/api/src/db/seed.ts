@@ -22,11 +22,11 @@ export async function seed(): Promise<void> {
   const consumer = await ensureDefaultTenant();
   const clinic = await createTenant('demo-clinic', 'Demoklinken', { publicSignup: false });
 
-  await seedDemoUser(consumer.id, 'demo@cleat.app', 'Alex');
+  await seedDemoUser(consumer.id, 'demo@cleat.se', 'Alex');
   await seedDemoUser(clinic.id, 'patient@demo-clinic.se', 'Kim');
 
   console.log('[seed] done');
-  console.log('[seed]   consumer tenant : %s (demo@cleat.app / demo-password-123)', consumer.slug);
+  console.log('[seed]   consumer tenant : %s (demo@cleat.se / demo-password-123)', consumer.slug);
   console.log('[seed]   clinic tenant   : %s (patient@demo-clinic.se / demo-password-123)', clinic.slug);
 }
 
