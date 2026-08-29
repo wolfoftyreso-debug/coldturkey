@@ -29,6 +29,7 @@ const PAGES = [
   '/medberoende',
   '/abstinens',
   '/sluta-roka',
+  '/sluta-snusa',
   '/organisation',
 ];
 

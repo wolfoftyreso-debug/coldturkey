@@ -175,3 +175,53 @@ describe('the intake question', () => {
     }
   });
 });
+
+/**
+ * The snus page, and the line it must not cross.
+ *
+ * Almost everything published in Swedish about quitting snus comes from
+ * companies that sell snus or sell the nicotine replacement, written to read
+ * like health information. The value of this page is entirely in what it
+ * refuses to claim, so that is what is tested.
+ */
+describe('the snus page claims only what holds for snus', () => {
+  const page = readFileSync(join(import.meta.dirname, '../app/sluta-snusa/page.tsx'), 'utf8');
+
+  it('renders only the milestones with no intake marker', () => {
+    expect(page).toContain("substanceProfile('nicotine').milestones.filter((m) => !m.intake)");
+  });
+
+  it('makes no claim about lungs, carbon monoxide or heart attacks', () => {
+    // The exact failure the intake question exists to prevent, checked on the
+    // page as well as in the payload — a hand-written paragraph here would
+    // reintroduce it without touching the engine at all.
+    const prose = page.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    for (const claim of ['lungfunktion', 'kolmonoxid', 'lungcancer']) {
+      // Allowed only where the page is explaining that these do NOT apply.
+      const mentions = prose.split(claim).length - 1;
+      const disclaimers = prose.split(/handlar om rökning|aldrig rökt|gäller ingenting/).length - 1;
+      expect(mentions, claim).toBeLessThanOrEqual(disclaimers);
+    }
+  });
+
+  it('says out loud who publishes the rest of the material', () => {
+    // The page's actual differentiator, and the reason it is short.
+    expect(page).toContain('säljer snus');
+  });
+
+  it('sends somebody who also smoked to the page that does apply to them', () => {
+    expect(page).toContain('/sluta-roka');
+  });
+
+  it('is reachable from the smoking page and the landing page', () => {
+    const smoking = readFileSync(join(import.meta.dirname, '../app/sluta-roka/page.tsx'), 'utf8');
+    const landing = readFileSync(join(import.meta.dirname, '../app/page.tsx'), 'utf8');
+    expect(smoking).toContain('/sluta-snusa');
+    expect(landing).toContain('/sluta-snusa');
+  });
+
+  it('is in the sitemap', async () => {
+    const { PUBLIC_PATHS } = await import('./seo');
+    expect(PUBLIC_PATHS).toContain('/sluta-snusa');
+  });
+});

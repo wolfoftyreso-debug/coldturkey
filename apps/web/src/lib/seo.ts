@@ -41,6 +41,7 @@ export const PUBLIC_PATHS = [
   '/medberoende',
   '/abstinens',
   '/sluta-roka',
+  '/sluta-snusa',
   '/organisation',
 ];
 

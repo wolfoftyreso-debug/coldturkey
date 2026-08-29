@@ -201,6 +201,18 @@ export default function QuitSmokingPage() {
         </Link>
       </section>
 
+      <section className={styles.crisis}>
+        <h2 className={styles.crisisTitle}>Snusar du i stället?</h2>
+        <p className={styles.crisisBody}>
+          Då gäller ingenting av tidslinjen ovan — den handlar om kolmonoxid och lungor, och
+          har du aldrig rökt har du inte utsatt kroppen för det. Vi har skrivit en egen sida
+          som säger det lilla som faktiskt går att säga.
+        </p>
+        <Link href="/sluta-snusa" className={styles.crisisLink}>
+          Sluta snusa →
+        </Link>
+      </section>
+
       <footer className={styles.footer}>
         <p>
           <Link href="/abstinens" style={{ color: 'var(--accent-strong)' }}>
