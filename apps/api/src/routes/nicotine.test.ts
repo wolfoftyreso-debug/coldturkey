@@ -5,6 +5,7 @@ import { closePool } from '../db/pool.js';
 import { migrate } from '../db/migrate.js';
 import { ensureDefaultTenant } from '../db/tenants.js';
 import { setMailer, type Mail, type Mailer } from '../mail/smtp.js';
+import { buildContextBlock } from '../coach/prompt.js';
 
 /**
  * What somebody quitting smoking actually gets back from the API.
@@ -214,5 +215,96 @@ suite('the dashboard for somebody quitting snus', () => {
     const sources = new Set(body.milestones!.reached.map((m) => m.source));
     expect(sources.has('1177')).toBe(true);
     expect(sources.has('NHS')).toBe(false);
+  });
+});
+
+/**
+ * The coach is the fourth surface, and the one where the mistake is easiest.
+ *
+ * The engine filters milestones, the pages are tested, the payload is tested —
+ * and then a language model, handed the word "nicotine" and nothing else,
+ * cheerfully tells a snus user their lungs are clearing. The safety layer will
+ * not catch that: it is not unsafe, only untrue, and untrue about somebody's
+ * body is the specific thing this product does not do.
+ */
+suite('what the coach is told about how the nicotine arrived', () => {
+  it('tells the model to make no claim about lungs for a snus user', () => {
+    const block = buildContextBlock({
+      locale: 'sv',
+      displayName: 'Test',
+      phase: 'stabilization',
+      substance: 'nicotine',
+      intakeForm: 'oral',
+      streakDays: 3,
+      longestStreakDays: 3,
+      totalDaysInRecovery: 3,
+      restarts: 0,
+      whyStatement: null,
+      supportContactNames: [],
+      topTriggers: [],
+      whatHasWorked: [],
+      indicators: [],
+      safetyLevel: 'none',
+      safetyCategories: [],
+      negotiationTypes: [],
+      mode: 'default',
+      detoxWarningRequired: false,
+    });
+
+    expect(block).toContain('snusar och har inte rökt');
+    expect(block).toContain('lungor');
+    expect(block).toContain('kolmonoxid');
+  });
+
+  it('says nothing of the sort for a smoker', () => {
+    const block = buildContextBlock({
+      locale: 'sv',
+      displayName: 'Test',
+      phase: 'stabilization',
+      substance: 'nicotine',
+      intakeForm: 'smoked',
+      streakDays: 3,
+      longestStreakDays: 3,
+      totalDaysInRecovery: 3,
+      restarts: 0,
+      whyStatement: null,
+      supportContactNames: [],
+      topTriggers: [],
+      whatHasWorked: [],
+      indicators: [],
+      safetyLevel: 'none',
+      safetyCategories: [],
+      negotiationTypes: [],
+      mode: 'default',
+      detoxWarningRequired: false,
+    });
+    expect(block).not.toContain('snusar och har inte rökt');
+  });
+
+  it('stays silent when nobody was asked', () => {
+    // Most plans. An instruction built on a guess would be worse than none.
+    const block = buildContextBlock({
+      locale: 'sv',
+      displayName: 'Test',
+      phase: 'stabilization',
+      substance: 'alcohol',
+      intakeForm: null,
+      streakDays: 3,
+      longestStreakDays: 3,
+      totalDaysInRecovery: 3,
+      restarts: 0,
+      whyStatement: null,
+      supportContactNames: [],
+      topTriggers: [],
+      whatHasWorked: [],
+      indicators: [],
+      safetyLevel: 'none',
+      safetyCategories: [],
+      negotiationTypes: [],
+      mode: 'default',
+      detoxWarningRequired: false,
+    });
+    expect(block).not.toContain('snusar');
+    expect(block).not.toContain('röker och snusar');
   });
 });

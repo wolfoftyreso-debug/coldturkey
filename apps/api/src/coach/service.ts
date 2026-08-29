@@ -119,6 +119,7 @@ export async function coach(request: CoachRequest): Promise<CoachResponse> {
         displayName: request.displayName,
         phase: assessPhase(snapshot, now).phase,
         substance: snapshot.quit?.substance ?? null,
+        intakeForm: snapshot.quit?.intakeForm ?? null,
         streakDays: snapshot.quit ? computeStreak(snapshot.quit, snapshot.relapses, now).currentDays : null,
         longestStreakDays: snapshot.quit
           ? computeStreak(snapshot.quit, snapshot.relapses, now).longestDays

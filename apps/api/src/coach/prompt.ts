@@ -189,6 +189,13 @@ export interface CoachContext {
   displayName: string;
   phase: RecoveryPhase;
   substance: string | null;
+  /**
+   * Nicotine only. The coach has to know, for the same reason every other
+   * surface does: telling somebody who has only ever used snus that their
+   * lungs are recovering is a false claim about their body, and the safety
+   * layer will not catch it because it is not unsafe — only untrue.
+   */
+  intakeForm: 'smoked' | 'oral' | 'both' | null;
   streakDays: number | null;
   longestStreakDays: number | null;
   totalDaysInRecovery: number | null;
@@ -222,6 +229,16 @@ export function buildContextBlock(context: CoachContext): string {
   if (context.displayName) lines.push(`Personen heter ${context.displayName}.`);
   lines.push(`Fas: ${context.phase}.`);
   if (context.substance) lines.push(`Substans/beteende: ${context.substance}.`);
+
+  if (context.intakeForm === 'oral') {
+    lines.push(
+      'Personen snusar och har inte rökt. Påstå ingenting om lungor, kolmonoxid, ' +
+        'andning, hosta eller lungcancerrisk — det gäller rökning och inte den här ' +
+        'personen. Det som gäller är nikotinberoendet: suget, sömnen, irritationen.',
+    );
+  } else if (context.intakeForm === 'both') {
+    lines.push('Personen både röker och snusar.');
+  }
 
   if (context.streakDays != null) {
     lines.push(
